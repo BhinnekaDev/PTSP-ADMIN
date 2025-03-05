@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Card,
   CardBody,
@@ -12,19 +12,25 @@ import {
 } from "@material-tailwind/react";
 import Chart from "react-apexcharts";
 import { UserGroupIcon, FunnelIcon } from "@heroicons/react/24/solid";
-import useTampilkanGrafikKunjungan from "@/hooks/backend/useTampilkanGrafikKunjungan";
+import useTampilkanGrafikKunjungan from "@/hooks/useTampilkanGrafikKunjungan";
 
 const GrafikKunjungan = () => {
-  const [periode, setPeriode] = useState("");
-  const { dataKunjungan } = useTampilkanGrafikKunjungan();
+  const [periode, setPeriode] = useState("minggu");
+  const { dataKunjungan, sedangMemuatGrafik } = useTampilkanGrafikKunjungan();
+
+  const dataPeriode = dataKunjungan[periode] || [0, 0];
 
   const konfigurasi = {
     type: "line",
     height: 240,
     series: [
       {
-        name: "Partisipan",
-        data: dataKunjungan,
+        name: "Perorangan",
+        data: [dataPeriode[0]],
+      },
+      {
+        name: "Perusahaan",
+        data: [dataPeriode[1]],
       },
     ],
     options: {
@@ -39,7 +45,7 @@ const GrafikKunjungan = () => {
       dataLabels: {
         enabled: false,
       },
-      colors: ["#020617"],
+      colors: ["#020617", "#0F67B1"],
       stroke: {
         lineCap: "round",
         curve: "smooth",
@@ -62,7 +68,7 @@ const GrafikKunjungan = () => {
             fontWeight: 400,
           },
         },
-        categories: ["Perseorangan", "Perusahaan"],
+        categories: ["Pengguna"],
       },
       yaxis: {
         labels: {
@@ -131,14 +137,18 @@ const GrafikKunjungan = () => {
             </Button>
           </MenuHandler>
           <MenuList>
-            <MenuItem onClick={() => setPeriode("mingguan")}>Mingguan</MenuItem>
-            <MenuItem onClick={() => setPeriode("bulanan")}>Bulanan</MenuItem>
-            <MenuItem onClick={() => setPeriode("tahunan")}>Tahunan</MenuItem>
+            <MenuItem onClick={() => setPeriode("minggu")}>Mingguan</MenuItem>
+            <MenuItem onClick={() => setPeriode("bulan")}>Bulanan</MenuItem>
+            <MenuItem onClick={() => setPeriode("tahun")}>Tahunan</MenuItem>
           </MenuList>
         </Menu>
       </CardHeader>
       <CardBody className="px-2 pb-0">
-        <Chart {...konfigurasi} />
+        {sedangMemuatGrafik ? (
+          <Typography color="blue-gray">Memuat data...</Typography>
+        ) : (
+          <Chart {...konfigurasi} />
+        )}
       </CardBody>
     </Card>
   );
