@@ -3,6 +3,7 @@ import { toast } from "react-toastify";
 import { doc, updateDoc, getDoc } from "firebase/firestore";
 // PERPUSTAKAAN KAMI
 import { database } from "@/lib/firebaseConfig";
+import { kirimEmail } from "@/hooks/backend/useNotifikasiEmail";
 
 export default function useSuntingPengajuan(idPemesanan) {
   const [statusPengajuan, setStatusPengajuan] = useState("");
@@ -73,10 +74,31 @@ export default function useSuntingPengajuan(idPemesanan) {
         throw new Error("Data pemesanan tidak ditemukan!");
       }
 
+      const idPengguna = pemesananData.ID_Pengguna;
+
+      let emailPengguna = "";
+      let namaPengguna = "";
+
+      const peroranganRef = doc(database, "perorangan", idPengguna);
+      const peroranganSnap = await getDoc(peroranganRef);
+
+      if (peroranganSnap.exists()) {
+        const peroranganData = peroranganSnap.data();
+        emailPengguna = peroranganData.Email;
+        namaPengguna = peroranganData.Nama_Lengkap;
+      } else {
+        const perusahaanRef = doc(database, "perusahaan", idPengguna);
+        const perusahaanSnap = await getDoc(perusahaanRef);
+
+        if (perusahaanSnap.exists()) {
+          const perusahaanData = perusahaanSnap.data();
+          emailPengguna = perusahaanData.Email;
+          namaPengguna = perusahaanData.Nama_Lengkap;
+        }
+      }
+
       const pengajuanRef = doc(database, "ajukan", idAjukan);
-      const pengajuanUpdateData = {
-        Status_Ajuan: statusPengajuan,
-      };
+      const pengajuanUpdateData = { Status_Ajuan: statusPengajuan };
 
       if (statusPengajuan === "Ditolak") {
         pengajuanUpdateData.Keterangan = keterangan;
@@ -110,11 +132,28 @@ export default function useSuntingPengajuan(idPemesanan) {
         return itemBaru;
       });
 
-      await updateDoc(pemesananRef, {
-        Data_Keranjang: updatedKeranjang,
-      });
+      await updateDoc(pemesananRef, { Data_Keranjang: updatedKeranjang });
 
-      toast.success("Pengajuan berhasil disunting dan Nomor VA diperbarui!");
+      // Kirim email notifikasi
+      if (emailPengguna) {
+        if (statusPengajuan === "Diterima") {
+          await kirimEmail(
+            emailPengguna,
+            "Pengajuan Anda Diterima!",
+            `Halo ${namaPengguna},\n\nPengajuan Anda telah diterima!`
+          );
+        } else if (statusPengajuan === "Ditolak") {
+          await kirimEmail(
+            emailPengguna,
+            "Pengajuan Anda Ditolak",
+            `Halo ${namaPengguna},\n\nKami mohon maaf, pengajuan Anda telah ditolak dengan alasan berikut:\n\n"${keterangan}"\n\nJika ada pertanyaan lebih lanjut, Anda dapat menghubungi kami melalui fitur Live Chat di website PTSP BMKG Bengkulu.\n\nTerima kasih.`
+          );
+        }
+      }
+
+      toast.success(
+        "Pengajuan berhasil disunting dan email notifikasi dikirim!"
+      );
     } catch (error) {
       toast.error("Gagal menyunting pengajuan: " + error.message);
     } finally {
