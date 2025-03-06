@@ -4,7 +4,6 @@ import { createUserWithEmailAndPassword } from "firebase/auth";
 import { toast } from "react-toastify";
 // PERPUSTAKAAN KAMI
 import { database, auth } from "@/lib/firebaseConfig";
-// Import DOMPurify untuk menghindari XSS
 import DOMPurify from "dompurify";
 
 const useTambahAdmin = () => {
@@ -17,7 +16,6 @@ const useTambahAdmin = () => {
   const [peranAdmin, setPeranAdmin] = useState("");
   const [sedangMemuatTambahAdmin, setSedangMemuatTambahAdmin] = useState(false);
 
-  // Fungsi untuk membersihkan input dari XSS
   const bersihkanInput = (input) => {
     return DOMPurify.sanitize(input);
   };
@@ -63,7 +61,6 @@ const useTambahAdmin = () => {
     setSedangMemuatTambahAdmin(true);
 
     try {
-      // Bersihkan semua input dari XSS sebelum disimpan
       const namaDepanBersih = bersihkanInput(namaDepan);
       const namaBelakangBersih = bersihkanInput(namaBelakang);
       const namaPenggunaBersih = bersihkanInput(namaPengguna);

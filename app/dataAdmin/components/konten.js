@@ -14,7 +14,7 @@ import {
 import Image from "next/image";
 // PENGAIT KAMI
 import useTampilkanAdmin from "@/hooks/backend/useTampilkanAdmin";
-// import useHapusAdmin from "@/hooks/backend/useHapusAdmin";
+import useHapusAdmin from "@/hooks/backend/useHapusAdmin";
 import useTampilkanDataPerTahun from "@/hooks/backend/useTampilkanDataPerTahun";
 // KOMPONEN KAMI
 import ModalTambahAdmin from "@/components/modalTambahAdmin";
@@ -30,9 +30,9 @@ const judulTabel = ["Admin", "Fungsi", "Status", "Tanggal Pembuatan Akun", ""];
 const Konten = ({ tahunDipilih }) => {
   const gambarBawaan = require("@/assets/images/profil.jpg");
   const [bukaModalTambahAdmin, setBukaModalTambahAdmin] = useState(false);
-  // const [bukaModalHapusAdmin, setBukaModalHapusAdmin] = useState(false);
+  const [bukaModalHapusAdmin, setBukaModalHapusAdmin] = useState(false);
   const [adminYangTerpilih, setAdminYangTerpilih] = useState(null);
-  // const { hapusAdmin, sedangMemuatHapusAdmin } = useHapusAdmin();
+  const { hapusAdmin, sedangMemuatHapusAdmin } = useHapusAdmin();
   const dataBulanTahun = useTampilkanDataPerTahun();
   const {
     halaman,
@@ -42,18 +42,18 @@ const Konten = ({ tahunDipilih }) => {
     ambilAdminSelanjutnya,
     sedangMemuatTampilkanAdmin,
   } = useTampilkanAdmin();
-  // const konfirmasiHapus = (idAdmin) => {
-  //   setAdminYangTerpilih(idAdmin);
-  //   setBukaModalHapusAdmin(true);
-  // };
+  const konfirmasiHapus = (idAdmin) => {
+    setAdminYangTerpilih(idAdmin);
+    setBukaModalHapusAdmin(true);
+  };
 
-  // const hapus = async () => {
-  //   if (adminYangTerpilih) {
-  //     await hapusAdmin(adminYangTerpilih);
-  //     setBukaModalHapusAdmin(false);
-  //     setAdminYangTerpilih(null);
-  //   }
-  // };
+  const hapus = async () => {
+    if (adminYangTerpilih) {
+      await hapusAdmin(adminYangTerpilih);
+      setBukaModalHapusAdmin(false);
+      setAdminYangTerpilih(null);
+    }
+  };
 
   const saringAdmin = daftarAdmin.filter((item) => {
     const tanggal = item.Tanggal_Pembuatan_Akun || item.Tanggal_Pembuatan;
@@ -216,22 +216,24 @@ const Konten = ({ tahunDipilih }) => {
                             {formatTanggal(Tanggal_Pembuatan_Akun)}
                           </Typography>
                         </td>
-                        {/* <td className={kelas}>
-                          {Peran !== "Super Admin" && (
-                            <Tooltip content="Hapus Admin">
-                              <IconButton
-                                variant="text"
-                                onClick={() => konfirmasiHapus(id, Peran)}
-                              >
-                                {sedangMemuatHapusAdmin ? (
-                                  <Memuat />
-                                ) : (
-                                  <TrashIcon className="h-4 w-4" />
-                                )}
-                              </IconButton>
-                            </Tooltip>
-                          )}
-                        </td> */}
+                        {
+                          <td className={kelas}>
+                            {Peran !== "Super Admin" && (
+                              <Tooltip content="Hapus Admin">
+                                <IconButton
+                                  variant="text"
+                                  onClick={() => konfirmasiHapus(id, Peran)}
+                                >
+                                  {sedangMemuatHapusAdmin ? (
+                                    <Memuat />
+                                  ) : (
+                                    <TrashIcon className="h-4 w-4" />
+                                  )}
+                                </IconButton>
+                              </Tooltip>
+                            )}
+                          </td>
+                        }
                       </tr>
                     );
                   }
@@ -273,13 +275,15 @@ const Konten = ({ tahunDipilih }) => {
         tertutup={setBukaModalTambahAdmin}
       />
 
-      {/* <ModalKonfirmasiHapusAdmin
-        terbuka={bukaModalHapusAdmin}
-        tertutup={setBukaModalHapusAdmin}
-        adminYangTerpilih={adminYangTerpilih}
-        konfirmasiHapusAdmin={hapus}
-        sedangMemuatHapusAdmin={sedangMemuatHapusAdmin}
-      /> */}
+      {
+        <ModalKonfirmasiHapusAdmin
+          terbuka={bukaModalHapusAdmin}
+          tertutup={setBukaModalHapusAdmin}
+          adminYangTerpilih={adminYangTerpilih}
+          konfirmasiHapusAdmin={hapus}
+          sedangMemuatHapusAdmin={sedangMemuatHapusAdmin}
+        />
+      }
     </Card>
   );
 };
