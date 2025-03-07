@@ -12,7 +12,7 @@ import {
 } from "@material-tailwind/react";
 import Chart from "react-apexcharts";
 import { UserGroupIcon, FunnelIcon } from "@heroicons/react/24/solid";
-import useTampilkanGrafikKunjungan from "@/hooks/useTampilkanGrafikKunjungan";
+import useTampilkanGrafikKunjungan from "@/hooks/backend/useTampilkanGrafikKunjungan";
 
 const GrafikKunjungan = () => {
   const [periode, setPeriode] = useState("minggu");
