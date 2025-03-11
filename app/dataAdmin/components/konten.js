@@ -197,15 +197,17 @@ const Konten = ({ tahunDipilih }) => {
                             </Typography>
                           </div>
                         </td>
-                        <td className={kelas}>
-                          <div className="w-max">
-                            <Chip
-                              variant="ghost"
-                              size="sm"
-                              value="Aktif"
-                              color="green"
-                            />
-                          </div>
+                        <td className="text-center hidden md:table-cell">
+                          <span
+                            className={(() => {
+                              const adminIdInStorage = localStorage.getItem(id);
+                              return adminIdInStorage
+                                ? "bg-green-500 bg-opacity-15 text-green-500 text-xs px-4 py-2 uppercase font-bold rounded-lg tracking-wider inline-block"
+                                : "bg-red-500 bg-opacity-15 text-red-500 text-xs px-4 py-2 uppercase font-bold tracking-wider rounded-lg inline-block";
+                            })()}
+                          >
+                            {localStorage.getItem(id) ? "Aktif" : "Tidak Aktif"}
+                          </span>
                         </td>
                         <td className={kelas}>
                           <Typography
