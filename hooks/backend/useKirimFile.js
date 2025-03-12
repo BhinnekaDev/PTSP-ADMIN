@@ -20,7 +20,7 @@ const useKirimFile = (idPemesanan) => {
 
   const ambilDataKeranjang = async () => {
     try {
-      const pemesananRef = doc(database, "pemesanan", idPemesanan)``;
+      const pemesananRef = doc(database, "pemesanan", idPemesanan);
       const pemesananSnap = await getDoc(pemesananRef);
 
       if (pemesananSnap.exists()) {
