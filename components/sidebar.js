@@ -428,7 +428,7 @@ function Sidebar({ pengarah }) {
           <ListItem
             onClick={() => pengarah.push("/liveChat")}
             className={
-              lokasiSaatIni === "/pesan" ? "bg-[#0F67B1] text-white" : ""
+              lokasiSaatIni === "/liveChat" ? "bg-[#0F67B1] text-white" : ""
             }
           >
             <ListItemPrefix>

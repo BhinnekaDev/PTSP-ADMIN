@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   PaperAirplaneIcon,
   FaceSmileIcon,
@@ -7,12 +7,145 @@ import {
 } from "@heroicons/react/24/outline";
 import { BsCheck2All } from "react-icons/bs";
 import { AiOutlineMessage } from "react-icons/ai";
-
+import { LuPaperclip } from "react-icons/lu";
+import { MdDelete } from "react-icons/md";
+import { IoIosClose } from "react-icons/io";
+import EmojiPicker from "emoji-picker-react";
 import Image from "next/image";
+import { motion } from "framer-motion";
+
+//KOMPONEN KAMI
+import ModalKonfirmasiHapusChat from "@/components/modalKonfirmasiHapusChat";
 
 const LiveChat = () => {
-  const [selectedUser, setSelectedUser] = useState("Eyca Putri Edwiyanti");
-  const [input, setInput] = useState("");
+  const [selectedUser, setSelectedUser] = useState("");
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [tampilkanModalHapus, setTampilkanModalHapus] = useState(false);
+  const [pesanTerpilih, setPesanTerpilih] = useState(null);
+  const [showDeleteIcon, setShowDeleteIcon] = useState(false);
+  const [iconPosition, setIconPosition] = useState({ x: 0, y: 0 });
+  const emojiPickerRef = useRef(null);
+  const fileInputRef = useRef(null);
+  const menuRef = useRef(null);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [message, setMessage] = useState("");
+  const [selengkapnya2, setSelengkapnya2] = useState([]);
+
+  const toggleSelengkapnya2 = (index) => {
+    console.log("Diklik index:", index); // Debug klik
+    setSelengkapnya2((prev) => {
+      console.log("Sebelum update:", prev);
+      const updated = prev.includes(index)
+        ? prev.filter((i) => i !== index)
+        : [...prev, index];
+      console.log("Setelah update:", updated);
+      return updated;
+    });
+  };
+
+  const messages = [
+    {
+      sender: "Eyca Putri Edwiyanti",
+      text: "Lorem ipsum dolor sit amet.",
+      time: "19:11",
+      type: "received",
+    },
+    {
+      sender: "Me",
+      text: "Lorem ipsum dolor sit amet, consectetur Lorem ipsum dolor sit amet, Lorem ipsum dolor sit amet, consectetur Lorem ipsum dolor sit ametLorem ipsum dolor sit amet, consectetur Lorem ipsum dolor sit amet, Lorem ipsum dolor sit amet, consectetur Lorem ipsum dolor sit amet, consectetur Lorem ipsum dolor sit amet, consecteturLorem ipsum dolor sit amet, consecteturLorem ipsum dolor sit amet, consectetur.",
+      time: "19:11",
+      type: "sent",
+    },
+    {
+      sender: "Eyca Putri Edwiyanti",
+      text: "Hey, ada info terbaru?",
+      time: "14:20",
+      type: "received",
+    },
+    {
+      sender: "Me",
+      text: "Cuaca hari ini cerah dan berawan.",
+      time: "19:11",
+      type: "sent",
+    },
+  ];
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setSelectedFile(file);
+    }
+  };
+
+  const handleRemoveFile = () => {
+    setSelectedFile(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  const handleSendMessage = () => {
+    if (message.trim() || selectedFile) {
+      console.log("Mengirim pesan:", message);
+      if (selectedFile) {
+        console.log("Mengirim file:", selectedFile);
+      }
+      setMessage("");
+      setSelectedFile(null);
+      fileInputRef.current.value = "";
+    }
+  };
+
+  const handleBukaEmoji = (emoji) => {
+    setMessage((prev) => prev + emoji.emoji);
+  };
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (
+        emojiPickerRef.current &&
+        !emojiPickerRef.current.contains(event.target) &&
+        event.target.getAttribute("data-ignore-click") !== "true"
+      ) {
+        setShowEmojiPicker(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  const klikKananPesan = (event, user) => {
+    event.preventDefault();
+    setPesanTerpilih(user);
+    setShowDeleteIcon(true);
+    setIconPosition({
+      x: window.innerWidth / 2 - 250,
+      y: window.innerHeight / 2 - 300,
+    });
+  };
+
+  const hapusPesan = () => {
+    setTampilkanModalHapus(true);
+    setShowDeleteIcon(false);
+  };
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        console.log("Klik di luar menu, menutup...");
+        setShowDeleteIcon(false);
+      }
+    };
+
+    if (showDeleteIcon) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [showDeleteIcon]);
 
   return (
     <div className="flex h-screen border rounded-lg shadow-lg overflow-hidden">
@@ -34,7 +167,33 @@ const LiveChat = () => {
               selectedUser === "Eyca Putri Edwiyanti" ? "bg-gray-200" : ""
             }`}
             onClick={() => setSelectedUser("Eyca Putri Edwiyanti")}
+            onContextMenu={(event) =>
+              klikKananPesan(event, "Eyca Putri Edwiyanti")
+            }
           >
+            {showDeleteIcon && (
+              <div
+                ref={menuRef}
+                style={{
+                  position: "absolute",
+                  top: iconPosition.y,
+                  left: iconPosition.x,
+                  background: "white",
+                  padding: "10px",
+                  borderRadius: "8px",
+                  boxShadow: "0px 0px 10px rgba(0,0,0,0.2)",
+                  zIndex: 1000,
+                }}
+              >
+                <button
+                  className="flex items-center gap-2 text-gray-500 hover:text-red-500"
+                  onClick={hapusPesan}
+                >
+                  <MdDelete />
+                  Delete Pesan
+                </button>
+              </div>
+            )}
             <Image
               src="/profil.jpg"
               alt="Profil"
@@ -57,6 +216,7 @@ const LiveChat = () => {
               selectedUser === "Hengki" ? "bg-gray-200" : ""
             }`}
             onClick={() => setSelectedUser("Hengki")}
+            onContextMenu={(event) => klikKananPesan(event, "Hengki")}
           >
             <Image
               src="/profil.jpg"
@@ -79,6 +239,7 @@ const LiveChat = () => {
               selectedUser === "Ahsan Ghofari" ? "bg-gray-200" : ""
             }`}
             onClick={() => setSelectedUser("Ahsan Ghofari")}
+            onContextMenu={(event) => klikKananPesan(event, "Ahsan Ghofari")}
           >
             <Image
               src="/profil.jpg"
@@ -101,6 +262,7 @@ const LiveChat = () => {
               selectedUser === "Sandoro" ? "bg-gray-200" : ""
             }`}
             onClick={() => setSelectedUser("Sandoro")}
+            onContextMenu={(event) => klikKananPesan(event, "Sandoro")}
           >
             <Image
               src="/profil.jpg"
@@ -123,6 +285,7 @@ const LiveChat = () => {
               selectedUser === "Fitri Nur" ? "bg-gray-200" : ""
             }`}
             onClick={() => setSelectedUser("Fitri Nur")}
+            onContextMenu={(event) => klikKananPesan(event, "Fitri Nur")}
           >
             <Image
               src="/profil.jpg"
@@ -162,179 +325,144 @@ const LiveChat = () => {
         </div>
 
         <div className="relative flex-1 p-4 bg-gray-100 overflow-auto">
-          <div className="absolute inset-0 flex justify-center items-center">
+          <div className="absolute inset-0 flex justify-center items-center pointer-events-none">
             <AiOutlineMessage className="text-black opacity-10 w-64 h-64" />
           </div>
-
           <div className="flex justify-center my-4">
-            <span className="bg-gray-300 text-gray-700 text-sm font-semibold px-4 py-1 rounded-lg">
+            <span className="bg-gray-300 text-gray-800 px-4 py-1 rounded-full text-xs font-semibold shadow">
               Kemarin
             </span>
           </div>
-          {selectedUser === "Eyca Putri Edwiyanti" ? (
-            <>
-              <div className="flex mb-2 justify-start">
-                <div className="bg-[#3182B7] text-white p-3 rounded-lg max-w-md shadow">
-                  <p>
-                    Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed
-                    do eiusmod tempor incididunt ut labore et dolore magna
-                    aliqua.
-                  </p>
-                  <p className="text-xs text-right mt-1 opacity-75">19:11</p>
-                </div>
-              </div>
-              <div className="flex mb-2 justify-end">
-                <div className="bg-[#72C02C] text-white p-3 rounded-lg max-w-md shadow">
-                  <p>Lorem ipsum dolor sit amet, consectetur adipiscing.</p>
-                  <div className="flex justify-end items-center space-x-1 mt-1 opacity-75">
-                    <div className="bg-white rounded-full flex px-2">
-                      <p className="text-xs text-black">19:11</p>
-                      <div className="flex items-center">
-                        <BsCheck2All className="w-4 h-4 text-blue-900 " />
-                      </div>
-                    </div>
+
+          {messages.map((msg, index) => (
+            <div
+              key={msg.id || index}
+              className={`flex mb-2 ${
+                msg.type === "sent" ? "justify-end" : "justify-start"
+              }`}
+            >
+              <div
+                className={`${
+                  msg.type === "sent" ? "bg-[#72C02C]" : "bg-[#3182B7]"
+                } text-white p-3 rounded-lg max-w-md shadow`}
+              >
+                <p>
+                  {selengkapnya2.includes(index) || msg.text.length <= 50
+                    ? msg.text
+                    : `${msg.text.substring(0, 250)}...`}
+                </p>
+
+                {msg.text.length > 50 && (
+                  <motion.button
+                    initial={{ opacity: 0.5, y: 5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0.5, y: 5 }}
+                    transition={{ duration: 0.2 }}
+                    className="text-white text-sm underline"
+                    onClick={() => toggleSelengkapnya2(index)}
+                  >
+                    {selengkapnya2.includes(index)
+                      ? "Tampilkan Lebih Sedikit"
+                      : "Lihat Selengkapnya"}
+                  </motion.button>
+                )}
+
+                <div className="text-xs text-right mt-1 flex items-center justify-end space-x-1">
+                  <div
+                    className={`flex items-center space-x-1 px-2 py-1 rounded-lg shadow ${
+                      msg.status === "terbaca" ? "bg-blue-100" : "bg-gray-200"
+                    }`}
+                  >
+                    <span
+                      className={
+                        msg.status === "terbaca"
+                          ? "text-blue-600"
+                          : "text-gray-700"
+                      }
+                    >
+                      {msg.time}
+                    </span>
+                    {msg.type === "sent" && (
+                      <BsCheck2All
+                        className={`w-4 h-4 ${
+                          msg.status === "terbaca"
+                            ? "text-blue-900"
+                            : "text-gray-400"
+                        }`}
+                      />
+                    )}
                   </div>
                 </div>
               </div>
-              <div className="flex mb-2 justify-end">
-                <div className="bg-[#72C02C] text-white p-3 rounded-lg max-w-md shadow">
-                  <p>Lorem ipsum dolor sit amet, consectetur adipiscing.</p>
-                  <div className="flex justify-end items-center space-x-1 mt-1 opacity-75">
-                    <div className="bg-white rounded-full flex px-2">
-                      <p className="text-xs text-black">19:11</p>
-                      <div className="flex items-center">
-                        <BsCheck2All className="w-4 h-4 text-blue-900 " />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className="flex mb-2 justify-end">
-                <div className="bg-[#72C02C] text-white p-3 rounded-lg max-w-md shadow">
-                  <p>Lorem ipsum dolor sit amet, consectetur adipiscing.</p>
-                  <div className="flex justify-end items-center space-x-1 mt-1 opacity-75">
-                    <div className="bg-white rounded-full flex px-2">
-                      <p className="text-xs text-black">19:11</p>
-                      <div className="flex items-center">
-                        <BsCheck2All className="w-4 h-4 text-blue-900 " />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex mb-2 justify-start">
-                <div className="bg-[#3182B7] text-white p-3 rounded-lg max-w-md shadow">
-                  <p>Lorem ipsum dolor sit met, consectetur adipiscing elit.</p>
-                  <p className="text-xs text-right mt-1 opacity-75">19:11</p>
-                </div>
-              </div>
-            </>
-          ) : (
-            <>
-              <div className="flex mb-2 justify-start">
-                <div className="bg-[#3182B7] text-white p-3 rounded-lg max-w-md shadow">
-                  <p>Hey, ada info terbaru?</p>
-                  <p className="text-xs text-right mt-1 opacity-75">14:20</p>
-                </div>
-              </div>
-
-              <div className="flex mb-2 justify-end">
-                <div className="bg-[#72C02C] text-black p-3 rounded-lg max-w-md shadow">
-                  <p>Cuaca hari ini cerah dan berawan.</p>
-                  <div className="flex justify-end items-center space-x-1 mt-1 opacity-75">
-                    <div className="bg-white rounded-full flex px-2">
-                      <p className="text-xs text-black">19:11</p>
-                      <div className="flex items-center">
-                        <BsCheck2All className="w-4 h-4 text-light-blue-900 " />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </>
-          )}
-
-          <div className="flex justify-center my-4">
-            <span className="bg-gray-300 text-gray-700 text-sm font-semibold px-4 py-1 rounded-lg">
-              Hari Ini
-            </span>
-          </div>
-
-          {selectedUser === "Eyca Putri Edwiyanti" ? (
-            <>
-              <div className="flex mb-2 justify-start">
-                <div className="bg-[#3182B7] text-white p-3 rounded-lg max-w-md shadow">
-                  <p>
-                    Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed
-                    do eiusmod tempor incididunt ut labore et dolore magna
-                    aliqua.
-                  </p>
-                  <p className="text-xs text-right mt-1 opacity-75">19:11</p>
-                </div>
-              </div>
-
-              <div className="flex mb-2 justify-end">
-                <div className="bg-[#72C02C] text-white p-3 rounded-lg max-w-md shadow">
-                  <p>Lorem ipsum dolor sit amet, consectetur adipiscing.</p>
-                  <div className="flex justify-end items-center space-x-1 mt-1 opacity-75">
-                    <div className="bg-white rounded-full flex px-2">
-                      <p className="text-xs text-black">19:11</p>
-                      <div className="flex items-center">
-                        <BsCheck2All className="w-4 h-4 text-blue-900 " />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </>
-          ) : (
-            <>
-              <div className="flex mb-2 justify-start">
-                <div className="bg-[#3182B7] text-white p-3 rounded-lg max-w-md shadow">
-                  <p>
-                    Lorem ipsum dolor sit amet, consectetur adipiscing elit.
-                  </p>
-                  <p className="text-xs text-right mt-1 opacity-75">19:11</p>
-                </div>
-              </div>
-
-              <div className="flex mb-2 justify-end">
-                <div className="bg-[#72C02C] text-white p-3 rounded-lg max-w-md shadow">
-                  <p>
-                    Ut enim ad minim veniam, quis nostrud exercitation ullamco
-                    laboris nisi ut aliquip ex ea commodo consequat.
-                  </p>
-                  <div className="flex justify-end items-center space-x-1 mt-1 opacity-75">
-                    <div className="bg-white rounded-full flex px-2">
-                      <p className="text-xs text-black">19:11</p>
-                      <div className="flex items-center">
-                        <BsCheck2All className="w-4 h-4 text-gray-600 " />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </>
-          )}
+            </div>
+          ))}
         </div>
 
-        <div className="p-4 border-t flex items-center gap-2">
-          <button className="w-6 h-6 text-gray-500 hover:text-gray-700 cursor-pointer">
-            <FaceSmileIcon className="w-6 h-6" />
-          </button>
+        <div className="flex p-2 rounded-lg border-2 border-[#808080]/30 gap-2 w-full bg-white">
+          <div className="flex gap-2">
+            <button
+              className="text-gray-500 hover:text-gray-700 cursor-pointer"
+              onClick={() => fileInputRef.current.click()}
+            >
+              <LuPaperclip className="w-5 h-5" />
+            </button>
+            <input
+              type="file"
+              ref={fileInputRef}
+              className="hidden"
+              onChange={handleFileChange}
+            />
+            <button
+              className="text-gray-500 hover:text-gray-700 cursor-pointer"
+              onClick={() => setShowEmojiPicker((prev) => !prev)}
+            >
+              <FaceSmileIcon className="w-6 h-6" />
+            </button>
+            {showEmojiPicker && (
+              <div
+                ref={emojiPickerRef}
+                className="absolute bottom-12 left-1/3 bg-white shadow-lg border rounded-lg z-50"
+                data-ignore-click="true"
+              >
+                <EmojiPicker onEmojiClick={handleBukaEmoji} />
+              </div>
+            )}
+          </div>
+          {selectedFile && (
+            <div className="flex items-center bg-[#808080]/40 px-3 py-1 rounded-md text-sm w-60">
+              <span className="text-black">
+                {selectedFile.name.length > 15
+                  ? selectedFile.name.slice(0, 15) + "..."
+                  : selectedFile.name}
+              </span>
+              <IoIosClose
+                className="ml-2 w-5 h-5 text-red-500 cursor-pointer"
+                onClick={handleRemoveFile}
+              />
+            </div>
+          )}
           <input
             type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
+            className="w-full text-black focus:outline-none p-2 rounded-md"
             placeholder="Ketik pesan"
-            className="flex-1 border p-2 rounded-lg"
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
           />
-          <button className="bg-black text-white p-2 rounded-lg">
+          <button
+            className="bg-black text-white p-2 rounded-lg"
+            onClick={handleSendMessage}
+          >
             <PaperAirplaneIcon className="w-6 h-6" />
           </button>
         </div>
       </div>
+      {tampilkanModalHapus && (
+        <ModalKonfirmasiHapusChat
+          terbuka={tampilkanModalHapus}
+          tertutup={() => setTampilkanModalHapus(false)}
+          chatTerpilih={pesanTerpilih}
+        />
+      )}
     </div>
   );
 };
