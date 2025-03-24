@@ -108,6 +108,12 @@ function Konten({ tahunDipilih }) {
         <CardBody className="overflow-hidden px-0">
           {sedangMemuatTampilkanPengguna ? (
             <MemuatRangkaTampilkanTabel />
+          ) : saringPengguna.length === 0 ? (
+            <div className="flex justify-center p-6">
+              <Typography variant="h6" className="text-red-500 font-bold">
+                Data Perorangan Tidak Ada!
+              </Typography>
+            </div>
           ) : (
             <table className="mt-4 w-full min-w-max table-auto text-left">
               <thead>
