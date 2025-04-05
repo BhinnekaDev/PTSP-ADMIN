@@ -19,16 +19,29 @@ const useTambahAdmin = () => {
   const validasiFormulir = () => {
     let pesan = "";
 
-    if (!namaDepan) pesan += "Nama Depan harus diisi. ";
-    if (!namaBelakang) pesan += "Nama Belakang harus diisi. ";
-    if (!namaPengguna) pesan += "Nama Pengguna harus diisi. ";
-    if (!email) {
-      pesan += "Email harus diisi. ";
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      pesan += "Format email tidak sesuai. ";
-    }
-    if (!jenisKelamin) pesan += "Jenis Kelamin harus dipilih. ";
-    if (!instasi) pesan += "Instansi harus diisi. ";
+!namaDepan
+  ? ((sesuai = false), (pesanKesalahan += "Nama Depan harus diisi. "))
+  : null;
+!namaBelakang
+  ? ((sesuai = false), (pesanKesalahan += "Nama Belakang harus diisi. "))
+  : null;
+!namaPengguna
+  ? ((sesuai = false), (pesanKesalahan += "Nama Pengguna harus diisi. "))
+  : null;
+!email
+  ? ((sesuai = false), (pesanKesalahan += "Email harus diisi. "))
+  : !/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email)
+  ? ((sesuai = false), (pesanKesalahan += "Format email tidak sesuai. "))
+  : null;
+!jenisKelamin
+  ? ((sesuai = false), (pesanKesalahan += "Jenis Kelamin harus dipilih. "))
+  : null;
+!instasi
+  ? ((sesuai = false), (pesanKesalahan += "Instansi harus diisi. "))
+  : null;
+!peranAdmin
+  ? ((sesuai = false), (pesanKesalahan += "Peran Admin harus dipilih. "))
+  : null;
 
     if (pesan) {
       toast.error(pesan.trim());
