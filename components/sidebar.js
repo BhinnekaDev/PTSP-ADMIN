@@ -30,6 +30,7 @@ import {
   DocumentPlusIcon,
 } from "@heroicons/react/24/solid";
 import { ChevronDownIcon } from "@heroicons/react/24/outline";
+import { IoChatboxEllipses } from "react-icons/io5";
 import "react-toastify/dist/ReactToastify.css";
 import Image from "next/image";
 // PENGAIT KAMI
@@ -424,6 +425,26 @@ function Sidebar({ pengarah }) {
               </ListItem>
             </List>
           </AccordionBody>
+          <ListItem
+            onClick={() => pengarah.push("/liveChat")}
+            className={
+              lokasiSaatIni === "/liveChat" ? "bg-[#0F67B1] text-white" : ""
+            }
+          >
+            <ListItemPrefix>
+              <IoChatboxEllipses className="h-5 w-5" />
+            </ListItemPrefix>
+            <div className="flex items-center justify-between w-full">
+              <span>Pesan</span>
+              <Chip
+                value="56"
+                size="sm"
+                variant="ghost"
+                color="blue-gray"
+                className="rounded-full text-black bg-[#DFE5E7] px-2 py-0.5 text-xs font-bold"
+              />
+            </div>
+          </ListItem>
         </Accordion>
       </List>
 
