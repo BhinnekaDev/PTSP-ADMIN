@@ -2,7 +2,6 @@ import { useState } from "react";
 import { toast } from "react-toastify";
 import { getStorage, ref, deleteObject } from "firebase/storage";
 import { doc, getDoc } from "firebase/firestore";
-// Konfigurasi Firebase
 import { database } from "@/lib/firebaseConfig";
 
 const useHapusAdmin = () => {

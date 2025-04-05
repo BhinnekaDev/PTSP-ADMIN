@@ -35,7 +35,7 @@ const useTambahAdmin = () => {
       : null;
     !email
       ? ((sesuai = false), (pesanKesalahan += "Email harus diisi. "))
-      : !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+      : !/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email)
       ? ((sesuai = false), (pesanKesalahan += "Format email tidak sesuai. "))
       : null;
     !jenisKelamin
