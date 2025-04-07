@@ -11,12 +11,43 @@ import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { toast } from "react-toastify";
 // PERPUSTAKAAN KAMI
 import { database, storage } from "@/lib/firebaseConfig";
+import { kirimEmail } from "@/hooks/backend/useNotifikasiEmail";
 
 const useKirimFile = (idPemesanan) => {
   const [kirimFile, setKirimFile] = useState([]);
   const [nomorSurat, setNomorSurat] = useState("");
   const [dataKeranjang, setDataKeranjang] = useState([]);
   const [sedangMemuatKirimFile, setSedangMemuatKirimFile] = useState(false);
+
+  const ambilDataPengguna = async (idPengguna) => {
+    try {
+      const peroranganRef = doc(database, "perorangan", idPengguna);
+      const peroranganSnap = await getDoc(peroranganRef);
+
+      if (peroranganSnap.exists()) {
+        const data = peroranganSnap.data();
+        return {
+          email: data.Email || "",
+          nama: data.Nama_Lengkap || "",
+        };
+      }
+
+      const perusahaanRef = doc(database, "perusahaan", idPengguna);
+      const perusahaanSnap = await getDoc(perusahaanRef);
+
+      if (perusahaanSnap.exists()) {
+        const data = perusahaanSnap.data();
+        return {
+          email: data.Email || "",
+          nama: data.Nama_Lengkap || "",
+        };
+      }
+    } catch (error) {
+      console.error("Gagal mengambil data pengguna:", error);
+    }
+
+    return { email: "", nama: "" };
+  };
 
   const ambilDataKeranjang = async () => {
     try {
@@ -57,6 +88,8 @@ const useKirimFile = (idPemesanan) => {
       if (!idPengguna)
         throw new Error("ID Pengguna tidak ditemukan di pemesanan.");
 
+      const { email, nama } = await ambilDataPengguna(idPengguna);
+
       const updatedDataKeranjang = [...dataKeranjang];
 
       if (kirimFile.length !== dataKeranjang.length) {
@@ -92,6 +125,17 @@ const useKirimFile = (idPemesanan) => {
       });
 
       toast.success("File berhasil dikirim dan data diperbarui.");
+
+      // ✅ Kirim email notifikasi ke pengguna
+      if (email) {
+        await kirimEmail(
+          email,
+          "File Anda Telah Selesai",
+          `Halo ${
+            nama || "Pengguna"
+          },\n\nFile Anda terkait pemesanan dengan ID ${idPemesanan} telah selesai dan dapat diakses melalui platform kami.\n\nTerima kasih.`
+        );
+      }
     } catch (error) {
       console.error("Gagal mengirim file:", error);
       toast.error("Gagal mengirim file. Silakan coba lagi.");

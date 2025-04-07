@@ -147,6 +147,12 @@ export default function useSuntingPengajuan(idPemesanan) {
             "Pengajuan Anda Ditolak",
             `Halo ${namaPengguna},\n\nKami mohon maaf, pengajuan Anda telah ditolak dengan alasan berikut:\n\n"${keterangan}"\n\nJika ada pertanyaan lebih lanjut, Anda dapat menghubungi kami melalui fitur Live Chat di website PTSP BMKG Bengkulu.\n\nTerima kasih.`
           );
+        } else if (statusPengajuan === "Sedang Ditinjau") {
+          await kirimEmail(
+            emailPengguna,
+            "Pengajuan Anda Sedang Ditinjau",
+            `Halo ${namaPengguna},\n\nPengajuan Anda sedang dalam proses peninjauan oleh Admin.\n\nSilakan menunggu pemberitahuan selanjutnya.\n\nTerima kasih.`
+          );
         }
       }
 

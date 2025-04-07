@@ -120,27 +120,39 @@ function Konten({ tahunDipilih }) {
                       <tr key={id}>
                         <td className={kelas}>
                           <div className="flex items-center gap-3">
-                            <Image
-                              src={pengguna.Foto || gambarBawaan}
-                              alt={pengguna.Nama_Lengkap}
-                              width={40}
-                              height={40}
-                              className="rounded-full"
-                            />
+                            {pengguna ? (
+                              <Image
+                                src={pengguna.Foto || gambarBawaan}
+                                alt={pengguna.Nama_Lengkap}
+                                width={40}
+                                height={40}
+                                className="rounded-full"
+                              />
+                            ) : (
+                              <Image
+                                src={gambarBawaan}
+                                alt="Pengguna Tidak Dikenal"
+                                width={40}
+                                height={40}
+                                className="rounded-full"
+                              />
+                            )}
+
                             <div className="flex flex-col">
                               <Typography
                                 variant="small"
                                 color="blue-gray"
                                 className="font-normal"
                               >
-                                {pengguna.Nama_Lengkap}
+                                {pengguna?.Nama_Lengkap ||
+                                  "Nama Tidak Diketahui"}
                               </Typography>
                               <Typography
                                 variant="small"
                                 color="blue-gray"
                                 className="font-normal opacity-70"
                               >
-                                {pengguna.Email}
+                                {pengguna?.Email || "Email Tidak Diketahui"}
                               </Typography>
                             </div>
                           </div>
