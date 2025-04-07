@@ -15,6 +15,7 @@ import { useState, useEffect } from "react";
 import Memuat from "@/components/memuat";
 // PENGAIT KAMI
 import useMasukDenganEmailKataSandi from "@/hooks/backend/useMasukDenganEmailKataSandi";
+import useLupaKataSandiAdmin from "@/hooks/backend/useLupaKataSandiAdmin";
 
 export default function Masuk() {
   const logoMasuk = require("@/assets/images/logoMasuk.png");
@@ -28,10 +29,17 @@ export default function Masuk() {
   const { masukDenganEmail, sedangMemuat } = useMasukDenganEmailKataSandi();
   const [tampilkanCardLupaKataSandi, setTampilkanCardLupaKataSandi] =
     useState(false);
+  const { kirimEmailReset, sedangMemuat: memuatReset } =
+    useLupaKataSandiAdmin();
 
   const handleLogin = () => {
     masukDenganEmail(email, password);
   };
+
+  const kirimTautanReset = async () => {
+    await kirimEmailReset(email);
+  };
+
   const munculBulan = {
     hidden: { y: -10, opacity: 0 },
     visible: {
@@ -270,9 +278,15 @@ export default function Masuk() {
           />
           <AtSymbolIcon className="h-6 w-6 absolute top-2 right-4 text-[#0F67B1]" />
         </div>
-        <Button className="w-[470px] self-center text-center text-md font-body bg-[#0F67B1] rounded-lg p-3 mt-4 hover:scale-95 hover:bg-[#0F67B1] transition-all duration-200">
-          {sedangMemuat ? <Memuat /> : "Kirim Tautan Reset"}
+
+        <Button
+          onClick={kirimTautanReset}
+          disabled={memuatReset}
+          className="w-[470px] self-center text-center mt-4 font-body bg-[#0F67B1] rounded-lg p-3 hover:scale-95 transition-all"
+        >
+          {memuatReset ? <Memuat /> : "Kirim Tautan Reset"}
         </Button>
+
         <div className="flex justify-center items-center mt-14">
           <ArrowLeftCircleIcon
             className="h-12 w-12 text-[#0F67B1] cursor-pointer hover:text-blue-300 hover:scale-110 transition duration-200"

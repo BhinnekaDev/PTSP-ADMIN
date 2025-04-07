@@ -12,6 +12,7 @@ const useTambahAdmin = () => {
   const [email, setEmail] = useState("");
   const [jenisKelamin, setJenisKelamin] = useState("");
   const [instasi, setInstasi] = useState("");
+  const [peranAdmin, setPeranAdmin] = useState("");
   const [sedangMemuatTambahAdmin, setSedangMemuatTambahAdmin] = useState(false);
 
   const bersihkanInput = (input) => DOMPurify.sanitize(input);
@@ -19,29 +20,29 @@ const useTambahAdmin = () => {
   const validasiFormulir = () => {
     let pesan = "";
 
-!namaDepan
-  ? ((sesuai = false), (pesanKesalahan += "Nama Depan harus diisi. "))
-  : null;
-!namaBelakang
-  ? ((sesuai = false), (pesanKesalahan += "Nama Belakang harus diisi. "))
-  : null;
-!namaPengguna
-  ? ((sesuai = false), (pesanKesalahan += "Nama Pengguna harus diisi. "))
-  : null;
-!email
-  ? ((sesuai = false), (pesanKesalahan += "Email harus diisi. "))
-  : !/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email)
-  ? ((sesuai = false), (pesanKesalahan += "Format email tidak sesuai. "))
-  : null;
-!jenisKelamin
-  ? ((sesuai = false), (pesanKesalahan += "Jenis Kelamin harus dipilih. "))
-  : null;
-!instasi
-  ? ((sesuai = false), (pesanKesalahan += "Instansi harus diisi. "))
-  : null;
-!peranAdmin
-  ? ((sesuai = false), (pesanKesalahan += "Peran Admin harus dipilih. "))
-  : null;
+    !namaDepan
+      ? ((sesuai = false), (pesanKesalahan += "Nama Depan harus diisi. "))
+      : null;
+    !namaBelakang
+      ? ((sesuai = false), (pesanKesalahan += "Nama Belakang harus diisi. "))
+      : null;
+    !namaPengguna
+      ? ((sesuai = false), (pesanKesalahan += "Nama Pengguna harus diisi. "))
+      : null;
+    !email
+      ? ((sesuai = false), (pesanKesalahan += "Email harus diisi. "))
+      : !/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email)
+      ? ((sesuai = false), (pesanKesalahan += "Format email tidak sesuai. "))
+      : null;
+    !jenisKelamin
+      ? ((sesuai = false), (pesanKesalahan += "Jenis Kelamin harus dipilih. "))
+      : null;
+    !instasi
+      ? ((sesuai = false), (pesanKesalahan += "Instansi harus diisi. "))
+      : null;
+    !peranAdmin
+      ? ((sesuai = false), (pesanKesalahan += "Peran Admin harus dipilih. "))
+      : null;
 
     if (pesan) {
       toast.error(pesan.trim());
@@ -62,8 +63,8 @@ const useTambahAdmin = () => {
       const emailBersih = bersihkanInput(email);
       const instasiBersih = bersihkanInput(instasi);
       const jenisKelaminBersih = bersihkanInput(jenisKelamin);
+      const peranAdminBersih = bersihkanInput(peranAdmin);
 
-      // Tambahkan akun ke Firebase Authentication
       const userCredential = await createUserWithEmailAndPassword(
         auth,
         emailBersih,
@@ -71,7 +72,6 @@ const useTambahAdmin = () => {
       );
       const user = userCredential.user;
 
-      // Simpan data admin ke collection "admin" saja
       const dataAdmin = {
         Nama_Depan: namaDepanBersih,
         Nama_Belakang: namaBelakangBersih,
@@ -81,6 +81,7 @@ const useTambahAdmin = () => {
         Instansi: instasiBersih,
         Kata_Sandi: "123456",
         Peran: "Admin",
+        Peran_Admin: peranAdminBersih,
         Tanggal_Pembuatan_Akun: serverTimestamp(),
         createdBy: auth.currentUser?.uid || null,
       };
@@ -112,12 +113,14 @@ const useTambahAdmin = () => {
   return {
     email,
     instasi,
+    peranAdmin,
     namaDepan,
     namaBelakang,
     namaPengguna,
     jenisKelamin,
     setEmail,
     setInstasi,
+    setPeranAdmin,
     setNamaDepan,
     setNamaBelakang,
     setNamaPengguna,
