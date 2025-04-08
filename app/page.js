@@ -31,7 +31,16 @@ export default function Masuk() {
     useState(false);
   const { kirimEmailReset, sedangMemuat: memuatReset } =
     useLupaKataSandiAdmin();
+  const [passwordBaru, setPasswordBaru] = useState("");
+  const [konfirmasiPassword, setKonfirmasiPassword] = useState("");
 
+  const handleReset = () => {
+    if (passwordBaru !== konfirmasiPassword) {
+      alert("Kata sandi tidak cocok!");
+      return;
+    }
+    resetKataSandi(passwordBaru);
+  };
   const handleLogin = () => {
     masukDenganEmail(email, password);
   };
@@ -249,7 +258,7 @@ export default function Masuk() {
         </Button>
       </Card>
       <Card
-        className={`w-full bg-white rounded-bl-none rounded-tl-none shadow-lg ${
+        className={`w-full bg-white shadow-lg rounded-bl-none rounded-tl-none ${
           tampilkanCardLupaKataSandi ? "" : "hidden"
         }`}
       >
@@ -291,6 +300,76 @@ export default function Masuk() {
           <ArrowLeftCircleIcon
             className="h-12 w-12 text-[#0F67B1] cursor-pointer hover:text-blue-300 hover:scale-110 transition duration-200"
             onClick={() => setTampilkanCardLupaKataSandi(false)}
+          />
+        </div>
+      </Card>
+      <Card className="w-full bg-white rounded-lg shadow-lg hidden">
+        <div className="flex justify-center items-center mt-20">
+          <Image
+            src={logoMasuk}
+            alt="Reset Kata Sandi"
+            className="w-28 h-28 object-cover bg-gray-200 rounded-full p-2"
+          />
+        </div>
+        <div className="mt-2">
+          <Typography className="text-center font-mono text-[40px]">
+            Atur Ulang Kata Sandi
+          </Typography>
+          <Typography className="text-center font-body text-md">
+            Masukkan kata sandi baru Anda.
+          </Typography>
+        </div>
+        <div className="w-[470px] self-center mt-8 relative">
+          <Input
+            className="hover:border-2 hover:border-[#0F67B1] focus:border-2 focus:border-[#0F67B1]"
+            label="Kata Sandi Baru"
+            type={lihatKataSandi ? "text" : "password"}
+            value={passwordBaru}
+            onChange={(e) => setPasswordBaru(e.target.value)}
+          />
+          {lihatKataSandi ? (
+            <EyeSlashIcon
+              className="h-6 w-6 absolute top-2 right-4 text-[#0F67B1] cursor-pointer"
+              onClick={() => setLihatKataSandi(false)}
+            />
+          ) : (
+            <EyeIcon
+              className="h-6 w-6 absolute top-2 right-4 text-[#0F67B1] cursor-pointer"
+              onClick={() => setLihatKataSandi(true)}
+            />
+          )}
+        </div>
+        <div className="w-[470px] self-center mt-8 relative">
+          <Input
+            className="hover:border-2 hover:border-[#0F67B1] focus:border-2 focus:border-[#0F67B1]"
+            label="Konfirmasi Kata Sandi"
+            type={lihatKataSandi ? "text" : "password"}
+            value={konfirmasiPassword}
+            onChange={(e) => setKonfirmasiPassword(e.target.value)}
+          />
+          {lihatKataSandi ? (
+            <EyeSlashIcon
+              className="h-6 w-6 absolute top-2 right-4 text-[#0F67B1] cursor-pointer"
+              onClick={() => setLihatKataSandi(false)}
+            />
+          ) : (
+            <EyeIcon
+              className="h-6 w-6 absolute top-2 right-4 text-[#0F67B1] cursor-pointer"
+              onClick={() => setLihatKataSandi(true)}
+            />
+          )}
+        </div>
+        <Button
+          onClick={handleReset}
+          disabled={sedangMemuat}
+          className="w-[470px] self-center text-center mt-4 font-body bg-[#0F67B1] rounded-lg p-3 hover:scale-95 transition-all"
+        >
+          {sedangMemuat ? <Memuat /> : "Atur Ulang Kata Sandi"}
+        </Button>
+        <div className="flex justify-center items-center mt-14">
+          <ArrowLeftCircleIcon
+            className="h-12 w-12 text-[#0F67B1] cursor-pointer hover:text-blue-300 hover:scale-110 transition duration-200"
+            onClick={() => window.history.back()}
           />
         </div>
       </Card>
