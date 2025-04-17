@@ -1,11 +1,16 @@
-export async function kirimEmail(email, subject, message) {
+export async function kirimEmail(email, subject, message, namaPengguna) {
   try {
     const response = await fetch("/api/kirim-email", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ email, subject, message }),
+      body: JSON.stringify({
+        email,
+        subject,
+        message,
+        namaPengguna,
+      }),
     });
 
     const result = await response.json();

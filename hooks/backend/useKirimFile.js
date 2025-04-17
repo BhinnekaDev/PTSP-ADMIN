@@ -88,7 +88,7 @@ const useKirimFile = (idPemesanan) => {
       if (!idPengguna)
         throw new Error("ID Pengguna tidak ditemukan di pemesanan.");
 
-      const { email, nama } = await ambilDataPengguna(idPengguna);
+      const { email, nama: namaPengguna } = await ambilDataPengguna(idPengguna);
 
       const updatedDataKeranjang = [...dataKeranjang];
 
@@ -126,14 +126,13 @@ const useKirimFile = (idPemesanan) => {
 
       toast.success("File berhasil dikirim dan data diperbarui.");
 
-      // ✅ Kirim email notifikasi ke pengguna
       if (email) {
         await kirimEmail(
           email,
           "File Anda Telah Selesai",
-          `Halo ${
-            nama || "Pengguna"
-          },\n\nFile Anda terkait pemesanan dengan ID ${idPemesanan} telah selesai dan dapat diakses melalui platform kami.\n\nTerima kasih.`
+          `Halo,\n\nFile Anda terkait pemesanan dengan ID ${idPemesanan} telah selesai dan dapat diakses melalui platform kami.\nTerima kasih.`,
+          namaPengguna || "Pengguna",
+          "Selesai"
         );
       }
     } catch (error) {

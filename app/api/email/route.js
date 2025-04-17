@@ -70,9 +70,9 @@ export async function POST(req) {
       html: `
         <div style="max-width: 550px; margin: auto; font-family: Arial, sans-serif; border: 1px solid #e0e0e0; border-radius: 10px; padding: 25px; background-color: #f9f9f9;">
           <div style="text-align: center; padding-bottom: 15px;">
-            <img src="https://4.bp.blogspot.com/-xHZR0kpIHTA/W_dNFTFgjxI/AAAAAAAAQQk/cJOEleTJmSAV4rifX6Lwq3ta5jcnTylugCLcBGAs/s1600/BMKG.png"
-              alt="BMKG Logo"
-              style="width: 180px; height: auto; display: block; margin: 0 auto;" />
+            <img src="https://drive.google.com/uc?export=view&id=1ZDTGxMXQOw_VcW9dJwYLQh05j4MsYDqY"
+                alt="Logo"
+                style="width: 200px; height: auto; display: block; margin: 0 auto; pointer-events: none; user-select: none;" />
           </div>
           <div style="background-color: white; padding: 20px; border-radius: 8px; box-shadow: 0px 2px 5px rgba(0,0,0,0.1);">
             <h2 style="font-size: 22px; color: #333; text-align: center;">Reset Kata Sandi Anda</h2>

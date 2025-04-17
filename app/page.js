@@ -258,7 +258,7 @@ export default function Masuk() {
         </Button>
       </Card>
       <Card
-        className={`w-full bg-white shadow-lg rounded-bl-none rounded-tl-none ${
+        className={`w-full bg-white shadow-lg rounded-bl-none rounded-tl-none  ${
           tampilkanCardLupaKataSandi ? "" : "hidden"
         }`}
       >

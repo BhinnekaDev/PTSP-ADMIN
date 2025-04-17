@@ -138,14 +138,16 @@ export default function useSuntingPengajuan(idPemesanan) {
         if (statusPengajuan === "Diterima") {
           await kirimEmail(
             emailPengguna,
-            "Pengajuan Anda Diterima!",
-            `Halo ${namaPengguna},\n\nPengajuan Anda telah diterima!`
+            "Terimakasih telah menghubungi BMKG PTSP Bengkulu.",
+            "Permohonan Anda telah kami terima dan akan segera kami proses. Jika ada informasi tambahan yang diperlukan, kami akan menghubungi Anda kembali.\n\nTerima kasih.",
+            namaPengguna
           );
         } else if (statusPengajuan === "Ditolak") {
           await kirimEmail(
             emailPengguna,
             "Pengajuan Anda Ditolak",
-            `Halo ${namaPengguna},\n\nKami mohon maaf, pengajuan Anda telah ditolak dengan alasan berikut:\n\n"${keterangan}"\n\nJika ada pertanyaan lebih lanjut, Anda dapat menghubungi kami melalui fitur Live Chat di website PTSP BMKG Bengkulu.\n\nTerima kasih.`
+            `Kami mohon maaf, pengajuan Anda telah ditolak dengan alasan berikut:\n\n"${keterangan}"\n\nJika ada pertanyaan lebih lanjut, Anda dapat menghubungi kami melalui fitur Live Chat di website PTSP BMKG Bengkulu.\n\nTerima kasih.`,
+            namaPengguna
           );
         } else if (statusPengajuan === "Sedang Ditinjau") {
           await kirimEmail(
