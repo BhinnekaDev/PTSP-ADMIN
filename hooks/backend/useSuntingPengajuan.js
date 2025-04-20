@@ -126,9 +126,17 @@ export default function useSuntingPengajuan(idPemesanan) {
 
       const updatedKeranjang = dataKeranjang.map((item, index) => {
         const itemBaru = { ...item };
-        if (nomorVAs[index]) {
+
+        const isBerbayarDanDiterima =
+          pengajuanDocData.Jenis_Ajukan !== "Gratis" &&
+          statusPengajuan === "Diterima";
+
+        if (isBerbayarDanDiterima && nomorVAs[index]) {
           itemBaru.Nomor_VA = nomorVAs[index];
+        } else {
+          delete itemBaru.Nomor_VA;
         }
+
         return itemBaru;
       });
 
@@ -136,10 +144,18 @@ export default function useSuntingPengajuan(idPemesanan) {
 
       if (emailPengguna) {
         if (statusPengajuan === "Diterima") {
+          const isBerbayar = pengajuanDocData.Jenis_Ajukan !== "Gratis";
+
+          const isiEmail = isBerbayar
+            ? `Permohonan Anda telah kami terima dan akan segera kami proses.\n\nNomor VA Anda: ${nomorVAs.join(
+                ", "
+              )}\n\nJika ada informasi tambahan yang diperlukan, kami akan menghubungi Anda kembali.\n\nTerima kasih.`
+            : `Permohonan Anda telah kami terima dan akan segera kami proses.\n\nKarena permohonan bersifat gratis, Anda tidak perlu melakukan pembayaran.\n\nTerima kasih.`;
+
           await kirimEmail(
             emailPengguna,
             "Terimakasih telah menghubungi BMKG PTSP Bengkulu.",
-            "Permohonan Anda telah kami terima dan akan segera kami proses. Jika ada informasi tambahan yang diperlukan, kami akan menghubungi Anda kembali.\n\nTerima kasih.",
+            isiEmail,
             namaPengguna
           );
         } else if (statusPengajuan === "Ditolak") {
@@ -148,12 +164,6 @@ export default function useSuntingPengajuan(idPemesanan) {
             "Pengajuan Anda Ditolak",
             `Kami mohon maaf, pengajuan Anda telah ditolak dengan alasan berikut:\n\n"${keterangan}"\n\nJika ada pertanyaan lebih lanjut, Anda dapat menghubungi kami melalui fitur Live Chat di website PTSP BMKG Bengkulu.\n\nTerima kasih.`,
             namaPengguna
-          );
-        } else if (statusPengajuan === "Sedang Ditinjau") {
-          await kirimEmail(
-            emailPengguna,
-            "Pengajuan Anda Sedang Ditinjau",
-            `Halo ${namaPengguna},\n\nPengajuan Anda sedang dalam proses peninjauan oleh Admin.\n\nSilakan menunggu pemberitahuan selanjutnya.\n\nTerima kasih.`
           );
         }
       }

@@ -103,26 +103,24 @@ export default function useSuntingPembayaran(idPemesanan) {
       const { email, nama } = await ambilDataPengguna(idPengguna);
 
       if (email) {
+        const emailPengguna = email;
+        const namaPengguna = nama;
         let subjek = "Status Pembayaran Diperbarui";
-        let isiPesan = "";
+        let isiEmail = "";
 
         if (statusPembayaran === "Lunas") {
-          isiPesan = `Halo ${
-            nama || "Pengguna"
-          },\n\nPembayaran Anda telah lunas.\n\nTerima kasih telah menggunakan layanan kami.`;
+          isiEmail = `Pembayaran Anda telah lunas.\n\nTerima kasih telah menggunakan layanan kami.`;
         } else {
-          isiPesan = `Halo ${
-            nama || "Pengguna"
-          },\n\nStatus pembayaran Anda untuk pemesanan dengan ID ${idPemesanan} ditolak.`;
+          isiEmail = `Status pembayaran Anda untuk pemesanan dengan ID ${idPemesanan} ditolak.`;
 
           if (statusPembayaran === "Ditolak" && keterangan) {
-            isiPesan += `\n\nKeterangan: ${keterangan.trim()}`;
+            isiEmail += `\n\nKeterangan: ${keterangan.trim()}`;
           }
 
-          isiPesan += `\n\nSilakan periksa detailnya di platform kami.\n\nTerima kasih.`;
+          isiEmail += `\n\nSilakan periksa detailnya di platform kami.\n\nTerima kasih.`;
         }
 
-        await kirimEmail(email, subjek, isiPesan);
+        await kirimEmail(emailPengguna, subjek, isiEmail, namaPengguna);
       }
     } catch (error) {
       console.error("Gagal memperbarui status pembayaran:", error);
