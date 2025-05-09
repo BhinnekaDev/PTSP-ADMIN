@@ -1,9 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, use } from "react";
 import { toast } from "react-toastify";
 import { doc, updateDoc, getDoc } from "firebase/firestore";
 // PERPUSTAKAAN KAMI
 import { database } from "@/lib/firebaseConfig";
 import { kirimEmail } from "@/hooks/backend/useNotifikasiEmail";
+import usePDFPengajuan from "@/hooks/backend/usePDFPengajuan";
 
 export default function useSuntingPengajuan(idPemesanan) {
   const [statusPengajuan, setStatusPengajuan] = useState("");
@@ -152,11 +153,21 @@ export default function useSuntingPengajuan(idPemesanan) {
               )}\n\nJika ada informasi tambahan yang diperlukan, kami akan menghubungi Anda kembali.\n\nTerima kasih.`
             : `Permohonan Anda telah kami terima dan akan segera kami proses.\n\nKarena permohonan bersifat gratis, Anda tidak perlu melakukan pembayaran.\n\nTerima kasih.`;
 
+          const pdf = usePDFPengajuan(
+            namaPengguna,
+            emailPengguna,
+            pengajuanDocData,
+            dataKeranjang,
+            pemesananData,
+            idPemesanan
+          );
+
           await kirimEmail(
             emailPengguna,
-            "Terimakasih telah menghubungi BMKG PTSP Bengkulu.",
+            "Pengajuan anda berhasil diterima.",
             isiEmail,
-            namaPengguna
+            namaPengguna,
+            pdf
           );
         } else if (statusPengajuan === "Ditolak") {
           await kirimEmail(

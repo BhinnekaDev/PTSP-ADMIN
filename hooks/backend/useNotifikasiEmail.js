@@ -1,6 +1,12 @@
-export async function kirimEmail(email, subject, message, namaPengguna) {
+export async function kirimEmail(
+  email,
+  subject,
+  message,
+  namaPengguna,
+  pdfBase64 = null
+) {
   try {
-    const response = await fetch("/api/kirim-email", {
+    const res = await fetch("/api/kirim-email", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -10,18 +16,14 @@ export async function kirimEmail(email, subject, message, namaPengguna) {
         subject,
         message,
         namaPengguna,
+        pdfBase64,
       }),
     });
 
-    const result = await response.json();
-
-    if (!response.ok) {
-      throw new Error(result.message || "Gagal mengirim email");
-    }
-
-    return result;
+    const data = await res.json();
+    return data;
   } catch (error) {
-    console.error("Error mengirim email:", error);
+    console.error("Gagal mengirim email:", error);
     throw error;
   }
 }

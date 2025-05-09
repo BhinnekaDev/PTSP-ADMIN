@@ -16,6 +16,8 @@ import { motion } from "framer-motion";
 
 //KOMPONEN KAMI
 import ModalKonfirmasiHapusChat from "@/components/modalKonfirmasiHapusChat";
+//PENGAIT KAMI
+import useTampilkanSemuaPesanPengguna from "@/hooks/backend/useTampilkanSemuaPesanPengguna";
 
 const LiveChat = () => {
   const [selectedUser, setSelectedUser] = useState("");
@@ -32,7 +34,7 @@ const LiveChat = () => {
   const [selengkapnya2, setSelengkapnya2] = useState([]);
 
   const toggleSelengkapnya2 = (index) => {
-    console.log("Diklik index:", index); // Debug klik
+    console.log("Diklik index:", index);
     setSelengkapnya2((prev) => {
       console.log("Sebelum update:", prev);
       const updated = prev.includes(index)
@@ -147,7 +149,7 @@ const LiveChat = () => {
     };
   }, [showDeleteIcon]);
 
-  return (
+  rteturn(
     <div className="flex h-screen border rounded-lg shadow-lg overflow-hidden">
       {/* Sidebar */}
       <div className="w-1/3 border-r p-4 bg-white">
@@ -228,75 +230,6 @@ const LiveChat = () => {
 
             <div className="flex-1">
               <p className="font-bold text-sm">Hengki</p>
-              <p className="text-xs text-gray-500 truncate w-32">
-                Hey, ada info terbaru?
-              </p>
-            </div>
-            <p className="text-xs text-gray-400">Jan 23</p>
-          </div>
-          <div
-            className={`flex items-center gap-3 p-2 hover:bg-gray-100 rounded cursor-pointer ${
-              selectedUser === "Ahsan Ghofari" ? "bg-gray-200" : ""
-            }`}
-            onClick={() => setSelectedUser("Ahsan Ghofari")}
-            onContextMenu={(event) => klikKananPesan(event, "Ahsan Ghofari")}
-          >
-            <Image
-              src="/profil.jpg"
-              alt="Profil"
-              width={40}
-              height={40}
-              className="rounded-full"
-            />
-
-            <div className="flex-1">
-              <p className="font-bold text-sm">Ahsan Ghofari</p>
-              <p className="text-xs text-gray-500 truncate w-32">
-                Hey, ada info terbaru?
-              </p>
-            </div>
-            <p className="text-xs text-gray-400">Jan 23</p>
-          </div>
-          <div
-            className={`flex items-center gap-3 p-2 hover:bg-gray-100 rounded cursor-pointer ${
-              selectedUser === "Sandoro" ? "bg-gray-200" : ""
-            }`}
-            onClick={() => setSelectedUser("Sandoro")}
-            onContextMenu={(event) => klikKananPesan(event, "Sandoro")}
-          >
-            <Image
-              src="/profil.jpg"
-              alt="Profil"
-              width={40}
-              height={40}
-              className="rounded-full"
-            />
-
-            <div className="flex-1">
-              <p className="font-bold text-sm">Sandoro</p>
-              <p className="text-xs text-gray-500 truncate w-32">
-                Hey, ada info terbaru?
-              </p>
-            </div>
-            <p className="text-xs text-gray-400">Jan 23</p>
-          </div>
-          <div
-            className={`flex items-center gap-3 p-2 hover:bg-gray-100 rounded cursor-pointer ${
-              selectedUser === "Fitri Nur" ? "bg-gray-200" : ""
-            }`}
-            onClick={() => setSelectedUser("Fitri Nur")}
-            onContextMenu={(event) => klikKananPesan(event, "Fitri Nur")}
-          >
-            <Image
-              src="/profil.jpg"
-              alt="Profil"
-              width={40}
-              height={40}
-              className="rounded-full"
-            />
-
-            <div className="flex-1">
-              <p className="font-bold text-sm">Fitri Nur</p>
               <p className="text-xs text-gray-500 truncate w-32">
                 Hey, ada info terbaru?
               </p>
