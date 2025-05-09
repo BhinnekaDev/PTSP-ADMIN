@@ -20,6 +20,7 @@ import ModalSuntingPembayaran from "@/components/modalSuntingPembayaran";
 import ModalLihatPembayaran from "@/components/modalLihatPembayaran";
 // KONSTANTA KAMI
 import { formatTanggal } from "@/constants/formatTanggal";
+import { bulan } from "@/constants/bulan";
 
 const judulTabel = ["Pembeli", "Produk", "Tanggal Pemesanan", ""];
 

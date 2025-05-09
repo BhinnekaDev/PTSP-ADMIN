@@ -22,6 +22,7 @@ import ModalSuntingPengajuan from "@/components/modalSuntingPengajuan";
 import ModalLihatPengajuan from "@/components/modalLihatPengajuan";
 // KONSTANTA KAMI
 import { formatTanggal } from "@/constants/formatTanggal";
+import { bulan } from "@/constants/bulan";
 
 const judulTabel = [
   "Pembeli",
