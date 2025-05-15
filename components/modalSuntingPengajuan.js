@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   Dialog,
   Typography,
@@ -12,9 +12,8 @@ import {
   Option,
 } from "@material-tailwind/react";
 import { XMarkIcon } from "@heroicons/react/24/outline";
-// PENGAIT KAMI
+import { FaRegTrashAlt } from "react-icons/fa";
 import useSuntingPengajuan from "@/hooks/backend/useSuntingPengajuan";
-// KOMPONEN KAMI
 import Memuat from "@/components/memuat";
 
 const ModalSuntingPengajuan = ({
@@ -32,12 +31,25 @@ const ModalSuntingPengajuan = ({
     statusPengajuan,
     setStatusPengajuan,
     sedangMemuatSuntingPengajuan,
+    tanggalMasuk,
+    setTanggalMasuk,
+    tanggalKadaluwarsa,
+    setTanggalKadaluwarsa,
+    file,
+    setFile,
+    jenisAjukan,
+    fileURL,
   } = useSuntingPengajuan(pengajuanYangTerpilih);
 
   const tanganiPerubahanNomorVA = (indeks, nilai) => {
     const updatedNomorVAs = [...nomorVAs];
     updatedNomorVAs[indeks] = nilai;
     setNomorVAs(updatedNomorVAs);
+  };
+
+  const handleDelete = () => {
+    setFile(null);
+    document.getElementById("upload-file").value = "";
   };
 
   return (
@@ -84,12 +96,13 @@ const ModalSuntingPengajuan = ({
             {statusPengajuan === "Ditolak" && (
               <div className="flex flex-col gap-4">
                 <Typography className="-mb-2" variant="h6">
-                  keterangan
+                  Keterangan
                 </Typography>
                 <Input
                   type="text"
                   label="Alasan Penolakan"
                   size="lg"
+                  value={keterangan}
                   onChange={(e) => setKeterangan(e.target.value)}
                 />
               </div>
@@ -114,15 +127,77 @@ const ModalSuntingPengajuan = ({
                       type="number"
                       label="Masukan Virtual Akun"
                       size="lg"
-                      defaultValue={dataKeranjang.Nomor_VA || ""}
+                      value={nomorVAs[indeks] || ""}
                       onChange={(e) =>
                         tanganiPerubahanNomorVA(indeks, e.target.value)
                       }
                     />
                   </div>
                 ))}
+
+            {jenisAjukan === "Berbayar" && (
+              <>
+                <Typography className="-mb-2" variant="h6">
+                  Tanggal Masuk Pembayaran
+                </Typography>
+                <Input
+                  type="datetime-local"
+                  size="lg"
+                  value={tanggalMasuk}
+                  onChange={(e) => setTanggalMasuk(e.target.value)}
+                />
+
+                <Typography className="-mb-2" variant="h6">
+                  Tanggal Kadaluwarsa Pembayaran
+                </Typography>
+                <Input
+                  type="datetime-local"
+                  size="lg"
+                  value={tanggalKadaluwarsa}
+                  onChange={(e) => setTanggalKadaluwarsa(e.target.value)}
+                />
+
+                <Typography className="-mb-2" variant="h6">
+                  Unggah File
+                </Typography>
+                <div className="w-full border border-gray-400 rounded-md py-2 px-2 flex items-center justify-between relative">
+                  <div className="flex items-center gap-2">
+                    <label
+                      htmlFor="upload-file"
+                      className="rounded-sm border border-blue-gray-200 px-3 py-1 bg-blue-gray-50 text-sm font-medium text-blue-gray-700 hover:bg-blue-gray-100 hover:text-blue-gray-900 focus:z-10 focus:outline-none focus:ring-2 focus:ring-blue-700"
+                    >
+                      Pilih File
+                    </label>
+                    <Typography className="text-sm text-blue-gray-700">
+                      {file
+                        ? file.name
+                        : fileURL
+                        ? "File sudah diunggah"
+                        : "Tidak ada file yang dipilih"}
+                    </Typography>
+                  </div>
+
+                  {(file || fileURL) && (
+                    <button
+                      onClick={handleDelete}
+                      className="text-red-500 hover:text-red-700"
+                    >
+                      <FaRegTrashAlt className="h-4 w-4" />
+                    </button>
+                  )}
+
+                  <input
+                    id="upload-file"
+                    type="file"
+                    onChange={(e) => setFile(e.target.files[0])}
+                    className="absolute top-0 left-0 h-full w-full opacity-0 cursor-pointer"
+                  />
+                </div>
+              </>
+            )}
           </form>
         </DialogBody>
+
         <DialogFooter>
           <Button
             onClick={async () => {
