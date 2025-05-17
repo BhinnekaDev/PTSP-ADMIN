@@ -13,387 +13,429 @@ import { IoIosClose } from "react-icons/io";
 import EmojiPicker from "emoji-picker-react";
 import Image from "next/image";
 import { motion } from "framer-motion";
-
-//KOMPONEN KAMI
-import ModalKonfirmasiHapusChat from "@/components/modalKonfirmasiHapusChat";
-//PENGAIT KAMI
 import useTampilkanSemuaPesanPengguna from "@/hooks/backend/useTampilkanSemuaPesanPengguna";
+import ModalKonfirmasiHapusChat from "@/components/modalKonfirmasiHapusChat";
+import Memuat from "@/components/memuat";
 
 const LiveChat = () => {
-  const [selectedUser, setSelectedUser] = useState("");
-  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const gambarBawaan = require("@/public/profil.jpg");
+  const [penggunaTerpilih, setPenggunaTerpilih] = useState(null);
+  const [tampilkanPickerEmoji, setTampilkanPickerEmoji] = useState(false);
   const [tampilkanModalHapus, setTampilkanModalHapus] = useState(false);
   const [pesanTerpilih, setPesanTerpilih] = useState(null);
-  const [showDeleteIcon, setShowDeleteIcon] = useState(false);
-  const [iconPosition, setIconPosition] = useState({ x: 0, y: 0 });
-  const emojiPickerRef = useRef(null);
-  const fileInputRef = useRef(null);
-  const menuRef = useRef(null);
-  const [selectedFile, setSelectedFile] = useState(null);
-  const [message, setMessage] = useState("");
-  const [selengkapnya2, setSelengkapnya2] = useState([]);
+  const [tampilkanIconHapus, setTampilkanIconHapus] = useState(false);
+  const [posisiIcon, setPosisiIcon] = useState({ x: 0, y: 0 });
+  const [fileTerpilih, setFileTerpilih] = useState(null);
+  const [isiPesan, setIsiPesan] = useState("");
+  const [pesanTersingkat, setPesanTersingkat] = useState([]);
+  const [pencarian, setPencarian] = useState("");
 
-  const toggleSelengkapnya2 = (index) => {
-    console.log("Diklik index:", index);
-    setSelengkapnya2((prev) => {
-      console.log("Sebelum update:", prev);
-      const updated = prev.includes(index)
-        ? prev.filter((i) => i !== index)
-        : [...prev, index];
-      console.log("Setelah update:", updated);
-      return updated;
+  const refPickerEmoji = useRef(null);
+  const refInputFile = useRef(null);
+  const refMenu = useRef(null);
+
+  let adminId = null;
+  if (typeof window !== "undefined") {
+    adminId = localStorage.getItem("ID_Admin");
+  }
+
+  // Gunakan hook yang diperbarui
+  const {
+    sedangMemuat,
+    semuaPengguna,
+    daftarPercakapan,
+    pesan,
+    dapatkanDaftarPercakapan,
+    dapatkanPesan,
+    kirimPesan,
+  } = useTampilkanSemuaPesanPengguna();
+
+  // Setup real-time listeners
+  useEffect(() => {
+    const unsubscribeChatList = dapatkanDaftarPercakapan(adminId);
+    return () => unsubscribeChatList && unsubscribeChatList();
+  }, [adminId]);
+
+  useEffect(() => {
+    if (penggunaTerpilih) {
+      const idRuangChat = [adminId, penggunaTerpilih.id].sort().join("_");
+      const unsubscribeMessages = dapatkanPesan(idRuangChat);
+      return () => unsubscribeMessages && unsubscribeMessages();
+    }
+  }, [penggunaTerpilih]);
+
+  // Gabungkan data untuk tampilan
+  const dataTampilan = semuaPengguna.map((pengguna) => {
+    const percakapan = daftarPercakapan.find((chat) =>
+      chat.peserta.includes(pengguna.id)
+    );
+
+    return {
+      ...pengguna,
+      pesanTerakhir: percakapan?.pesanTerakhir || "Belum ada pesan",
+      lastActive: percakapan?.terakhirDiperbarui || null,
+      sudahPernahChat: !!percakapan,
+    };
+  });
+
+  // Filter berdasarkan pencarian
+  const dataTersaring = dataTampilan.filter(
+    (pengguna) =>
+      pengguna.Nama_Lengkap?.toLowerCase().includes(pencarian.toLowerCase()) ||
+      (pengguna.tipe === "perusahaan" &&
+        pengguna.Nama_Perusahaan?.toLowerCase().includes(
+          pencarian.toLowerCase()
+        ))
+  );
+
+  // Fungsi kirim pesan
+  const handleKirimPesan = async () => {
+    if (!isiPesan.trim() && !fileTerpilih) return;
+
+    try {
+      await kirimPesan({
+        adminId,
+        penerimaId: penggunaTerpilih.id,
+        isiPesan: isiPesan,
+        tipePenerima: penggunaTerpilih.tipe,
+      });
+
+      // Reset form
+      setIsiPesan("");
+      setFileTerpilih(null);
+      if (refInputFile.current) refInputFile.current.value = "";
+    } catch (error) {}
+  };
+
+  // Toggle pesan singkat/panjang
+  const togglePesanSingkat = (index) => {
+    setPesanTersingkat((prev) =>
+      prev.includes(index) ? prev.filter((i) => i !== index) : [...prev, index]
+    );
+  };
+
+  // Handle klik kanan pesan
+  const handleKlikKananPesan = (event, percakapan) => {
+    event.preventDefault();
+    setPesanTerpilih(percakapan);
+    setTampilkanIconHapus(true);
+    setPosisiIcon({
+      x: event.clientX,
+      y: event.clientY,
     });
   };
 
-  const messages = [
-    {
-      sender: "Eyca Putri Edwiyanti",
-      text: "Lorem ipsum dolor sit amet.",
-      time: "19:11",
-      type: "received",
-    },
-    {
-      sender: "Me",
-      text: "Lorem ipsum dolor sit amet, consectetur Lorem ipsum dolor sit amet, Lorem ipsum dolor sit amet, consectetur Lorem ipsum dolor sit ametLorem ipsum dolor sit amet, consectetur Lorem ipsum dolor sit amet, Lorem ipsum dolor sit amet, consectetur Lorem ipsum dolor sit amet, consectetur Lorem ipsum dolor sit amet, consecteturLorem ipsum dolor sit amet, consecteturLorem ipsum dolor sit amet, consectetur.",
-      time: "19:11",
-      type: "sent",
-    },
-    {
-      sender: "Eyca Putri Edwiyanti",
-      text: "Hey, ada info terbaru?",
-      time: "14:20",
-      type: "received",
-    },
-    {
-      sender: "Me",
-      text: "Cuaca hari ini cerah dan berawan.",
-      time: "19:11",
-      type: "sent",
-    },
-  ];
-
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setSelectedFile(file);
-    }
-  };
-
-  const handleRemoveFile = () => {
-    setSelectedFile(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
-  };
-
-  const handleSendMessage = () => {
-    if (message.trim() || selectedFile) {
-      console.log("Mengirim pesan:", message);
-      if (selectedFile) {
-        console.log("Mengirim file:", selectedFile);
-      }
-      setMessage("");
-      setSelectedFile(null);
-      fileInputRef.current.value = "";
-    }
-  };
-
-  const handleBukaEmoji = (emoji) => {
-    setMessage((prev) => prev + emoji.emoji);
-  };
-
+  // Handle klik di luar komponen
   useEffect(() => {
-    function handleClickOutside(event) {
+    const handleKlikDiluar = (event) => {
       if (
-        emojiPickerRef.current &&
-        !emojiPickerRef.current.contains(event.target) &&
-        event.target.getAttribute("data-ignore-click") !== "true"
+        refPickerEmoji.current &&
+        !refPickerEmoji.current.contains(event.target)
       ) {
-        setShowEmojiPicker(false);
+        setTampilkanPickerEmoji(false);
       }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
+      if (refMenu.current && !refMenu.current.contains(event.target)) {
+        setTampilkanIconHapus(false);
+      }
     };
+
+    document.addEventListener("mousedown", handleKlikDiluar);
+    return () => document.removeEventListener("mousedown", handleKlikDiluar);
   }, []);
 
-  const klikKananPesan = (event, user) => {
-    event.preventDefault();
-    setPesanTerpilih(user);
-    setShowDeleteIcon(true);
-    setIconPosition({
-      x: window.innerWidth / 2 - 250,
-      y: window.innerHeight / 2 - 300,
-    });
-  };
-
-  const hapusPesan = () => {
-    setTampilkanModalHapus(true);
-    setShowDeleteIcon(false);
-  };
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (menuRef.current && !menuRef.current.contains(event.target)) {
-        console.log("Klik di luar menu, menutup...");
-        setShowDeleteIcon(false);
-      }
-    };
-
-    if (showDeleteIcon) {
-      document.addEventListener("mousedown", handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [showDeleteIcon]);
-
-  rteturn(
+  return (
     <div className="flex h-screen border rounded-lg shadow-lg overflow-hidden">
-      {/* Sidebar */}
+      {/* Sidebar Daftar Chat */}
       <div className="w-1/3 border-r p-4 bg-white">
         <h2 className="text-lg font-bold">Pesan</h2>
         <div className="relative mt-2">
           <input
             type="text"
-            placeholder="Cari"
+            placeholder="Cari percakapan"
             className="w-full p-2 border rounded-lg pl-10"
+            value={pencarian}
+            onChange={(e) => setPencarian(e.target.value)}
           />
           <MagnifyingGlassIcon className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
         </div>
-        <div className="mt-4">
-          {/* Manual list user chat */}
-          <div
-            className={`flex items-center gap-3 p-2 hover:bg-gray-100 rounded cursor-pointer ${
-              selectedUser === "Eyca Putri Edwiyanti" ? "bg-gray-200" : ""
-            }`}
-            onClick={() => setSelectedUser("Eyca Putri Edwiyanti")}
-            onContextMenu={(event) =>
-              klikKananPesan(event, "Eyca Putri Edwiyanti")
-            }
-          >
-            {showDeleteIcon && (
+
+        {/* Daftar Pengguna */}
+        <div className="mt-4 space-y-2">
+          {sedangMemuat ? (
+            <Memuat />
+          ) : dataTersaring.length > 0 ? (
+            dataTersaring.map((pengguna) => (
               <div
-                ref={menuRef}
-                style={{
-                  position: "absolute",
-                  top: iconPosition.y,
-                  left: iconPosition.x,
-                  background: "white",
-                  padding: "10px",
-                  borderRadius: "8px",
-                  boxShadow: "0px 0px 10px rgba(0,0,0,0.2)",
-                  zIndex: 1000,
-                }}
+                key={pengguna.id}
+                className={`flex items-center gap-3 p-2 hover:bg-gray-100 rounded cursor-pointer ${
+                  penggunaTerpilih?.id === pengguna.id ? "bg-gray-200" : ""
+                }`}
+                onClick={() => setPenggunaTerpilih(pengguna)}
+                onContextMenu={(e) => handleKlikKananPesan(e, pengguna)}
               >
-                <button
-                  className="flex items-center gap-2 text-gray-500 hover:text-red-500"
-                  onClick={hapusPesan}
-                >
-                  <MdDelete />
-                  Delete Pesan
-                </button>
-              </div>
-            )}
-            <Image
-              src="/profil.jpg"
-              alt="Profil"
-              width={40}
-              height={40}
-              className="rounded-full"
-            />
+                <Image
+                  src={pengguna.fotoProfil || gambarBawaan}
+                  alt="Profil"
+                  width={40}
+                  height={40}
+                  className="rounded-full"
+                />
 
-            <div className="flex-1">
-              <p className="font-bold text-sm">Eyca Putri Edwiyanti</p>
-              <p className="text-xs text-gray-500 truncate w-32">
-                Lorem ipsum dolor sit amet...
-              </p>
-            </div>
-            <p className="text-xs text-gray-400">Jan 23</p>
-          </div>
-
-          <div
-            className={`flex items-center gap-3 p-2 hover:bg-gray-100 rounded cursor-pointer ${
-              selectedUser === "Hengki" ? "bg-gray-200" : ""
-            }`}
-            onClick={() => setSelectedUser("Hengki")}
-            onContextMenu={(event) => klikKananPesan(event, "Hengki")}
-          >
-            <Image
-              src="/profil.jpg"
-              alt="Profil"
-              width={40}
-              height={40}
-              className="rounded-full"
-            />
-
-            <div className="flex-1">
-              <p className="font-bold text-sm">Hengki</p>
-              <p className="text-xs text-gray-500 truncate w-32">
-                Hey, ada info terbaru?
-              </p>
-            </div>
-            <p className="text-xs text-gray-400">Jan 23</p>
-          </div>
-        </div>
-      </div>
-      <div className="w-2/3 flex flex-col bg-white">
-        <div className="p-4 border-b flex items-center">
-          <div className="flex items-center gap-3">
-            <Image
-              src="/profil.jpg"
-              alt="Profil"
-              width={40}
-              height={40}
-              className="rounded-full"
-            />
-
-            {/* Nama & Status Online dalam 1 Kolom */}
-            <div className="flex flex-col">
-              <span className="font-bold">{selectedUser}</span>
-              <span className="text-green-500 text-xs">online</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="relative flex-1 p-4 bg-gray-100 overflow-auto">
-          <div className="absolute inset-0 flex justify-center items-center pointer-events-none">
-            <AiOutlineMessage className="text-black opacity-10 w-64 h-64" />
-          </div>
-          <div className="flex justify-center my-4">
-            <span className="bg-gray-300 text-gray-800 px-4 py-1 rounded-full text-xs font-semibold shadow">
-              Kemarin
-            </span>
-          </div>
-
-          {messages.map((msg, index) => (
-            <div
-              key={msg.id || index}
-              className={`flex mb-2 ${
-                msg.type === "sent" ? "justify-end" : "justify-start"
-              }`}
-            >
-              <div
-                className={`${
-                  msg.type === "sent" ? "bg-[#72C02C]" : "bg-[#3182B7]"
-                } text-white p-3 rounded-lg max-w-md shadow`}
-              >
-                <p>
-                  {selengkapnya2.includes(index) || msg.text.length <= 50
-                    ? msg.text
-                    : `${msg.text.substring(0, 250)}...`}
-                </p>
-
-                {msg.text.length > 50 && (
-                  <motion.button
-                    initial={{ opacity: 0.5, y: 5 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0.5, y: 5 }}
-                    transition={{ duration: 0.2 }}
-                    className="text-white text-sm underline"
-                    onClick={() => toggleSelengkapnya2(index)}
-                  >
-                    {selengkapnya2.includes(index)
-                      ? "Tampilkan Lebih Sedikit"
-                      : "Lihat Selengkapnya"}
-                  </motion.button>
+                <div className="flex-1">
+                  <p className="font-bold text-sm">
+                    {pengguna.tipe === "perorangan"
+                      ? pengguna.Nama_Lengkap
+                      : pengguna.Nama_Perusahaan}
+                  </p>
+                  <p className="text-xs text-gray-500 truncate w-24">
+                    {pengguna.pesanTerakhir}
+                  </p>
+                </div>
+                {pengguna.lastActive && (
+                  <p className="text-xs text-gray-400">
+                    {pengguna.lastActive.toLocaleTimeString([], {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </p>
                 )}
+              </div>
+            ))
+          ) : (
+            <p className="text-gray-500 text-center py-4">
+              Tidak ada pengguna ditemukan
+            </p>
+          )}
+        </div>
 
-                <div className="text-xs text-right mt-1 flex items-center justify-end space-x-1">
-                  <div
-                    className={`flex items-center space-x-1 px-2 py-1 rounded-lg shadow ${
-                      msg.status === "terbaca" ? "bg-blue-100" : "bg-gray-200"
-                    }`}
-                  >
-                    <span
-                      className={
-                        msg.status === "terbaca"
-                          ? "text-blue-600"
-                          : "text-gray-700"
-                      }
-                    >
-                      {msg.time}
-                    </span>
-                    {msg.type === "sent" && (
-                      <BsCheck2All
-                        className={`w-4 h-4 ${
-                          msg.status === "terbaca"
-                            ? "text-blue-900"
-                            : "text-gray-400"
-                        }`}
-                      />
-                    )}
-                  </div>
+        {/* Menu Konteks Hapus */}
+        {tampilkanIconHapus && (
+          <div
+            ref={refMenu}
+            style={{
+              position: "fixed",
+              top: posisiIcon.y,
+              left: posisiIcon.x,
+              background: "white",
+              padding: "10px",
+              borderRadius: "8px",
+              boxShadow: "0px 0px 10px rgba(0,0,0,0.2)",
+              zIndex: 1000,
+            }}
+          >
+            <button
+              className="flex items-center gap-2 text-gray-500 hover:text-red-500"
+              onClick={() => setTampilkanModalHapus(true)}
+            >
+              <MdDelete />
+              Hapus Percakapan
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Area Chat Utama */}
+      <div className="w-2/3 flex flex-col bg-white">
+        {penggunaTerpilih ? (
+          <>
+            {/* Header Chat */}
+            <div className="p-4 border-b flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Image
+                  src={penggunaTerpilih.fotoProfil || gambarBawaan}
+                  alt="Profil"
+                  width={40}
+                  height={40}
+                  className="rounded-full"
+                />
+                <div className="flex flex-col">
+                  <span className="font-bold">
+                    {penggunaTerpilih.tipe === "perorangan"
+                      ? penggunaTerpilih.Nama_Lengkap
+                      : penggunaTerpilih.Nama_Perusahaan}
+                  </span>
+                  <span className="text-green-500 text-xs">online</span>
                 </div>
               </div>
             </div>
-          ))}
-        </div>
 
-        <div className="flex p-2 rounded-lg border-2 border-[#808080]/30 gap-2 w-full bg-white">
-          <div className="flex gap-2">
-            <button
-              className="text-gray-500 hover:text-gray-700 cursor-pointer"
-              onClick={() => fileInputRef.current.click()}
-            >
-              <LuPaperclip className="w-5 h-5" />
-            </button>
-            <input
-              type="file"
-              ref={fileInputRef}
-              className="hidden"
-              onChange={handleFileChange}
-            />
-            <button
-              className="text-gray-500 hover:text-gray-700 cursor-pointer"
-              onClick={() => setShowEmojiPicker((prev) => !prev)}
-            >
-              <FaceSmileIcon className="w-6 h-6" />
-            </button>
-            {showEmojiPicker && (
-              <div
-                ref={emojiPickerRef}
-                className="absolute bottom-12 left-1/3 bg-white shadow-lg border rounded-lg z-50"
-                data-ignore-click="true"
-              >
-                <EmojiPicker onEmojiClick={handleBukaEmoji} />
+            {/* Isi Percakapan */}
+            <div className="relative flex-1 p-4 bg-gray-100 overflow-auto">
+              <div className="absolute inset-0 flex justify-center items-center pointer-events-none">
+                <AiOutlineMessage className="text-black opacity-10 w-64 h-64" />
               </div>
-            )}
-          </div>
-          {selectedFile && (
-            <div className="flex items-center bg-[#808080]/40 px-3 py-1 rounded-md text-sm w-60">
-              <span className="text-black">
-                {selectedFile.name.length > 15
-                  ? selectedFile.name.slice(0, 15) + "..."
-                  : selectedFile.name}
-              </span>
-              <IoIosClose
-                className="ml-2 w-5 h-5 text-red-500 cursor-pointer"
-                onClick={handleRemoveFile}
-              />
+
+              {/* Daftar Pesan */}
+              {pesan.length > 0 ? (
+                pesan.map((msg, index) => (
+                  <div
+                    key={msg.id}
+                    className={`flex mb-2 ${
+                      msg.idPengirim === adminId
+                        ? "justify-end"
+                        : "justify-start"
+                    }`}
+                  >
+                    <div
+                      className={`${
+                        msg.idPengirim === adminId
+                          ? "bg-[#72C02C]"
+                          : "bg-[#3182B7]"
+                      } text-white p-3 rounded-lg max-w-md shadow`}
+                    >
+                      {msg.isi && (
+                        <p>
+                          {pesanTersingkat.includes(index) ||
+                          msg.isi.length <= 50
+                            ? msg.isi
+                            : `${msg.isi.substring(0, 250)}...`}
+                        </p>
+                      )}
+
+                      {msg.urlFile && (
+                        <div className="mt-2">
+                          <a
+                            href={msg.urlFile}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-white underline"
+                          >
+                            {msg.namaFile || "File"}
+                          </a>
+                        </div>
+                      )}
+
+                      {msg.isi && msg.isi.length > 50 && (
+                        <motion.button
+                          className="text-white text-sm underline"
+                          onClick={() => togglePesanSingkat(index)}
+                        >
+                          {pesanTersingkat.includes(index)
+                            ? "Tampilkan Lebih Sedikit"
+                            : "Lihat Selengkapnya"}
+                        </motion.button>
+                      )}
+
+                      <div className="text-xs text-right mt-1 flex items-center justify-end space-x-1">
+                        <div className="flex items-center space-x-1 px-2 py-1 rounded-lg shadow bg-blue-100">
+                          <span className="text-blue-600">
+                            {msg.waktu?.toLocaleTimeString([], {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                          </span>
+                          {msg.idPengirim === adminId && (
+                            <BsCheck2All
+                              className={`w-4 h-4 ${
+                                msg.sudahDibaca
+                                  ? "text-blue-900"
+                                  : "text-gray-400"
+                              }`}
+                            />
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <p className="text-center text-gray-500 py-4">
+                  {penggunaTerpilih.sudahPernahChat
+                    ? "Belum ada pesan dalam percakapan ini"
+                    : "Mulailah percakapan baru dengan pengguna ini"}
+                </p>
+              )}
             </div>
-          )}
-          <input
-            type="text"
-            className="w-full text-black focus:outline-none p-2 rounded-md"
-            placeholder="Ketik pesan"
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-          />
-          <button
-            className="bg-black text-white p-2 rounded-lg"
-            onClick={handleSendMessage}
-          >
-            <PaperAirplaneIcon className="w-6 h-6" />
-          </button>
-        </div>
+
+            {/* Input Pesan */}
+            <div className="flex p-2 rounded-lg border-2 border-[#808080]/30 gap-2 w-full bg-white">
+              <div className="flex gap-2">
+                <button
+                  className="text-gray-500 hover:text-gray-700 cursor-pointer"
+                  onClick={() => refInputFile.current.click()}
+                >
+                  <LuPaperclip className="w-5 h-5" />
+                </button>
+                <input
+                  type="file"
+                  ref={refInputFile}
+                  className="hidden"
+                  onChange={(e) => setFileTerpilih(e.target.files[0])}
+                />
+                <button
+                  className="text-gray-500 hover:text-gray-700 cursor-pointer"
+                  onClick={() => setTampilkanPickerEmoji(!tampilkanPickerEmoji)}
+                >
+                  <FaceSmileIcon className="w-6 h-6" />
+                </button>
+                {tampilkanPickerEmoji && (
+                  <div
+                    ref={refPickerEmoji}
+                    className="absolute bottom-12 left-1/3 bg-white shadow-lg border rounded-lg z-50"
+                  >
+                    <EmojiPicker
+                      onEmojiClick={(emoji) =>
+                        setIsiPesan((prev) => prev + emoji.emoji)
+                      }
+                    />
+                  </div>
+                )}
+              </div>
+
+              {fileTerpilih && (
+                <div className="flex items-center bg-[#808080]/40 px-3 py-1 rounded-md text-sm w-60">
+                  <span className="text-black">
+                    {fileTerpilih.name.length > 15
+                      ? fileTerpilih.name.slice(0, 15) + "..."
+                      : fileTerpilih.name}
+                  </span>
+                  <IoIosClose
+                    className="ml-2 w-5 h-5 text-red-500 cursor-pointer"
+                    onClick={() => setFileTerpilih(null)}
+                  />
+                </div>
+              )}
+
+              <input
+                type="text"
+                className="w-full text-black focus:outline-none p-2 rounded-md"
+                placeholder="Ketik pesan"
+                value={isiPesan}
+                onChange={(e) => setIsiPesan(e.target.value)}
+                onKeyPress={(e) => e.key === "Enter" && handleKirimPesan()}
+              />
+
+              <button
+                className="bg-black text-white p-2 rounded-lg disabled:opacity-50"
+                onClick={handleKirimPesan}
+                disabled={sedangMemuat || (!isiPesan.trim() && !fileTerpilih)}
+              >
+                {sedangMemuat ? (
+                  <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                ) : (
+                  <PaperAirplaneIcon className="w-6 h-6" />
+                )}
+              </button>
+            </div>
+          </>
+        ) : (
+          <div className="flex-1 flex items-center justify-center bg-gray-100">
+            <div className="text-center">
+              <AiOutlineMessage className="w-16 h-16 mx-auto text-gray-400" />
+              <p className="mt-2 text-gray-600">
+                Pilih percakapan untuk memulai
+              </p>
+            </div>
+          </div>
+        )}
       </div>
+
+      {/* Modal Konfirmasi Hapus */}
       {tampilkanModalHapus && (
         <ModalKonfirmasiHapusChat
           terbuka={tampilkanModalHapus}
           tertutup={() => setTampilkanModalHapus(false)}
-          chatTerpilih={pesanTerpilih}
+          percakapanTerpilih={pesanTerpilih}
         />
       )}
     </div>
