@@ -219,7 +219,6 @@ export default function useSuntingPengajuan(idPemesanan) {
         return;
       }
 
-      // Generate PDF untuk pengajuan yang diterima
       let pdf = null;
       if (statusPengajuan === "Diterima") {
         pdf = await usePDFPengajuan(
@@ -237,46 +236,48 @@ export default function useSuntingPengajuan(idPemesanan) {
 
       switch (statusPengajuan) {
         case "Diterima":
-          subjekEmail = "Pengajuan Anda Diterima";
+          subjekEmail = "Pemberitahuan: Pengajuan Telah Diterima";
 
           if (jenisAjukan === "Berbayar") {
             isiEmail =
-              `Pengajuan Anda dengan ID ${idPemesanan} telah diterima. ` +
-              `Berikut detail pembayaran:\n\n` +
+              `Dengan hormat,\n\n` +
+              `Pengajuan Anda dengan ID ${idPemesanan} telah kami terima.\n` +
+              `Berikut adalah rincian pembayaran yang perlu diperhatikan:\n\n` +
               `- Nomor Virtual Account: ${nomorVAs
                 .filter(Boolean)
                 .join(", ")}\n` +
-              `- Tanggal Masuk Pembayaran: ${formatTanggal(tanggalMasuk)}\n` +
-              `- Batas Waktu Pembayaran: ${formatTanggal(
+              `- Tanggal Pembayaran Masuk: ${formatTanggal(tanggalMasuk)}\n` +
+              `- Batas Akhir Pembayaran: ${formatTanggal(
                 tanggalKadaluwarsa
               )}\n\n` +
-              `Silakan lakukan pembayaran sebelum batas waktu yang ditentukan.\n\n` +
-              `Terima kasih.`;
+              `Mohon untuk melakukan pembayaran sebelum batas waktu yang telah ditentukan.\n\n` +
+              `Atas perhatian dan kerja sama Anda, kami ucapkan terima kasih.`;
           } else {
             isiEmail =
-              `Yth. ${namaPengguna},\n\n` +
-              `Pengajuan gratis Anda dengan ID ${idPemesanan} telah diterima.\n\n` +
-              `Kami akan segera memproses permohonan Anda.\n\n` +
-              `Terima kasih.`;
+              `Dengan hormat,\n\n` +
+              `Pengajuan gratis Anda dengan ID ${idPemesanan} telah kami terima.\n\n` +
+              `Pengajuan tersebut akan segera kami proses sesuai ketentuan yang berlaku.\n\n` +
+              `Kami menghargai partisipasi Anda dan mengucapkan terima kasih.`;
           }
           break;
 
         case "Ditolak":
-          subjekEmail = "Pengajuan Anda Ditolak";
+          subjekEmail = "Pemberitahuan: Pengajuan Ditolak";
           isiEmail =
-            `Kami memberitahukan bahwa pengajuan Anda dengan ID ${idPemesanan} tidak dapat kami proses.\n\n` +
-            `Alasan Penolakan: ${keterangan}\n\n` +
-            `Silakan perbaiki dan ajukan kembali.\n\n` +
-            `Terima kasih.`;
+            `Dengan hormat,\n\n` +
+            `Kami sampaikan bahwa pengajuan Anda dengan ID ${idPemesanan} tidak dapat kami proses.\n\n` +
+            `Alasan penolakan: ${keterangan}\n\n` +
+            `Silakan lakukan perbaikan sesuai keterangan di atas, kemudian ajukan kembali.\n\n` +
+            `Kami menghargai perhatian dan pengertian Anda.`;
           break;
 
         case "Sedang Ditinjau":
-          subjekEmail = "Pengajuan Anda Sedang Diproses";
+          subjekEmail = "Pemberitahuan: Pengajuan Sedang Ditinjau";
           isiEmail =
-            `Yth. ${namaPengguna},\n\n` +
-            `Pengajuan Anda dengan ID ${idPemesanan} sedang dalam proses peninjauan.\n\n` +
-            `Kami akan memberikan kabar terbaru segera setelah ada perkembangan.\n\n` +
-            `Terima kasih.`;
+            `Dengan hormat,\n\n` +
+            `Pengajuan Anda dengan ID ${idPemesanan} saat ini sedang dalam proses peninjauan oleh tim kami.\n\n` +
+            `Kami akan menginformasikan hasilnya segera setelah proses peninjauan selesai.\n\n` +
+            `Terima kasih atas kesabaran dan kepercayaan Anda.`;
           break;
 
         default:

@@ -30,45 +30,81 @@ const useTampilkanPengajuan = (batasHalaman = 5) => {
         if (pemesananDoc.exists()) {
           const pemesananData = {
             id: pemesananDoc.id,
+            ID_Pengguna: pemesananDoc.data().ID_Pengguna || null,
+            ID_Ajukan: pemesananDoc.data().ID_Ajukan || null,
+            pengguna: {
+              id: "",
+              Foto: null,
+              Nama_Lengkap: "Nama tidak tersedia",
+              Email: "Email tidak tersedia",
+              ...(pemesananDoc.data().pengguna || {}),
+            },
+            ajukan: {
+              id: "",
+              Status_Ajuan: "Belum ada status",
+              Jenis_Ajukan: "Belum ada jenis",
+              Tanggal_Pembuatan_Ajukan: null,
+              ...(pemesananDoc.data().ajukan || {}),
+            },
+            Data_Keranjang: pemesananDoc.data().Data_Keranjang || [],
             ...pemesananDoc.data(),
           };
 
-          const penggunaRef = doc(
-            database,
-            "perorangan",
-            pemesananData.ID_Pengguna
-          );
-          const penggunaDoc = await getDoc(penggunaRef);
+          if (pemesananData.ID_Pengguna) {
+            try {
+              const penggunaRef = doc(
+                database,
+                "perorangan",
+                pemesananData.ID_Pengguna
+              );
+              const penggunaDoc = await getDoc(penggunaRef);
 
-          if (penggunaDoc.exists()) {
-            pemesananData.pengguna = {
-              id: penggunaDoc.id,
-              ...penggunaDoc.data(),
-            };
-          } else {
-            const perusahaanRef = doc(
-              database,
-              "perusahaan",
-              pemesananData.ID_Pengguna
-            );
-            const perusahaanDoc = await getDoc(perusahaanRef);
+              if (penggunaDoc.exists()) {
+                pemesananData.pengguna = {
+                  ...pemesananData.pengguna,
+                  id: penggunaDoc.id,
+                  ...penggunaDoc.data(),
+                };
+              } else {
+                const perusahaanRef = doc(
+                  database,
+                  "perusahaan",
+                  pemesananData.ID_Pengguna
+                );
+                const perusahaanDoc = await getDoc(perusahaanRef);
 
-            if (perusahaanDoc.exists()) {
-              pemesananData.pengguna = {
-                id: perusahaanDoc.id,
-                ...perusahaanDoc.data(),
-              };
+                if (perusahaanDoc.exists()) {
+                  pemesananData.pengguna = {
+                    ...pemesananData.pengguna,
+                    id: perusahaanDoc.id,
+                    ...perusahaanDoc.data(),
+                  };
+                }
+              }
+            } catch (error) {
+              console.error("Gagal mengambil data pengguna:", error);
             }
           }
 
-          const ajukanRef = doc(database, "ajukan", pemesananData.ID_Ajukan);
-          const ajukanDoc = await getDoc(ajukanRef);
+          if (pemesananData.ID_Ajukan) {
+            try {
+              const ajukanRef = doc(
+                database,
+                "ajukan",
+                pemesananData.ID_Ajukan
+              );
+              const ajukanDoc = await getDoc(ajukanRef);
 
-          if (ajukanDoc.exists()) {
-            pemesananData.ajukan = {
-              id: ajukanDoc.id,
-              ...ajukanDoc.data(),
-            };
+              if (ajukanDoc.exists()) {
+                pemesananData.ajukan = {
+                  ...pemesananData.ajukan,
+                  id: ajukanDoc.id,
+                  ...ajukanDoc.data(),
+                };
+              }
+            } catch (error) {
+              console.error("Gagal mengambil data ajukan:", error);
+            }
           }
 
           pemesanans.push(pemesananData);
@@ -80,6 +116,7 @@ const useTampilkanPengajuan = (batasHalaman = 5) => {
       toast.error(
         "Terjadi kesalahan saat mengambil data pemesanan: " + error.message
       );
+      console.error("Error mengambil pengajuan:", error);
     } finally {
       setSedangMemuatPengajuan(false);
     }

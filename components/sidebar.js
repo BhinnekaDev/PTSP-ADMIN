@@ -31,6 +31,9 @@ import {
 } from "@heroicons/react/24/solid";
 import { ChevronDownIcon } from "@heroicons/react/24/outline";
 import { IoChatboxEllipses } from "react-icons/io5";
+import { RiCustomerService2Fill, RiUserLocationLine } from "react-icons/ri";
+import { HiOutlineLightBulb } from "react-icons/hi";
+import { AiTwotoneAlert } from "react-icons/ai";
 import "react-toastify/dist/ReactToastify.css";
 import Image from "next/image";
 // PENGAIT KAMI
@@ -40,12 +43,13 @@ import useTampilkanBanyakData from "@/hooks/backend/useTampilkanBanyakData";
 // KOMPONEN KAMI
 import Memuat from "@/components/memuat";
 import { AiOutlineHistory } from "react-icons/ai";
+import { FaAddressCard } from "react-icons/fa";
+import { HiMiniUserGroup } from "react-icons/hi2";
+import { BsClockHistory } from "react-icons/bs";
 
 function Sidebar({ pengarah }) {
   const gambarBawaan = require("@/assets/images/profil.jpg");
   const [bukaDropdown, setBukaDropdown] = useState(0);
-  const [bukaDropdown2, setBukaDropdown2] = useState(0);
-  const [bukaDropdown3, setBukaDropdown3] = useState(0);
   const [lokasiSaatIni, setLokasiSaatIni] = useState("");
   const { adminData, memuatTampilkanAdminSesuaiID } =
     useTampilkanAdminSesuaiID();
@@ -188,7 +192,7 @@ function Sidebar({ pengarah }) {
 
         <Accordion
           open={
-            bukaDropdown2 === 2 ||
+            bukaDropdown === 2 ||
             lokasiSaatIni === "/dataInformasi" ||
             lokasiSaatIni === "/dataJasa"
           }
@@ -196,7 +200,7 @@ function Sidebar({ pengarah }) {
             <ChevronDownIcon
               strokeWidth={2.5}
               className={`mx-auto h-4 w-4 transition-transform ${
-                bukaDropdown2 === 2 ||
+                bukaDropdown === 2 ||
                 lokasiSaatIni === "/dataInformasi" ||
                 lokasiSaatIni === "/dataJasa"
                   ? "rotate-180"
@@ -207,7 +211,7 @@ function Sidebar({ pengarah }) {
         >
           <ListItem className="p-0">
             <AccordionHeader
-              onClick={() => setBukaDropdown2(bukaDropdown2 === 2 ? 0 : 2)}
+              onClick={() => setBukaDropdown(bukaDropdown === 2 ? 0 : 2)}
               className="border-b-0 p-3"
             >
               <ListItemPrefix>
@@ -366,7 +370,143 @@ function Sidebar({ pengarah }) {
 
         <Accordion
           open={
-            bukaDropdown3 === 3 ||
+            bukaDropdown === 4 ||
+            lokasiSaatIni === "/dataSaran" ||
+            lokasiSaatIni === "/dataPengaduan"
+          }
+          icon={
+            <ChevronDownIcon
+              strokeWidth={2.5}
+              className={`mx-auto h-4 w-4 transition-transform ${
+                bukaDropdown === 4 ||
+                lokasiSaatIni === "/dataSaran" ||
+                lokasiSaatIni === "/dataPengaduan"
+                  ? "rotate-180"
+                  : ""
+              }`}
+            />
+          }
+        >
+          <ListItem className="p-0" selected={bukaDropdown === 4}>
+            <AccordionHeader
+              onClick={() => setBukaDropdown(bukaDropdown === 4 ? 0 : 4)}
+              className="p-3 border-none"
+            >
+              <ListItemPrefix>
+                <RiCustomerService2Fill className="w-5 h-5" />
+              </ListItemPrefix>
+              <Typography color="blue-gray" className="mr-auto font-normal">
+                Layanan
+              </Typography>
+            </AccordionHeader>
+          </ListItem>
+
+          <AccordionBody className="py-1">
+            <List className="p-0">
+              <ListItem
+                onClick={() => pengarah.push("/dataSaran")}
+                className={
+                  lokasiSaatIni === "/dataSaran"
+                    ? "bg-[#0F67B1] text-white"
+                    : ""
+                }
+              >
+                <ListItemPrefix>
+                  <HiOutlineLightBulb className="h-5 w-5" />
+                </ListItemPrefix>
+                Saran
+              </ListItem>
+
+              <ListItem
+                onClick={() => pengarah.push("/dataPengaduan")}
+                className={
+                  lokasiSaatIni === "/dataPengaduan"
+                    ? "bg-[#0F67B1] text-white"
+                    : ""
+                }
+              >
+                <ListItemPrefix>
+                  <AiTwotoneAlert className="h-5 w-5" />
+                </ListItemPrefix>
+                Pengaduan
+              </ListItem>
+
+              <hr className="border border-gray-400 w-64 self-center" />
+            </List>
+          </AccordionBody>
+        </Accordion>
+
+        <Accordion
+          open={
+            bukaDropdown === 6 ||
+            lokasiSaatIni === "/dataKunjungan" ||
+            lokasiSaatIni === "/riwayatKunjungan"
+          }
+          icon={
+            <ChevronDownIcon
+              strokeWidth={2.5}
+              className={`mx-auto h-4 w-4 transition-transform ${
+                bukaDropdown === 6 ||
+                lokasiSaatIni === "/dataKunjungan" ||
+                lokasiSaatIni === "/riwayatKunjungan"
+                  ? "rotate-180"
+                  : ""
+              }`}
+            />
+          }
+        >
+          <ListItem className="p-0" selected={bukaDropdown === 6}>
+            <AccordionHeader
+              onClick={() => setBukaDropdown(bukaDropdown === 6 ? 0 : 6)}
+              className="p-3 border-none"
+            >
+              <ListItemPrefix>
+                <FaAddressCard className="w-5 h-5" />
+              </ListItemPrefix>
+              <Typography color="blue-gray" className="mr-auto font-normal">
+                Kunjungan
+              </Typography>
+            </AccordionHeader>
+          </ListItem>
+
+          <AccordionBody className="py-1">
+            <List className="p-0">
+              <ListItem
+                onClick={() => pengarah.push("/dataKunjungan")}
+                className={
+                  lokasiSaatIni === "/dataKunjungan"
+                    ? "bg-[#0F67B1] text-white"
+                    : ""
+                }
+              >
+                <ListItemPrefix>
+                  <HiMiniUserGroup className="h-5 w-5" />
+                </ListItemPrefix>
+                Pengajuan Kunjungan
+              </ListItem>
+
+              <ListItem
+                onClick={() => pengarah.push("/riwayatKunjungan")}
+                className={
+                  lokasiSaatIni === "/riwayatKunjungan"
+                    ? "bg-[#0F67B1] text-white"
+                    : ""
+                }
+              >
+                <ListItemPrefix>
+                  <BsClockHistory className="h-5 w-5" />
+                </ListItemPrefix>
+                Riwayat Kunjungan
+              </ListItem>
+
+              <hr className="border border-gray-400 w-64 self-center" />
+            </List>
+          </AccordionBody>
+        </Accordion>
+
+        <Accordion
+          open={
+            bukaDropdown === 5 ||
             lokasiSaatIni === "/profilSaya" ||
             lokasiSaatIni === "/Keluar"
           }
@@ -374,7 +514,7 @@ function Sidebar({ pengarah }) {
             <ChevronDownIcon
               strokeWidth={2.5}
               className={`mx-auto h-4 w-4 transition-transform ${
-                bukaDropdown3 === 3 ||
+                bukaDropdown === 5 ||
                 lokasiSaatIni === "/profilSaya" ||
                 lokasiSaatIni === "/Keluar"
                   ? "rotate-180"
@@ -383,9 +523,9 @@ function Sidebar({ pengarah }) {
             />
           }
         >
-          <ListItem className="p-0" selected={bukaDropdown3 === 3}>
+          <ListItem className="p-0" selected={bukaDropdown === 5}>
             <AccordionHeader
-              onClick={() => setBukaDropdown3(bukaDropdown3 === 3 ? 0 : 3)}
+              onClick={() => setBukaDropdown(bukaDropdown === 5 ? 0 : 5)}
               className="p-3 border-none"
             >
               <ListItemPrefix>
@@ -423,6 +563,7 @@ function Sidebar({ pengarah }) {
                 </ListItemPrefix>
                 Keluar
               </ListItem>
+              <hr className="border border-gray-400 w-64 self-center" />
             </List>
           </AccordionBody>
           <ListItem

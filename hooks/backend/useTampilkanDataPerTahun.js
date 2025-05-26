@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { database } from "@/lib/firebaseConfig";
-import { collection, getDocs } from "firebase/firestore";
+import { collection, getDocs, Timestamp } from "firebase/firestore";
 // KONSTANTA KAMI
 import { bulan } from "@/constants/bulan";
 
@@ -17,6 +17,10 @@ const useTampilkanDataPerTahun = () => {
         "perorangan",
         "perusahaan",
         "pemesanan",
+        "saran",
+        "pengaduan",
+        "pengajuan_kunjungan",
+        "riwayat_kunjungan",
       ];
 
       for (const koleksiNama of koleksi) {
@@ -28,13 +32,21 @@ const useTampilkanDataPerTahun = () => {
             (koleksiNama === "admin" ||
               koleksiNama === "perorangan" ||
               koleksiNama === "perusahaan") &&
-            data.Tanggal_Pembuatan_Akun
+            data.Tanggal_Pembuatan_Akun instanceof Timestamp
               ? data.Tanggal_Pembuatan_Akun.toDate()
-              : (koleksiNama === "informasi" || koleksiNama === "jasa") &&
-                data.Tanggal_Pembuatan
+              : (koleksiNama === "informasi" ||
+                  koleksiNama === "jasa" ||
+                  koleksiNama === "saran" ||
+                  koleksiNama === "pengaduan") &&
+                data.Tanggal_Pembuatan instanceof Timestamp
               ? data.Tanggal_Pembuatan.toDate()
-              : koleksiNama === "pemesanan" && data.Tanggal_Pemesanan
+              : koleksiNama === "pemesanan" &&
+                data.Tanggal_Pemesanan instanceof Timestamp
               ? data.Tanggal_Pemesanan.toDate()
+              : (koleksiNama === "pengajuan_kunjungan" ||
+                  koleksiNama === "riwayat_kunjungan") &&
+                data.Tanggal_Kunjungan instanceof Timestamp
+              ? data.Tanggal_Kunjungan.toDate()
               : null;
 
           if (tanggal) {

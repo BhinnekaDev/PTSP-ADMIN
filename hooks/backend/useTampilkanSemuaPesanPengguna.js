@@ -183,8 +183,6 @@ const useTampilkanSemuaPesanPengguna = () => {
         idPesan
       );
       await setDoc(refPesan, dataPesan);
-
-      toast.success("✅ Pesan berhasil dikirim.");
     } catch (error) {
       console.error("❌ ERROR kirimPesan:", error);
       toast.error("❌ Gagal mengirim pesan: " + error.message);
