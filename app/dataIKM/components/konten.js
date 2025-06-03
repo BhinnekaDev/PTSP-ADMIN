@@ -22,8 +22,8 @@ import useTampilkanDataPerTahun from "@/hooks/backend/useTampilkanDataPerTahun";
 // KONSTANTA KAMI
 import { formatTanggal } from "@/constants/formatTanggal";
 // KOMPONEN KAMI
-import Memuat from "@/components/memuat";
 import ModalLihatIKM from "@/components/modalLihatIKM";
+import { bulan } from "@/constants/bulan";
 
 const judulTabel = [
   "Pembeli",
@@ -35,7 +35,6 @@ const judulTabel = [
 function Konten({ tahunDipilih }) {
   const gambarBawaan = require("@/assets/images/profil.jpg");
   const [bukaModalLihatIKM, setBukaModalLihatIKM] = useState(false);
-  const [bukaModalHapusIKM, setBukaModalHapusIKM] = useState(false);
   const [ikmYangTerpilih, setIkmYangTerpilih] = useState(null);
   const dataBulanTahun = useTampilkanDataPerTahun();
   const {

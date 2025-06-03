@@ -1,219 +1,191 @@
-import { useState, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   collection,
+  getDocs,
   doc,
-  setDoc,
   getDoc,
   addDoc,
+  updateDoc,
   serverTimestamp,
   query,
-  where,
   orderBy,
   onSnapshot,
-  updateDoc,
 } from "firebase/firestore";
 import { database } from "@/lib/firebaseConfig";
-import { toast } from "react-toastify";
 
 const useKirimPesanPengguna = () => {
-  const [sedangMemuat, setSedangMemuat] = useState(false);
+  const [chatRooms, setChatRooms] = useState([]);
+  const [sedangMemuat, setSedangMemuat] = useState(true);
   const [error, setError] = useState(null);
-  const [daftarPesan, setDaftarPesan] = useState([]);
-  const [ruangChatAktif, setRuangChatAktif] = useState(null);
 
-  // Fungsi untuk mendapatkan atau membuat ruang chat
-  const dapatkanAtauBuatRuangChat = async (
-    idPengirim,
-    idPenerima,
-    tipePenerima
-  ) => {
-    try {
-      // Format ID ruang yang konsisten
-      const idRuang = [idPengirim, idPenerima].sort().join("_");
-      const referensiRuangChat = doc(database, "chatRooms", idRuang);
-
-      const dokumenSnapshot = await getDoc(referensiRuangChat);
-
-      if (!dokumenSnapshot.exists()) {
-        // Buat ruang baru jika belum ada
-        await setDoc(referensiRuangChat, {
-          peserta: [idPengirim, idPenerima],
-          tipePeserta: {
-            [idPengirim]: "admin",
-            [idPenerima]: tipePenerima,
-          },
-          pesanTerakhir: "",
-          waktuPesanTerakhir: serverTimestamp(),
-          dibuatPada: serverTimestamp(),
-        });
-
-        // Buat subkoleksi untuk pesan
-        await addDoc(collection(referensiRuangChat, "pesan"), {
-          pesanSistem: true,
-          teks: "Ruang chat dibuat",
-          dibuatPada: serverTimestamp(),
-        });
-      }
-
-      return idRuang;
-    } catch (err) {
-      console.error("Gagal mendapatkan/membuat ruang chat:", err);
-      throw err;
+  const getAdminId = () => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("ID_Admin");
     }
+    return null;
   };
 
-  // Fungsi untuk mengirim pesan
-  const kirimPesan = async ({
-    idPengirim,
-    idPenerima,
-    pesan,
-    file,
-    tipePenerima,
-  }) => {
-    setSedangMemuat(true);
-    setError(null);
-
+  const fetchPesertaDetail = useCallback(async (id) => {
     try {
-      // Dapatkan atau buat ruang chat
-      const idRuang = await dapatkanAtauBuatRuangChat(
-        idPengirim,
-        idPenerima,
-        tipePenerima
-      );
-      const referensiRuangChat = doc(database, "chatRooms", idRuang);
-      const referensiPesan = collection(referensiRuangChat, "pesan");
+      const adminId = getAdminId();
 
-      // Data pesan
-      const dataPesan = {
-        idPengirim,
-        idPenerima,
-        teks: pesan,
-        file: file
-          ? {
-              nama: file.name,
-              tipe: file.type,
-              ukuran: file.size,
-              url: "", // URL akan diisi setelah upload
-            }
-          : null,
-        sudahDibaca: false,
-        dibuatPada: serverTimestamp(),
-      };
+      if (!id) return null;
 
-      // Tambahkan pesan ke subkoleksi
-      await addDoc(referensiPesan, dataPesan);
+      if (adminId && id === adminId) {
+        const adminRef = doc(database, "admin", id);
+        const adminSnap = await getDoc(adminRef);
+        if (adminSnap.exists()) {
+          return { id, ...adminSnap.data(), jenis: "admin" };
+        }
+        return null;
+      }
 
-      // Perbarui pesan terakhir di ruang
-      await updateDoc(referensiRuangChat, {
-        pesanTerakhir: pesan || (file ? `File: ${file.name}` : ""),
-        waktuPesanTerakhir: serverTimestamp(),
-      });
+      const peroranganRef = doc(database, "perorangan", id);
+      const peroranganSnap = await getDoc(peroranganRef);
+      if (peroranganSnap.exists()) {
+        return { id, ...peroranganSnap.data(), jenis: "perorangan" };
+      }
 
-      return true;
+      const perusahaanRef = doc(database, "perusahaan", id);
+      const perusahaanSnap = await getDoc(perusahaanRef);
+      if (perusahaanSnap.exists()) {
+        return { id, ...perusahaanSnap.data(), jenis: "perusahaan" };
+      }
+
+      return null;
     } catch (err) {
-      console.error("Gagal mengirim pesan:", err);
-      setError(err.message);
-      toast.error("Gagal mengirim pesan: " + err.message);
-      return false;
+      console.error("Error fetching participant details:", err);
+      setError(err);
+      return null;
+    }
+  }, []);
+
+  const fetchChatRooms = useCallback(async () => {
+    setSedangMemuat(true);
+    try {
+      const adminId = getAdminId();
+      if (!adminId) {
+        setChatRooms([]);
+        return;
+      }
+
+      const chatRoomsRef = collection(database, "chatRooms");
+      const chatRoomsSnapshot = await getDocs(chatRoomsRef);
+
+      const chatRoomsData = await Promise.all(
+        chatRoomsSnapshot.docs.map(async (chatDoc) => {
+          const chatRoomData = chatDoc.data();
+
+          // Pastikan format peserta selalu array
+          let peserta = Array.isArray(chatRoomData.peserta)
+            ? [...chatRoomData.peserta]
+            : [];
+
+          // Jika admin belum ada di room, tambahkan
+          if (!peserta.includes(adminId)) {
+            peserta.push(adminId);
+            await updateDoc(doc(database, "chatRooms", chatDoc.id), {
+              peserta,
+            });
+          }
+
+          // Proses data seperti sebelumnya...
+          const pesertaDetail = await Promise.all(
+            peserta.map((pesertaId) => fetchPesertaDetail(pesertaId))
+          );
+
+          const pesanRef = collection(
+            database,
+            `chatRooms/${chatDoc.id}/pesan`
+          );
+          const pesanQuery = query(pesanRef, orderBy("waktu", "asc"));
+          const pesanSnapshot = await getDocs(pesanQuery);
+
+          const pesanData = pesanSnapshot.docs.map((pesanDoc) => ({
+            id: pesanDoc.id,
+            ...pesanDoc.data(),
+            waktu: pesanDoc.data().waktu?.toDate(),
+          }));
+
+          return {
+            id: chatDoc.id,
+            ...chatRoomData,
+            peserta,
+            pesertaDetail: pesertaDetail.filter(Boolean),
+            pesan: pesanData,
+          };
+        })
+      );
+
+      setChatRooms(
+        chatRoomsData.filter((room) => {
+          const isAdminInRoom = room.peserta.includes(adminId);
+          const isOneOnOneChat = room.peserta.length === 2;
+          return isAdminInRoom && isOneOnOneChat;
+        })
+      );
+    } catch (err) {
+      console.error("Gagal memuat chatRooms:", err);
+      setError(err);
     } finally {
       setSedangMemuat(false);
     }
-  };
+  }, [fetchPesertaDetail]);
 
-  // Fungsi untuk subscribe ke pembaruan real-time
-  const berlanggananRuangChat = useCallback((idRuang, callback) => {
-    if (!idRuang) return;
+  const kirimPesan = useCallback(
+    async (roomId, pengirimId, isiPesan, tipePengirim, fileData = null) => {
+      try {
+        const pesanRef = collection(database, `chatRooms/${roomId}/pesan`);
 
-    const referensiRuangChat = doc(database, "chatRooms", idRuang);
-    const referensiPesan = collection(referensiRuangChat, "pesan");
+        const pesanData = {
+          idPengirim: pengirimId,
+          isi: isiPesan,
+          namaFile: fileData?.name || null,
+          urlFile: fileData?.url || null,
+          sudahDibaca: false,
+          tipePengirim,
+          waktu: serverTimestamp(),
+        };
 
-    const q = query(referensiPesan, orderBy("dibuatPada", "asc"));
+        await addDoc(pesanRef, pesanData);
 
-    const berhentiBerlangganan = onSnapshot(q, (querySnapshot) => {
-      const pesan = [];
-      querySnapshot.forEach((doc) => {
-        pesan.push({
-          id: doc.id,
-          ...doc.data(),
-          // Konversi Firestore timestamp ke JS Date
-          dibuatPada: doc.data().dibuatPada?.toDate() || new Date(),
-        });
-      });
+        fetchChatRooms();
+      } catch (err) {
+        console.error("Gagal mengirim pesan:", err);
+        setError(err);
+        throw err;
+      }
+    },
+    [fetchChatRooms]
+  );
 
-      callback(pesan);
+  const subscribeToChatRoom = useCallback((roomId, callback) => {
+    const pesanRef = collection(database, `chatRooms/${roomId}/pesan`);
+    const pesanQuery = query(pesanRef, orderBy("waktu", "asc"));
+
+    const unsubscribe = onSnapshot(pesanQuery, (snapshot) => {
+      const updatedMessages = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+        waktu: doc.data().waktu?.toDate(),
+      }));
+      callback(updatedMessages);
     });
 
-    return berhentiBerlangganan;
+    return unsubscribe;
   }, []);
 
-  // Fungsi untuk mendapatkan semua ruang chat untuk seorang pengguna
-  const dapatkanRuangChatUntukPengguna = async (idPengguna) => {
-    try {
-      const referensiRuangChat = collection(database, "chatRooms");
-      const q = query(
-        referensiRuangChat,
-        where("peserta", "array-contains", idPengguna)
-      );
-
-      const querySnapshot = await getDocs(q);
-      const ruangan = [];
-
-      querySnapshot.forEach((doc) => {
-        ruangan.push({
-          id: doc.id,
-          ...doc.data(),
-          waktuPesanTerakhir:
-            doc.data().waktuPesanTerakhir?.toDate() || new Date(),
-        });
-      });
-
-      // Urutkan berdasarkan pesan terakhir
-      return ruangan.sort(
-        (a, b) => b.waktuPesanTerakhir - a.waktuPesanTerakhir
-      );
-    } catch (err) {
-      console.error("Gagal mendapatkan ruang chat:", err);
-      throw err;
-    }
-  };
-
-  // Fungsi untuk menandai pesan sebagai sudah dibaca
-  const tandaiPesanSudahDibaca = async (idRuang, idPengguna) => {
-    try {
-      const referensiRuangChat = doc(database, "chatRooms", idRuang);
-      const referensiPesan = collection(referensiRuangChat, "pesan");
-
-      // Dapatkan pesan yang belum dibaca
-      const q = query(
-        referensiPesan,
-        where("idPenerima", "==", idPengguna),
-        where("sudahDibaca", "==", false)
-      );
-
-      const querySnapshot = await getDocs(q);
-
-      // Perbarui semua pesan yang belum dibaca
-      const pembaruanBatch = [];
-      querySnapshot.forEach((doc) => {
-        pembaruanBatch.push(updateDoc(doc.ref, { sudahDibaca: true }));
-      });
-
-      await Promise.all(pembaruanBatch);
-    } catch (err) {
-      console.error("Gagal menandai pesan sebagai sudah dibaca:", err);
-    }
-  };
+  useEffect(() => {
+    fetchChatRooms();
+  }, [fetchChatRooms]);
 
   return {
+    chatRooms,
     sedangMemuat,
     error,
-    daftarPesan,
     kirimPesan,
-    berlanggananRuangChat,
-    dapatkanRuangChatUntukPengguna,
-    tandaiPesanSudahDibaca,
-    ruangChatAktif,
-    setRuangChatAktif,
+    subscribeToChatRoom,
+    fetchChatRooms,
   };
 };
 

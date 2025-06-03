@@ -12,8 +12,8 @@ import { XMarkIcon } from "@heroicons/react/24/outline";
 import { AiOutlineDownload } from "react-icons/ai";
 import JSZip from "jszip";
 import { saveAs } from "file-saver";
-import jsPDF from "jspdf";
-import "jspdf-autotable";
+import { jsPDF } from "jspdf";
+import autoTable from "jspdf-autotable";
 import { getDownloadURL, ref } from "firebase/storage";
 import { storage } from "@/lib/firebaseConfig";
 // PENGAIT KAMI
@@ -261,7 +261,7 @@ const ModalLihatRiwayatTransaksi = ({
       formatRupiah(item.Harga * item.Kuantitas),
     ]);
 
-    doc.autoTable({
+    autoTable(doc, {
       head: tableHeaders,
       body: tableData,
       startY: 100,

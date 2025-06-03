@@ -13,430 +13,534 @@ import { IoIosClose } from "react-icons/io";
 import EmojiPicker from "emoji-picker-react";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import useTampilkanSemuaPesanPengguna from "@/hooks/backend/useTampilkanSemuaPesanPengguna";
+import useKirimPesanPengguna from "@/hooks/backend/useKirimPesanPengguna";
 import ModalKonfirmasiHapusChat from "@/components/modalKonfirmasiHapusChat";
-import Memuat from "@/components/memuat";
 
 const LiveChat = () => {
-  const gambarBawaan = require("@/public/profil.jpg");
-  const [penggunaTerpilih, setPenggunaTerpilih] = useState(null);
-  const [tampilkanPickerEmoji, setTampilkanPickerEmoji] = useState(false);
+  const gambarBawaan = require("@/assets/images/profil.jpg");
+  const [currentUserId, setCurrentUserId] = useState(null);
+  const [adminId, setAdminId] = useState(null);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const id = localStorage.getItem("ID_Admin");
+      setCurrentUserId(id);
+      setAdminId(id);
+    }
+  }, []);
+
+  const {
+    chatRooms,
+    sedangMemuat,
+    kirimPesan,
+    subscribeToChatRoom,
+    fetchChatRooms,
+  } = useKirimPesanPengguna(adminId);
+
+  const [selectedRoom, setSelectedRoom] = useState(null);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [tampilkanModalHapus, setTampilkanModalHapus] = useState(false);
   const [pesanTerpilih, setPesanTerpilih] = useState(null);
-  const [tampilkanIconHapus, setTampilkanIconHapus] = useState(false);
-  const [posisiIcon, setPosisiIcon] = useState({ x: 0, y: 0 });
-  const [fileTerpilih, setFileTerpilih] = useState(null);
-  const [isiPesan, setIsiPesan] = useState("");
-  const [pesanTersingkat, setPesanTersingkat] = useState([]);
-  const [pencarian, setPencarian] = useState("");
+  const [showDeleteIcon, setShowDeleteIcon] = useState(false);
+  const [iconPosition, setIconPosition] = useState({ x: 0, y: 0 });
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [message, setMessage] = useState("");
+  const [selengkapnya2, setSelengkapnya2] = useState([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [realTimeMessages, setRealTimeMessages] = useState([]);
 
-  const refPickerEmoji = useRef(null);
-  const refInputFile = useRef(null);
-  const refMenu = useRef(null);
+  const emojiPickerRef = useRef(null);
+  const fileInputRef = useRef(null);
+  const menuRef = useRef(null);
+  const messagesEndRef = useRef(null);
 
-  let adminId = null;
-  if (typeof window !== "undefined") {
-    adminId = localStorage.getItem("ID_Admin");
-  }
-
-  // Gunakan hook yang diperbarui
-  const {
-    sedangMemuat,
-    semuaPengguna,
-    daftarPercakapan,
-    pesan,
-    dapatkanDaftarPercakapan,
-    dapatkanPesan,
-    kirimPesan,
-  } = useTampilkanSemuaPesanPengguna();
-
-  // Setup real-time listeners
+  // Subscribe to real-time updates when room is selected
   useEffect(() => {
-    const unsubscribeChatList = dapatkanDaftarPercakapan(adminId);
-    return () => unsubscribeChatList && unsubscribeChatList();
-  }, [adminId]);
+    if (!selectedRoom) return;
 
-  useEffect(() => {
-    if (penggunaTerpilih) {
-      const idRuangChat = [adminId, penggunaTerpilih.id].sort().join("_");
-      const unsubscribeMessages = dapatkanPesan(idRuangChat);
-      return () => unsubscribeMessages && unsubscribeMessages();
-    }
-  }, [penggunaTerpilih]);
+    const unsubscribe = subscribeToChatRoom(selectedRoom.id, (messages) => {
+      setRealTimeMessages(messages);
 
-  // Gabungkan data untuk tampilan
-  const dataTampilan = semuaPengguna.map((pengguna) => {
-    const percakapan = daftarPercakapan.find((chat) =>
-      chat.peserta.includes(pengguna.id)
-    );
+      // Update the selected room with new messages
+      setSelectedRoom((prev) => ({
+        ...prev,
+        pesan: messages,
+      }));
+    });
 
-    return {
-      ...pengguna,
-      pesanTerakhir: percakapan?.pesanTerakhir || "Belum ada pesan",
-      lastActive: percakapan?.terakhirDiperbarui || null,
-      sudahPernahChat: !!percakapan,
-    };
+    return () => unsubscribe();
+  }, [selectedRoom, subscribeToChatRoom]);
+
+  const filteredChatRooms = chatRooms.filter((room) => {
+    const participantName =
+      room.pesertaDetail.find((p) => p.id !== currentUserId)?.Nama_Lengkap ||
+      "";
+    return participantName.toLowerCase().includes(searchQuery.toLowerCase());
   });
 
-  // Filter berdasarkan pencarian
-  const dataTersaring = dataTampilan.filter(
-    (pengguna) =>
-      pengguna.Nama_Lengkap?.toLowerCase().includes(pencarian.toLowerCase()) ||
-      (pengguna.tipe === "perusahaan" &&
-        pengguna.Nama_Perusahaan?.toLowerCase().includes(
-          pencarian.toLowerCase()
-        ))
-  );
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [realTimeMessages]);
 
-  // Fungsi kirim pesan
-  const handleKirimPesan = async () => {
-    if (!isiPesan.trim() && !fileTerpilih) return;
-
-    try {
-      await kirimPesan({
-        adminId,
-        penerimaId: penggunaTerpilih.id,
-        isiPesan: isiPesan,
-        tipePenerima: penggunaTerpilih.tipe,
-      });
-
-      // Reset form
-      setIsiPesan("");
-      setFileTerpilih(null);
-      if (refInputFile.current) refInputFile.current.value = "";
-    } catch (error) {}
-  };
-
-  // Toggle pesan singkat/panjang
-  const togglePesanSingkat = (index) => {
-    setPesanTersingkat((prev) =>
+  const toggleSelengkapnya2 = (index) => {
+    setSelengkapnya2((prev) =>
       prev.includes(index) ? prev.filter((i) => i !== index) : [...prev, index]
     );
   };
 
-  // Handle klik kanan pesan
-  const handleKlikKananPesan = (event, percakapan) => {
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        alert("File terlalu besar. Maksimal 5MB");
+        return;
+      }
+      setSelectedFile(file);
+    }
+  };
+
+  const handleRemoveFile = () => {
+    setSelectedFile(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const handleSendMessage = async () => {
+    if ((!message.trim() && !selectedFile) || !selectedRoom || !currentUserId)
+      return;
+
+    try {
+      await kirimPesan(
+        selectedRoom.id,
+        currentUserId,
+        message,
+        "admin",
+        selectedFile
+          ? {
+              name: selectedFile.name,
+              url: URL.createObjectURL(selectedFile),
+            }
+          : null
+      );
+
+      setMessage("");
+      setSelectedFile(null);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    } catch (error) {
+      console.error("Gagal mengirim pesan:", error);
+      alert("Gagal mengirim pesan");
+    }
+  };
+
+  const handleBukaEmoji = (emoji) => {
+    setMessage((prev) => prev + emoji.emoji);
+  };
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        emojiPickerRef.current &&
+        !emojiPickerRef.current.contains(event.target)
+      ) {
+        setShowEmojiPicker(false);
+      }
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setShowDeleteIcon(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const klikKananPesan = (event, roomId) => {
     event.preventDefault();
-    setPesanTerpilih(percakapan);
-    setTampilkanIconHapus(true);
-    setPosisiIcon({
+    setPesanTerpilih(roomId);
+    setShowDeleteIcon(true);
+    setIconPosition({
       x: event.clientX,
       y: event.clientY,
     });
   };
 
-  // Handle klik di luar komponen
-  useEffect(() => {
-    const handleKlikDiluar = (event) => {
-      if (
-        refPickerEmoji.current &&
-        !refPickerEmoji.current.contains(event.target)
-      ) {
-        setTampilkanPickerEmoji(false);
-      }
-      if (refMenu.current && !refMenu.current.contains(event.target)) {
-        setTampilkanIconHapus(false);
-      }
-    };
+  const hapusPesan = () => {
+    setTampilkanModalHapus(true);
+    setShowDeleteIcon(false);
+  };
 
-    document.addEventListener("mousedown", handleKlikDiluar);
-    return () => document.removeEventListener("mousedown", handleKlikDiluar);
-  }, []);
+  const getParticipantInfo = (room) => {
+    return room.pesertaDetail.find((p) => p.id !== currentUserId) || {};
+  };
+
+  if (sedangMemuat) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
+
+  const displayMessages = selectedRoom?.id
+    ? realTimeMessages.length > 0
+      ? realTimeMessages
+      : selectedRoom.pesan
+    : [];
 
   return (
-    <div className="flex h-screen border rounded-lg shadow-lg overflow-hidden">
-      {/* Sidebar Daftar Chat */}
-      <div className="w-1/3 border-r p-4 bg-white">
-        <h2 className="text-lg font-bold">Pesan</h2>
-        <div className="relative mt-2">
-          <input
-            type="text"
-            placeholder="Cari percakapan"
-            className="w-full p-2 border rounded-lg pl-10"
-            value={pencarian}
-            onChange={(e) => setPencarian(e.target.value)}
-          />
-          <MagnifyingGlassIcon className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
+    <div className="flex h-screen border rounded-lg shadow-lg overflow-hidden bg-white">
+      {/* Sidebar */}
+      <div className="w-1/3 border-r flex flex-col">
+        <div className="p-4 border-b">
+          <h2 className="text-lg font-bold">Pesan</h2>
+          <div className="relative mt-2">
+            <input
+              type="text"
+              placeholder="Cari percakapan"
+              className="w-full p-2 border rounded-lg pl-10"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+            <MagnifyingGlassIcon className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
+          </div>
         </div>
 
-        {/* Daftar Pengguna */}
-        <div className="mt-4 space-y-2">
-          {sedangMemuat ? (
-            <Memuat />
-          ) : dataTersaring.length > 0 ? (
-            dataTersaring.map((pengguna) => (
-              <div
-                key={pengguna.id}
-                className={`flex items-center gap-3 p-2 hover:bg-gray-100 rounded cursor-pointer ${
-                  penggunaTerpilih?.id === pengguna.id ? "bg-gray-200" : ""
-                }`}
-                onClick={() => setPenggunaTerpilih(pengguna)}
-                onContextMenu={(e) => handleKlikKananPesan(e, pengguna)}
-              >
-                <Image
-                  src={pengguna.fotoProfil || gambarBawaan}
-                  alt="Profil"
-                  width={40}
-                  height={40}
-                  className="rounded-full"
-                />
-
-                <div className="flex-1">
-                  <p className="font-bold text-sm">
-                    {pengguna.tipe === "perorangan"
-                      ? pengguna.Nama_Lengkap
-                      : pengguna.Nama_Perusahaan}
-                  </p>
-                  <p className="text-xs text-gray-500 truncate w-24">
-                    {pengguna.pesanTerakhir}
-                  </p>
-                </div>
-                {pengguna.lastActive && (
-                  <p className="text-xs text-gray-400">
-                    {pengguna.lastActive.toLocaleTimeString([], {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-                  </p>
-                )}
-              </div>
-            ))
+        <div className="flex-1 overflow-y-auto">
+          {filteredChatRooms.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-full text-gray-500">
+              <AiOutlineMessage className="w-12 h-12 mb-2" />
+              <p>Tidak ada percakapan</p>
+            </div>
           ) : (
-            <p className="text-gray-500 text-center py-4">
-              Tidak ada pengguna ditemukan
-            </p>
+            filteredChatRooms.map((room) => {
+              const participant = getParticipantInfo(room);
+              const lastMessage =
+                room.pesan?.length > 0
+                  ? room.pesan[room.pesan.length - 1]
+                  : null;
+
+              return (
+                <div
+                  key={room.id}
+                  className={`flex items-center gap-3 p-3 hover:bg-gray-100 cursor-pointer ${
+                    selectedRoom?.id === room.id ? "bg-gray-200" : ""
+                  }`}
+                  onClick={() => setSelectedRoom(room)}
+                  onContextMenu={(e) => klikKananPesan(e, room.id)}
+                >
+                  <Image
+                    src={participant.Foto || gambarBawaan}
+                    alt="Profil"
+                    width={40}
+                    height={40}
+                    className="rounded-full object-cover"
+                    onError={(e) => {
+                      e.target.src = gambarBawaan;
+                    }}
+                  />
+
+                  <div className="flex-1 min-w-0">
+                    <p className="font-bold text-sm truncate">
+                      {participant.Nama_Lengkap || "Unknown"}
+                    </p>
+                    <p className="text-xs text-gray-500 truncate">
+                      {lastMessage?.isi || lastMessage?.teks || "No messages"}
+                    </p>
+                  </div>
+
+                  {lastMessage && (
+                    <div className="flex flex-col items-end">
+                      <p className="text-xs text-gray-400 whitespace-nowrap">
+                        {lastMessage.waktu?.toDate
+                          ? new Date(
+                              lastMessage.waktu.toDate()
+                            ).toLocaleTimeString([], {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })
+                          : lastMessage.waktu?.toLocaleTimeString([], {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            }) || ""}
+                      </p>
+                      {lastMessage.idPengirim === currentUserId && (
+                        <BsCheck2All
+                          className={`w-3 h-3 mt-1 ${
+                            lastMessage.sudahDibaca
+                              ? "text-blue-500"
+                              : "text-gray-400"
+                          }`}
+                        />
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })
           )}
         </div>
-
-        {/* Menu Konteks Hapus */}
-        {tampilkanIconHapus && (
-          <div
-            ref={refMenu}
-            style={{
-              position: "fixed",
-              top: posisiIcon.y,
-              left: posisiIcon.x,
-              background: "white",
-              padding: "10px",
-              borderRadius: "8px",
-              boxShadow: "0px 0px 10px rgba(0,0,0,0.2)",
-              zIndex: 1000,
-            }}
-          >
-            <button
-              className="flex items-center gap-2 text-gray-500 hover:text-red-500"
-              onClick={() => setTampilkanModalHapus(true)}
-            >
-              <MdDelete />
-              Hapus Percakapan
-            </button>
-          </div>
-        )}
       </div>
 
-      {/* Area Chat Utama */}
-      <div className="w-2/3 flex flex-col bg-white">
-        {penggunaTerpilih ? (
+      {/* Main Chat Area */}
+      <div className="w-2/3 flex flex-col">
+        {selectedRoom ? (
           <>
-            {/* Header Chat */}
             <div className="p-4 border-b flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <Image
-                  src={penggunaTerpilih.fotoProfil || gambarBawaan}
+                  src={getParticipantInfo(selectedRoom)?.Foto || gambarBawaan}
                   alt="Profil"
                   width={40}
                   height={40}
-                  className="rounded-full"
+                  className="rounded-full object-cover"
+                  onError={(e) => {
+                    e.target.src = gambarBawaan;
+                  }}
                 />
-                <div className="flex flex-col">
+                <div>
                   <span className="font-bold">
-                    {penggunaTerpilih.tipe === "perorangan"
-                      ? penggunaTerpilih.Nama_Lengkap
-                      : penggunaTerpilih.Nama_Perusahaan}
+                    {getParticipantInfo(selectedRoom)?.Nama_Lengkap ||
+                      "Unknown"}
                   </span>
-                  <span className="text-green-500 text-xs">online</span>
+                  <span className="block text-green-500 text-xs">online</span>
                 </div>
               </div>
+              <button className="text-gray-500 hover:text-gray-700">
+                <MdDelete className="w-5 h-5" />
+              </button>
             </div>
 
-            {/* Isi Percakapan */}
-            <div className="relative flex-1 p-4 bg-gray-100 overflow-auto">
-              <div className="absolute inset-0 flex justify-center items-center pointer-events-none">
-                <AiOutlineMessage className="text-black opacity-10 w-64 h-64" />
-              </div>
+            <div className="flex-1 p-4 bg-gray-50 overflow-y-auto">
+              {displayMessages.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-full">
+                  <AiOutlineMessage className="w-24 h-24 text-gray-200 mb-4" />
+                  <p className="text-gray-500">Belum ada pesan</p>
+                </div>
+              ) : (
+                <>
+                  <div className="flex justify-center my-4">
+                    <span className="bg-gray-200 text-gray-800 px-4 py-1 rounded-full text-xs font-semibold">
+                      {displayMessages[0]?.waktu?.toDate
+                        ? new Date(
+                            displayMessages[0].waktu.toDate()
+                          ).toLocaleDateString("id-ID", {
+                            weekday: "long",
+                            day: "numeric",
+                            month: "long",
+                          })
+                        : new Date(
+                            displayMessages[0]?.waktu
+                          ).toLocaleDateString("id-ID", {
+                            weekday: "long",
+                            day: "numeric",
+                            month: "long",
+                          }) || ""}
+                    </span>
+                  </div>
 
-              {/* Daftar Pesan */}
-              {pesan.length > 0 ? (
-                pesan.map((msg, index) => (
-                  <div
-                    key={msg.id}
-                    className={`flex mb-2 ${
-                      msg.idPengirim === adminId
-                        ? "justify-end"
-                        : "justify-start"
-                    }`}
-                  >
-                    <div
-                      className={`${
-                        msg.idPengirim === adminId
-                          ? "bg-[#72C02C]"
-                          : "bg-[#3182B7]"
-                      } text-white p-3 rounded-lg max-w-md shadow`}
-                    >
-                      {msg.isi && (
-                        <p>
-                          {pesanTersingkat.includes(index) ||
-                          msg.isi.length <= 50
-                            ? msg.isi
-                            : `${msg.isi.substring(0, 250)}...`}
-                        </p>
-                      )}
+                  {displayMessages.map((msg, index) => {
+                    if (!msg || (!msg.isi && !msg.teks)) return null;
 
-                      {msg.urlFile && (
-                        <div className="mt-2">
-                          <a
-                            href={msg.urlFile}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-white underline"
-                          >
-                            {msg.namaFile || "File"}
-                          </a>
-                        </div>
-                      )}
+                    const teks = msg.isi || msg.teks || "";
+                    const waktuPesan = msg.waktu?.toDate
+                      ? msg.waktu.toDate().toLocaleTimeString([], {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })
+                      : msg.waktu?.toLocaleTimeString([], {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        }) || "00:00";
 
-                      {msg.isi && msg.isi.length > 50 && (
-                        <motion.button
-                          className="text-white text-sm underline"
-                          onClick={() => togglePesanSingkat(index)}
+                    return (
+                      <div
+                        key={`${
+                          msg.id ||
+                          `${msg.pengirim}_${msg.waktu?.seconds || index}`
+                        }_${index}`}
+                        className={`flex mb-4 ${
+                          msg.idPengirim === currentUserId ||
+                          msg.pengirim === currentUserId
+                            ? "justify-end"
+                            : "justify-start"
+                        }`}
+                      >
+                        <div
+                          className={`${
+                            msg.idPengirim === currentUserId ||
+                            msg.pengirim === currentUserId
+                              ? "bg-[#72C02C]"
+                              : "bg-[#3182B7]"
+                          } text-white p-3 rounded-lg max-w-md shadow`}
                         >
-                          {pesanTersingkat.includes(index)
-                            ? "Tampilkan Lebih Sedikit"
-                            : "Lihat Selengkapnya"}
-                        </motion.button>
-                      )}
+                          {msg.urlFile ? (
+                            <div className="mb-2">
+                              <a
+                                href={msg.urlFile}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-white underline"
+                              >
+                                {msg.namaFile || "File"}
+                              </a>
+                            </div>
+                          ) : null}
 
-                      <div className="text-xs text-right mt-1 flex items-center justify-end space-x-1">
-                        <div className="flex items-center space-x-1 px-2 py-1 rounded-lg shadow bg-blue-100">
-                          <span className="text-blue-600">
-                            {msg.waktu?.toLocaleTimeString([], {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })}
-                          </span>
-                          {msg.idPengirim === adminId && (
-                            <BsCheck2All
-                              className={`w-4 h-4 ${
-                                msg.sudahDibaca
-                                  ? "text-blue-900"
-                                  : "text-gray-400"
-                              }`}
-                            />
+                          <p className="whitespace-pre-wrap">
+                            {selengkapnya2.includes(index) || teks.length <= 50
+                              ? teks
+                              : `${teks.substring(0, 250)}...`}
+                          </p>
+
+                          {teks.length > 50 && (
+                            <motion.button
+                              initial={{ opacity: 0.5, y: 5 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              exit={{ opacity: 0.5, y: 5 }}
+                              transition={{ duration: 0.2 }}
+                              className="text-white text-sm underline mt-1"
+                              onClick={() => toggleSelengkapnya2(index)}
+                            >
+                              {selengkapnya2.includes(index)
+                                ? "Tampilkan Lebih Sedikit"
+                                : "Lihat Selengkapnya"}
+                            </motion.button>
                           )}
+
+                          <div className="flex items-center justify-end mt-1 space-x-1">
+                            <span className="text-xs opacity-80">
+                              {waktuPesan}
+                            </span>
+                            {(msg.idPengirim === currentUserId ||
+                              msg.pengirim === currentUserId) && (
+                              <BsCheck2All
+                                className={`w-3 h-3 ${
+                                  msg.sudahDibaca || msg.status === "terbaca"
+                                    ? "text-blue-200"
+                                    : "text-gray-300"
+                                }`}
+                              />
+                            )}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <p className="text-center text-gray-500 py-4">
-                  {penggunaTerpilih.sudahPernahChat
-                    ? "Belum ada pesan dalam percakapan ini"
-                    : "Mulailah percakapan baru dengan pengguna ini"}
-                </p>
+                    );
+                  })}
+                  <div ref={messagesEndRef} />
+                </>
               )}
             </div>
+          </>
+        ) : (
+          <div className="flex-1 flex flex-col items-center justify-center bg-gray-50">
+            <AiOutlineMessage className="w-24 h-24 text-gray-200 mb-4" />
+            <p className="text-gray-500">Pilih percakapan untuk memulai</p>
+          </div>
+        )}
 
-            {/* Input Pesan */}
-            <div className="flex p-2 rounded-lg border-2 border-[#808080]/30 gap-2 w-full bg-white">
-              <div className="flex gap-2">
-                <button
-                  className="text-gray-500 hover:text-gray-700 cursor-pointer"
-                  onClick={() => refInputFile.current.click()}
-                >
-                  <LuPaperclip className="w-5 h-5" />
+        {/* Message Input */}
+        {selectedRoom && (
+          <div className="p-3 border-t bg-white">
+            {selectedFile && (
+              <div className="flex items-center justify-between bg-blue-50 p-2 rounded-lg mb-2">
+                <div className="flex items-center">
+                  <LuPaperclip className="text-blue-500 mr-2" />
+                  <span className="text-sm truncate max-w-xs">
+                    {selectedFile.name}
+                  </span>
+                </div>
+                <button onClick={handleRemoveFile}>
+                  <IoIosClose className="text-red-500 w-5 h-5" />
                 </button>
+              </div>
+            )}
+
+            <div className="flex items-center gap-2">
+              <button
+                className="text-gray-500 hover:text-blue-500 p-2 rounded-full"
+                onClick={() => fileInputRef.current.click()}
+              >
+                <LuPaperclip className="w-5 h-5" />
                 <input
                   type="file"
-                  ref={refInputFile}
+                  ref={fileInputRef}
                   className="hidden"
-                  onChange={(e) => setFileTerpilih(e.target.files[0])}
+                  onChange={handleFileChange}
+                  accept="image/*, .pdf, .doc, .docx"
                 />
-                <button
-                  className="text-gray-500 hover:text-gray-700 cursor-pointer"
-                  onClick={() => setTampilkanPickerEmoji(!tampilkanPickerEmoji)}
-                >
-                  <FaceSmileIcon className="w-6 h-6" />
-                </button>
-                {tampilkanPickerEmoji && (
-                  <div
-                    ref={refPickerEmoji}
-                    className="absolute bottom-12 left-1/3 bg-white shadow-lg border rounded-lg z-50"
-                  >
-                    <EmojiPicker
-                      onEmojiClick={(emoji) =>
-                        setIsiPesan((prev) => prev + emoji.emoji)
-                      }
-                    />
-                  </div>
-                )}
-              </div>
+              </button>
 
-              {fileTerpilih && (
-                <div className="flex items-center bg-[#808080]/40 px-3 py-1 rounded-md text-sm w-60">
-                  <span className="text-black">
-                    {fileTerpilih.name.length > 15
-                      ? fileTerpilih.name.slice(0, 15) + "..."
-                      : fileTerpilih.name}
-                  </span>
-                  <IoIosClose
-                    className="ml-2 w-5 h-5 text-red-500 cursor-pointer"
-                    onClick={() => setFileTerpilih(null)}
+              <button
+                className="text-gray-500 hover:text-yellow-500 p-2 rounded-full"
+                onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+              >
+                <FaceSmileIcon className="w-5 h-5" />
+              </button>
+
+              {showEmojiPicker && (
+                <div
+                  ref={emojiPickerRef}
+                  className="absolute bottom-16 right-16 z-50"
+                >
+                  <EmojiPicker
+                    onEmojiClick={handleBukaEmoji}
+                    width={300}
+                    height={350}
                   />
                 </div>
               )}
 
               <input
                 type="text"
-                className="w-full text-black focus:outline-none p-2 rounded-md"
-                placeholder="Ketik pesan"
-                value={isiPesan}
-                onChange={(e) => setIsiPesan(e.target.value)}
-                onKeyPress={(e) => e.key === "Enter" && handleKirimPesan()}
+                className="flex-1 border rounded-full py-2 px-4 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                placeholder="Ketik pesan..."
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
               />
 
               <button
-                className="bg-black text-white p-2 rounded-lg disabled:opacity-50"
-                onClick={handleKirimPesan}
-                disabled={sedangMemuat || (!isiPesan.trim() && !fileTerpilih)}
+                className="bg-blue-500 text-white p-2 rounded-full hover:bg-blue-600 disabled:bg-gray-300"
+                onClick={handleSendMessage}
+                disabled={!message.trim() && !selectedFile}
               >
-                {sedangMemuat ? (
-                  <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                ) : (
-                  <PaperAirplaneIcon className="w-6 h-6" />
-                )}
+                <PaperAirplaneIcon className="w-5 h-5" />
               </button>
-            </div>
-          </>
-        ) : (
-          <div className="flex-1 flex items-center justify-center bg-gray-100">
-            <div className="text-center">
-              <AiOutlineMessage className="w-16 h-16 mx-auto text-gray-400" />
-              <p className="mt-2 text-gray-600">
-                Pilih percakapan untuk memulai
-              </p>
             </div>
           </div>
         )}
       </div>
 
-      {/* Modal Konfirmasi Hapus */}
+      {/* Delete Confirmation Modal */}
       {tampilkanModalHapus && (
         <ModalKonfirmasiHapusChat
           terbuka={tampilkanModalHapus}
           tertutup={() => setTampilkanModalHapus(false)}
-          percakapanTerpilih={pesanTerpilih}
+          chatTerpilih={pesanTerpilih}
+          onSuccess={() => {
+            setSelectedRoom(null);
+            setPesanTerpilih(null);
+            fetchChatRooms();
+          }}
         />
+      )}
+
+      {/* Context Menu */}
+      {showDeleteIcon && (
+        <div
+          ref={menuRef}
+          className="fixed bg-white shadow-lg rounded-md py-1 z-50"
+          style={{
+            top: `${iconPosition.y}px`,
+            left: `${iconPosition.x}px`,
+          }}
+        >
+          <button
+            className="flex items-center gap-2 w-full px-4 py-2 text-left hover:bg-gray-100 text-red-500"
+            onClick={hapusPesan}
+          >
+            <MdDelete className="w-4 h-4" />
+            <span>Hapus Percakapan</span>
+          </button>
+        </div>
       )}
     </div>
   );

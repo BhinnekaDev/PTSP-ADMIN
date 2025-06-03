@@ -291,7 +291,7 @@ const useKonversiDataIKMKePdf = () => {
         let x = 10;
         const rowData = [
           `${index + 1}`,
-          response.NamaPertanyaan || "-",
+          response.Nama_Pertanyaan || "-",
           response.KualitasLayanan || "-",
           response.HarapanKonsumen || "-",
         ];
