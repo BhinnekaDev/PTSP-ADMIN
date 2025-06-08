@@ -236,24 +236,28 @@ export default function useSuntingPengajuan(idPemesanan) {
 
           if (jenisAjukan === "Berbayar") {
             isiEmail =
-              `Dengan hormat,\n\n` +
-              `Pengajuan Anda dengan ID ${idPemesanan} telah kami terima.\n` +
-              `Berikut adalah rincian pembayaran yang perlu diperhatikan:\n\n` +
-              `- Nomor Virtual Account: ${nomorVAs
-                .filter(Boolean)
-                .join(", ")}\n` +
-              `- Tanggal Pembayaran Masuk: ${formatTanggal(tanggalMasuk)}\n` +
-              `- Batas Akhir Pembayaran: ${formatTanggal(
-                tanggalKadaluwarsa
-              )}\n\n` +
-              `Mohon untuk melakukan pembayaran sebelum batas waktu yang telah ditentukan.\n\n` +
-              `Atas perhatian dan kerja sama Anda, kami ucapkan terima kasih.`;
+              `<p>Dengan hormat,</p>` +
+              `<p>Pengajuan Anda dengan ID <strong>${idPemesanan}</strong> telah kami terima.</p>` +
+              `<p>Berikut adalah rincian pembayaran yang perlu diperhatikan:</p>` +
+              `<ul>
+      <li><strong>Nomor Virtual Account:</strong> ${nomorVAs
+        .filter(Boolean)
+        .join(", ")}</li>
+      <li><strong>Tanggal Pembayaran Masuk:</strong> ${formatTanggal(
+        tanggalMasuk
+      )}</li>
+      <li><strong>Batas Akhir Pembayaran:</strong> ${formatTanggal(
+        tanggalKadaluwarsa
+      )}</li>
+    </ul>` +
+              `<p>Mohon untuk melakukan pembayaran sebelum batas waktu yang telah ditentukan.</p>` +
+              `<p>Atas perhatian dan kerja sama Anda, kami ucapkan terima kasih.</p>`;
           } else {
             isiEmail =
-              `Dengan hormat,\n\n` +
-              `Pengajuan gratis Anda dengan ID ${idPemesanan} telah kami terima.\n\n` +
-              `Pengajuan tersebut akan segera kami proses sesuai ketentuan yang berlaku.\n\n` +
-              `Kami menghargai partisipasi Anda dan mengucapkan terima kasih.`;
+              `<p>Dengan hormat,</p>` +
+              `<p>Pengajuan <strong>gratis</strong> Anda dengan ID <strong>${idPemesanan}</strong> telah kami terima.</p>` +
+              `<p>Pengajuan tersebut akan segera kami proses sesuai ketentuan yang berlaku.</p>` +
+              `<p>Kami menghargai partisipasi Anda dan mengucapkan terima kasih.</p>`;
           }
           break;
 

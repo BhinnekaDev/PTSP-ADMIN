@@ -127,13 +127,30 @@ const useKirimFile = (idPemesanan) => {
       toast.success("File berhasil dikirim dan data diperbarui.");
 
       if (email) {
-        await kirimEmail(
-          email,
-          "File Anda Telah Selesai",
-          `Halo,\n\nFile Anda terkait pemesanan dengan ID ${idPemesanan} telah selesai dan dapat diakses melalui platform kami.\nTerima kasih.`,
-          namaPengguna || "Pengguna",
-          "Selesai"
-        );
+        try {
+          const subject = "File Anda Telah Selesai";
+          const message = `
+        Halo ${namaPengguna || "Pengguna"},<br><br>
+        File Anda terkait pemesanan dengan ID <strong>${idPemesanan}</strong> telah selesai dan dapat diakses melalui platform kami.<br><br>
+        Silakan <a href="https://ptsp-six.vercel.app/Transaksi?openDialog=true&id=${idPemesanan}" target="_blank">klik di sini untuk melanjutkan</a>.<br><br>
+        Terima kasih.
+      `;
+
+          await kirimEmail(
+            email,
+            subject,
+            message,
+            namaPengguna || "Pengguna",
+            null
+          );
+
+          toast.success("Email notifikasi berhasil dikirim");
+        } catch (error) {
+          console.error("Gagal mengirim email notifikasi:", error);
+          toast.error(
+            "Berhasil mengirim file tetapi gagal mengirim email notifikasi"
+          );
+        }
       }
     } catch (error) {
       console.error("Gagal mengirim file:", error);

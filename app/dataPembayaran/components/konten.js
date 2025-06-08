@@ -101,16 +101,18 @@ function Konten({ tahunDipilih }) {
               </tr>
             </thead>
             <tbody>
-              {saringPemesanan.filter(
-                (pemesanan) =>
-                  pemesanan.Status_Pembayaran === "Sedang Ditinjau" ||
-                  pemesanan.Status_Pembayaran === "Ditolak"
+              {saringPemesanan.filter((pemesanan) =>
+                ["Sedang Ditinjau", "Ditolak", "Menunggu Pembayaran"].includes(
+                  pemesanan.Status_Pembayaran
+                )
               ).length > 0 ? (
                 saringPemesanan
-                  .filter(
-                    (pemesanan) =>
-                      pemesanan.Status_Pembayaran === "Sedang Ditinjau" ||
-                      pemesanan.Status_Pembayaran === "Ditolak"
+                  .filter((pemesanan) =>
+                    [
+                      "Sedang Ditinjau",
+                      "Ditolak",
+                      "Menunggu Pembayaran",
+                    ].includes(pemesanan.Status_Pembayaran)
                   )
                   .map(
                     (
