@@ -13,7 +13,7 @@ import Memuat from "@/components/memuat";
 
 const ModalKonfirmasiHapusJasa = ({
   terbuka,
-  tutupModal,
+  tertutup,
   jasaYangTerpilih,
   konfirmasiHapusJasa,
   sedangMemuatHapusJasa,
@@ -21,7 +21,7 @@ const ModalKonfirmasiHapusJasa = ({
   return (
     <Dialog
       open={terbuka}
-      handler={tutupModal}
+      handler={() => tertutup(false)}
       animate={{
         mount: { scale: 1, y: 0 },
         unmount: { scale: 0.9, y: -100 },
@@ -30,7 +30,7 @@ const ModalKonfirmasiHapusJasa = ({
       className="bg-[#fff] max-w-xs sm:max-w-sm md:max-w-md lg:max-w-lg"
     >
       <div className="absolute top-3 right-3">
-        <IconButton variant="text" color="red" onClick={tutupModal}>
+        <IconButton variant="text" color="red" onClick={() => tertutup(false)}>
           <XMarkIcon className="h-6 w-6" />
         </IconButton>
       </div>

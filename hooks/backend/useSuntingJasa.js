@@ -15,57 +15,62 @@ export default function useSuntingJasa(idJasa) {
     try {
       const jasaRef = doc(database, "jasa", idJasa);
       const docSnap = await getDoc(jasaRef);
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        setNamaJasa(data.Nama);
-        setHargaJasa(data.Harga);
-        setPemilikJasa(data.Pemilik);
-        setNoRekening(data.Nomor_Rekening);
-        setDeskripsiJasa(data.Deskripsi);
-      } else {
-        toast.error("Data jasa tidak ditemukan!");
-      }
-    } catch (error) {}
+      if (!docSnap.exists()) return toast.error("Data jasa tidak ditemukan!");
+
+      const data = docSnap.data();
+      setNamaJasa(data.Nama || "");
+      setHargaJasa(data.Harga?.toString() || "");
+      setPemilikJasa(data.Pemilik || "");
+      setDeskripsiJasa(data.Deskripsi || "");
+      setNoRekening(data.Nomor_Rekening || "");
+    } catch (e) {
+      toast.error("Gagal mengambil data jasa: " + (e?.message || e));
+    }
   };
 
-  const validasiFormulir = () =>
-    !namaJasa
-      ? (toast.error("Masukkan nama jasa"), false)
-      : !hargaJasa
-      ? (toast.error("Masukkan harga jasa"), false)
-      : !pemilikJasa
-      ? (toast.error("Pilih pemilik jasa"), false)
-      : !deskripsiJasa
-      ? (toast.error("Ketik Deskripsi jasa"), false)
-      : true;
+  const validasiFormulir = () => {
+    const errors = [];
+
+    if (!namaJasa) errors.push("Nama jasa harus diisi.");
+    else if (namaJasa.length > 255)
+      errors.push("Nama jasa maksimal 255 karakter.");
+
+    if (!hargaJasa) errors.push("Harga jasa harus diisi.");
+    else if (!/^\d+$/.test(hargaJasa))
+      errors.push("Harga jasa hanya boleh angka.");
+    else if (hargaJasa.length > 9) errors.push("Harga jasa maksimal 9 digit.");
+
+    if (!pemilikJasa) errors.push("Pemilik jasa harus dipilih.");
+    if (!deskripsiJasa) errors.push("Deskripsi jasa harus diisi.");
+    else if (deskripsiJasa.length > 1000)
+      errors.push("Deskripsi jasa maksimal 1000 karakter.");
+
+    if (errors.length) toast.error(errors.join(" "));
+    return errors.length === 0;
+  };
 
   const suntingJasa = async () => {
+    if (!validasiFormulir()) return;
+
     setSedangMemuatSuntingJasa(true);
-
-    if (!validasiFormulir()) {
-      setSedangMemuatSuntingJasa(false);
-      return;
-    }
-
     try {
       const jasaRef = doc(database, "jasa", idJasa);
       await updateDoc(jasaRef, {
-        Nama: namaJasa,
-        Harga: hargaJasa,
-        Pemilik: pemilikJasa,
-        Deskripsi: deskripsiJasa,
+        Nama: namaJasa.trim(),
+        Harga: parseFloat(hargaJasa),
+        Pemilik: pemilikJasa.trim(),
+        Deskripsi: deskripsiJasa.trim(),
       });
-
       toast.success("Jasa berhasil disunting!");
-    } catch (error) {
-      toast.error("Gagal menyunting jasa: " + error.message);
+    } catch (e) {
+      toast.error("Gagal menyunting jasa: " + (e?.message || e));
     } finally {
       setSedangMemuatSuntingJasa(false);
     }
   };
 
   useEffect(() => {
-    ambilDataJasa();
+    if (idJasa) ambilDataJasa();
   }, [idJasa]);
 
   return {

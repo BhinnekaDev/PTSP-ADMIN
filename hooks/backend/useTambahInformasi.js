@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { collection, doc, setDoc, serverTimestamp } from "firebase/firestore";
 import { toast } from "react-toastify";
-// PERPUSTAKAAN KAMI
 import { database } from "@/lib/firebaseConfig";
 
 const useTambahInformasi = () => {
@@ -13,43 +12,46 @@ const useTambahInformasi = () => {
   const [sedangMemuatTambahInformasi, setSedangMemuatTambahInformasi] =
     useState(false);
 
-  const tentukanNomorRekening = () => {
-    return pemilikInformasi === "Meteorologi"
+  const bersihkan = (teks) => teks.trim().replace(/\s+/g, " ");
+
+  const tentukanNomorRekening = () =>
+    pemilikInformasi === "Meteorologi"
       ? 1111
       : pemilikInformasi === "Klimatologi"
       ? 2222
       : pemilikInformasi === "Geofisika"
       ? 3333
       : 0;
-  };
 
   const validasiFormulir = () => {
-    let sesuai = true;
-    let pesanKesalahan = "";
+    const nama = bersihkan(namaInformasi);
+    const harga = hargaInformasi.trim();
+    const deskripsi = bersihkan(deskripsiInformasi);
+    const pemilik = pemilikInformasi.trim();
 
-    !namaInformasi
-      ? ((sesuai = false), (pesanKesalahan += "Nama Informasi harus diisi. "))
-      : null;
-    !hargaInformasi
-      ? ((sesuai = false), (pesanKesalahan += "Harga Informasi harus diisi. "))
-      : isNaN(hargaInformasi)
-      ? ((sesuai = false),
-        (pesanKesalahan += "Harga Informasi harus berupa angka. "))
-      : null;
-    !pemilikInformasi
-      ? ((sesuai = false),
-        (pesanKesalahan += "Pemilik Informasi harus dipilih. "))
-      : null;
-    !deskripsiInformasi
-      ? ((sesuai = false),
-        (pesanKesalahan += "Deskripsi Informasi harus diisi. "))
-      : null;
+    let pesan = "";
 
-    if (!sesuai) {
-      toast.error(pesanKesalahan.trim());
+    if (!nama) pesan += "Nama Informasi harus diisi. ";
+    else if (nama.length > 255)
+      pesan += "Nama Informasi maksimal 255 karakter. ";
+
+    if (!harga) pesan += "Harga Informasi harus diisi. ";
+    else if (!/^\d+(\.\d{1,2})?$/.test(harga))
+      pesan += "Harga Informasi harus berupa angka. ";
+    else if (harga.length > 9) pesan += "Harga Informasi maksimal 9 digit. ";
+
+    if (!pemilik) pesan += "Pemilik Informasi harus dipilih. ";
+
+    if (!deskripsi) pesan += "Deskripsi Informasi harus diisi. ";
+    else if (deskripsi.length > 1000)
+      pesan += "Deskripsi Informasi maksimal 1000 karakter. ";
+
+    if (pesan) {
+      toast.error(pesan.trim());
+      return false;
     }
 
-    return sesuai;
+    return true;
   };
 
   const tambahInformasi = async () => {
@@ -57,25 +59,22 @@ const useTambahInformasi = () => {
 
     setSedangMemuatTambahInformasi(true);
 
-    const referensiInformasi = collection(database, "informasi");
     const dataInformasi = {
-      Nama: namaInformasi,
+      Nama: bersihkan(namaInformasi),
       Harga: parseFloat(hargaInformasi),
-      Pemilik: pemilikInformasi,
-      Deskripsi: deskripsiInformasi,
-      Tanggal_Pembuatan: serverTimestamp(),
+      Pemilik: pemilikInformasi.trim(),
+      Deskripsi: bersihkan(deskripsiInformasi),
       Nomor_Rekening: tentukanNomorRekening(),
+      Tanggal_Pembuatan: serverTimestamp(),
       Status: statusInformasi,
     };
 
     try {
-      await setDoc(doc(referensiInformasi), dataInformasi);
+      await setDoc(doc(collection(database, "informasi")), dataInformasi);
       toast.success("Informasi berhasil ditambahkan!");
       aturUlangFormulir();
     } catch (error) {
-      toast.error(
-        "Terjadi kesalahan saat menambahkan Informasi: " + error.message
-      );
+      toast.error("Gagal menambahkan Informasi: " + (error?.message || error));
     } finally {
       setSedangMemuatTambahInformasi(false);
     }
@@ -96,12 +95,12 @@ const useTambahInformasi = () => {
     tambahInformasi,
     pemilikInformasi,
     setNamaInformasi,
-    aturUlangFormulir,
     setHargaInformasi,
     deskripsiInformasi,
     setStatusInformasi,
     setPemilikInformasi,
     setDeskripsiInformasi,
+    aturUlangFormulir,
     sedangMemuatTambahInformasi,
   };
 };

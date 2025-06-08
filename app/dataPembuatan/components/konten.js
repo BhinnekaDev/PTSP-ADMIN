@@ -16,6 +16,7 @@ import useTampilkanPembuatan from "@/hooks/backend/useTampilkanPembuatan";
 import useTampilkanDataPerTahun from "@/hooks/backend/useTampilkanDataPerTahun";
 // KOMPONEN KAMI
 import ModalSuntingPembuatan from "@/components/modalSuntingPembuatan";
+import MemuatRangkaTampilkanTabel from "@/components/memuatRangkaTabel";
 // KONSTANTA KAMI
 import { formatTanggal } from "@/constants/formatTanggal";
 import { bulan } from "@/constants/bulan";
@@ -72,139 +73,144 @@ function Konten({ tahunDipilih }) {
       </CardHeader>
 
       <CardBody className="overflow-hidden px-0">
-        <table className="mt-4 w-full min-w-max table-auto text-left">
-          <thead>
-            <tr>
-              {judulTabel.map((konten) => (
-                <th
-                  key={konten}
-                  className="border-y border-blue-gray-100 bg-blue-gray-50/50 p-4"
-                >
-                  <Typography
-                    variant="small"
-                    color="blue-gray"
-                    className="font-normal leading-none opacity-70"
+        {sedangMemuatPemesanan ? (
+          <MemuatRangkaTampilkanTabel />
+        ) : (
+          <table className="mt-4 w-full min-w-max table-auto text-left">
+            <thead>
+              <tr>
+                {judulTabel.map((konten) => (
+                  <th
+                    key={konten}
+                    className="border-y border-blue-gray-100 bg-blue-gray-50/50 p-4"
                   >
-                    {konten}
-                  </Typography>
-                </th>
-              ))}
-            </tr>
-          </thead>
+                    <Typography
+                      variant="small"
+                      color="blue-gray"
+                      className="font-normal leading-none opacity-70"
+                    >
+                      {konten}
+                    </Typography>
+                  </th>
+                ))}
+              </tr>
+            </thead>
 
-          <tbody>
-            {saringPemesanan
-              .filter((pemesanan) => pemesanan.Status_Pembayaran === "Lunas")
-              .filter((pemesanan) => pemesanan.Status_Pesanan !== "Selesai")
-              .filter(
-                (pemesanan) =>
-                  pemesanan.Status_Pembuatan !== "Selesai Pembuatan"
-              ).length > 0 ? (
-              saringPemesanan
+            <tbody>
+              {saringPemesanan
+                .filter((pemesanan) => pemesanan.Status_Pembayaran === "Lunas")
+                .filter((pemesanan) => pemesanan.Status_Pesanan !== "Selesai")
                 .filter(
                   (pemesanan) =>
-                    pemesanan.Status_Pembayaran === "Lunas" &&
-                    pemesanan.Status_Pesanan !== "Selesai" &&
                     pemesanan.Status_Pembuatan !== "Selesai Pembuatan"
-                )
-                .map(
-                  (
-                    { id, pengguna, Data_Keranjang, Tanggal_Pemesanan },
-                    index
-                  ) => {
-                    const apakahTerakhir = index === saringPemesanan.length - 1;
-                    const kelas = apakahTerakhir
-                      ? "p-4"
-                      : "p-4 border-b border-blue-gray-50";
+                ).length > 0 ? (
+                saringPemesanan
+                  .filter(
+                    (pemesanan) =>
+                      pemesanan.Status_Pembayaran === "Lunas" &&
+                      pemesanan.Status_Pesanan !== "Selesai" &&
+                      pemesanan.Status_Pembuatan !== "Selesai Pembuatan"
+                  )
+                  .map(
+                    (
+                      { id, pengguna, Data_Keranjang, Tanggal_Pemesanan },
+                      index
+                    ) => {
+                      const apakahTerakhir =
+                        index === saringPemesanan.length - 1;
+                      const kelas = apakahTerakhir
+                        ? "p-4"
+                        : "p-4 border-b border-blue-gray-50";
 
-                    return (
-                      <tr key={id}>
-                        <td className={kelas}>
-                          <div className="flex items-center gap-3">
-                            {pengguna ? (
-                              <Image
-                                src={pengguna.Foto || gambarBawaan}
-                                alt={pengguna.Nama_Lengkap}
-                                width={40}
-                                height={40}
-                                className="rounded-full"
-                              />
-                            ) : (
-                              <Image
-                                src={gambarBawaan}
-                                alt="Pengguna Tidak Dikenal"
-                                width={40}
-                                height={40}
-                                className="rounded-full"
-                              />
-                            )}
+                      return (
+                        <tr key={id}>
+                          <td className={kelas}>
+                            <div className="flex items-center gap-3">
+                              {pengguna ? (
+                                <Image
+                                  src={pengguna.Foto || gambarBawaan}
+                                  alt={pengguna.Nama_Lengkap}
+                                  width={40}
+                                  height={40}
+                                  className="rounded-full"
+                                />
+                              ) : (
+                                <Image
+                                  src={gambarBawaan}
+                                  alt="Pengguna Tidak Dikenal"
+                                  width={40}
+                                  height={40}
+                                  className="rounded-full"
+                                />
+                              )}
 
-                            <div className="flex flex-col">
+                              <div className="flex flex-col">
+                                <Typography
+                                  variant="small"
+                                  color="blue-gray"
+                                  className="font-normal"
+                                >
+                                  {pengguna?.Nama_Lengkap ||
+                                    "Nama Tidak Diketahui"}
+                                </Typography>
+                                <Typography
+                                  variant="small"
+                                  color="blue-gray"
+                                  className="font-normal opacity-70"
+                                >
+                                  {pengguna?.Email || "Email Tidak Diketahui"}
+                                </Typography>
+                              </div>
+                            </div>
+                          </td>
+                          <td className={kelas}>
+                            {Data_Keranjang.map((keranjang, index) => (
                               <Typography
+                                key={index}
                                 variant="small"
                                 color="blue-gray"
                                 className="font-normal"
                               >
-                                {pengguna?.Nama_Lengkap ||
-                                  "Nama Tidak Diketahui"}
+                                {keranjang.Nama}
                               </Typography>
-                              <Typography
-                                variant="small"
-                                color="blue-gray"
-                                className="font-normal opacity-70"
-                              >
-                                {pengguna?.Email || "Email Tidak Diketahui"}
-                              </Typography>
-                            </div>
-                          </div>
-                        </td>
-                        <td className={kelas}>
-                          {Data_Keranjang.map((keranjang, index) => (
+                            ))}
+                          </td>
+                          <td className={kelas}>
                             <Typography
-                              key={index}
                               variant="small"
                               color="blue-gray"
                               className="font-normal"
                             >
-                              {keranjang.Nama}
+                              {formatTanggal(Tanggal_Pemesanan)}
                             </Typography>
-                          ))}
-                        </td>
-                        <td className={kelas}>
-                          <Typography
-                            variant="small"
-                            color="blue-gray"
-                            className="font-normal"
-                          >
-                            {formatTanggal(Tanggal_Pemesanan)}
-                          </Typography>
-                        </td>
-                        <td className={kelas}>
-                          <Tooltip content="Sunting">
-                            <IconButton
-                              onClick={() => {
-                                setPembuatanTerpilih(id);
-                                setBukaModalSuntingPengajuan(true);
-                              }}
-                              variant="text"
-                            >
-                              <AiOutlineUpload className="h-4 w-4" />
-                            </IconButton>
-                          </Tooltip>
-                        </td>
-                      </tr>
-                    );
-                  }
-                )
-            ) : (
-              <tr>
-                <td colSpan="3" className="p-4 text-center text-gray-500">
-                  Tidak Ada Data
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+                          </td>
+                          <td className={kelas}>
+                            <Tooltip content="Sunting">
+                              <IconButton
+                                onClick={() => {
+                                  setPembuatanTerpilih(id);
+                                  setBukaModalSuntingPengajuan(true);
+                                }}
+                                variant="text"
+                              >
+                                <AiOutlineUpload className="h-4 w-4" />
+                              </IconButton>
+                            </Tooltip>
+                          </td>
+                        </tr>
+                      );
+                    }
+                  )
+              ) : (
+                <tr>
+                  <td colSpan="3" className="p-4 text-center text-gray-500">
+                    Tidak Ada Data
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        )}
       </CardBody>
 
       <CardFooter className="flex items-center justify-between border-t border-blue-gray-50 p-4">

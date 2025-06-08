@@ -7,7 +7,6 @@ import { kirimEmail } from "@/hooks/backend/useNotifikasiEmail";
 import usePDFPengajuan from "@/hooks/backend/usePDFPengajuan";
 
 export default function useSuntingPengajuan(idPemesanan) {
-  // State untuk pengelolaan form
   const [statusPengajuan, setStatusPengajuan] = useState("");
   const [keterangan, setKeterangan] = useState("");
   const [dataKeranjang, setDataKeranjang] = useState([]);
@@ -114,7 +113,6 @@ export default function useSuntingPengajuan(idPemesanan) {
     }
 
     try {
-      // Upload file jika ada
       let fileUrl = fileURL;
       if (file) {
         fileUrl = await uploadFile();
@@ -153,7 +151,6 @@ export default function useSuntingPengajuan(idPemesanan) {
             : pemesananData.Total_Harga_Pesanan,
       });
 
-      // Update data pengajuan
       const pengajuanRef = doc(database, "ajukan", idAjukan);
       const pengajuanUpdateData = {
         Status_Ajuan: statusPengajuan,
@@ -195,7 +192,6 @@ export default function useSuntingPengajuan(idPemesanan) {
       let emailPengguna = "";
       let namaPengguna = "";
 
-      // Ambil data pengguna
       const peroranganRef = doc(database, "perorangan", idPengguna);
       const peroranganSnap = await getDoc(peroranganRef);
 

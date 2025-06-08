@@ -106,12 +106,12 @@ const ModalLihatRiwayatTransaksi = ({
       for (const [index, url] of buktiPembayaran.entries()) {
         const response = await fetch(url);
         const blob = await response.blob();
-        const fileName = `bukti_pembayaran_${index + 1}.jpg`;
+        const fileName = `Bukti_Pembayaran_${index + 1}.jpg`;
         zip.file(fileName, blob);
       }
 
       const content = await zip.generateAsync({ type: "blob" });
-      saveAs(content, "bukti_pembayaran.zip");
+      saveAs(content, "Bukti_Pembayaran.zip");
     } catch (error) {
       console.error("Gagal mengunduh bukti pembayaran:", error);
       alert("Terjadi kesalahan saat mengunduh bukti pembayaran.");
@@ -535,20 +535,47 @@ const ModalLihatRiwayatTransaksi = ({
                   </td>
 
                   <td className="p-4">
-                    {transaksiTerpilih.transaksi?.Bukti_Pembayaran.map(
-                      (bukti, indeks) => (
+                    {(Array.isArray(
+                      transaksiTerpilih.transaksi?.Bukti_Pembayaran
+                    )
+                      ? transaksiTerpilih.transaksi?.Bukti_Pembayaran
+                      : [
+                          transaksiTerpilih.transaksi?.Bukti_Pembayaran ||
+                            gambarBawaan,
+                        ]
+                    ).map((bukti, indeks) => {
+                      const ekstensi = bukti?.split(".").pop()?.toLowerCase();
+                      const adalahGambar = [
+                        "jpg",
+                        "jpeg",
+                        "png",
+                        "gif",
+                        "webp",
+                      ].includes(ekstensi || "");
+
+                      return (
                         <div key={indeks} className="flex items-center gap-3">
-                          <Image
-                            src={bukti || gambarBawaan}
-                            alt={"Tidak ada nama"}
-                            className="cursor-pointer m-5 hover:scale-105 duration-300"
-                            onClick={() => window.open(bukti, "_blank")}
-                            width={100}
-                            height={100}
-                          />
+                          {adalahGambar ? (
+                            <Image
+                              src={bukti || gambarBawaan}
+                              alt={`Bukti Pembayaran ${indeks + 1}`}
+                              className="cursor-pointer m-5 hover:scale-105 duration-300"
+                              onClick={() => window.open(bukti, "_blank")}
+                              width={100}
+                              height={100}
+                            />
+                          ) : (
+                            <embed
+                              src={bukti || gambarBawaan}
+                              className="cursor-pointer m-5 hover:scale-105 duration-300"
+                              onClick={() => window.open(bukti, "_blank")}
+                              width={100}
+                              height={100}
+                            />
+                          )}
                         </div>
-                      )
-                    )}
+                      );
+                    })}
                   </td>
 
                   <td className="p-4 text-end">

@@ -24,18 +24,32 @@ const usePDFPengajuan = (
   const titleX = (pageWidth - titleWidth) / 2;
   doc.text(titleText, titleX, 50);
 
-  const belumBayarText = "Belum Bayar";
-  doc.setFontSize(12);
-  doc.setFont("helvetica", "bold");
-  doc.setTextColor(255, 0, 0);
-  const belumBayarX = pageWidth - doc.getTextWidth(belumBayarText) - 10;
-  doc.text(belumBayarText, belumBayarX, 60);
+  const jenisAjukan = pengajuanDocData?.Jenis_Ajukan || "-";
+  let statusText = "";
+  let statusColor = [0, 0, 0];
+
+  if (jenisAjukan === "Berbayar") {
+    statusText =
+      pemesananData?.Status_Pembayaran === "Lunas" ? "Lunas" : "Belum Bayar";
+    statusColor =
+      pemesananData?.Status_Pembayaran === "Lunas" ? [0, 128, 0] : [255, 0, 0];
+  } else if (jenisAjukan === "Gratis") {
+    statusText = "Gratis";
+    statusColor = [0, 0, 255];
+  }
+
+  if (statusText) {
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(...statusColor);
+    const statusX = pageWidth - doc.getTextWidth(statusText) - 10;
+    doc.text(statusText, statusX, 60);
+  }
 
   doc.setFontSize(12);
   doc.setFont("helvetica", "normal");
   doc.setTextColor(0, 0, 0);
 
-  const jenisAjukan = pengajuanDocData?.Jenis_Ajukan || "-";
   const nomorPemesanan = idPemesanan || "-";
   const nomorAjukan = pemesananData?.ID_Ajukan || "-";
   const tanggalPemesanan = pemesananData?.Tanggal_Pemesanan || "-";

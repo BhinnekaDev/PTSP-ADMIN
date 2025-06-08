@@ -76,12 +76,10 @@ const useKirimPesanPengguna = () => {
         chatRoomsSnapshot.docs.map(async (chatDoc) => {
           const chatRoomData = chatDoc.data();
 
-          // Pastikan format peserta selalu array
           let peserta = Array.isArray(chatRoomData.peserta)
             ? [...chatRoomData.peserta]
             : [];
 
-          // Jika admin belum ada di room, tambahkan
           if (!peserta.includes(adminId)) {
             peserta.push(adminId);
             await updateDoc(doc(database, "chatRooms", chatDoc.id), {
@@ -89,7 +87,6 @@ const useKirimPesanPengguna = () => {
             });
           }
 
-          // Proses data seperti sebelumnya...
           const pesertaDetail = await Promise.all(
             peserta.map((pesertaId) => fetchPesertaDetail(pesertaId))
           );

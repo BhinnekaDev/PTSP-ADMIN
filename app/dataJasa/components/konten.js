@@ -242,7 +242,7 @@ function Konten({ tahunDipilih }) {
                           <IconButton
                             onClick={() => {
                               setJasaYangTerpilih(id);
-                              setBukaModalLihatJasa(true);
+                              setBukaModalSuntingJasa(true);
                             }}
                             variant="text"
                           >
@@ -306,7 +306,7 @@ function Konten({ tahunDipilih }) {
 
       <ModalKonfirmasiHapusJasa
         terbuka={bukaModalHapusJasa}
-        tutupModal={setBukaModalHapusJasa}
+        tertutup={setBukaModalHapusJasa}
         jasaYangTerpilih={jasaYangTerpilih}
         konfirmasiHapusJasa={hapus}
         sedangMemuatHapusJasa={sedangMemuatHapusJasa}
