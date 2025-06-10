@@ -135,10 +135,10 @@ const ModalSuntingPengajuan = ({
                   </div>
                 ))}
 
-            {jenisAjukan === "Berbayar" && (
+            {jenisAjukan === "Berbayar" && statusPengajuan !== "Ditolak" && (
               <>
                 <Typography className="-mb-2" variant="h6">
-                  Tanggal Masuk Pembayaran
+                  Tanggal Masuk Virtual Akun
                 </Typography>
                 <Input
                   type="datetime-local"
@@ -148,7 +148,7 @@ const ModalSuntingPengajuan = ({
                 />
 
                 <Typography className="-mb-2" variant="h6">
-                  Tanggal Kadaluwarsa Pembayaran
+                  Tanggal Kadaluwarsa Virtual Akun
                 </Typography>
                 <Input
                   type="datetime-local"
@@ -164,7 +164,7 @@ const ModalSuntingPengajuan = ({
                   <div className="flex items-center gap-2">
                     <label
                       htmlFor="upload-file"
-                      className="rounded-sm border border-blue-gray-200 px-3 py-1 bg-blue-gray-50 text-sm font-medium text-blue-gray-700 hover:bg-blue-gray-100 hover:text-blue-gray-900 focus:z-10 focus:outline-none focus:ring-2 focus:ring-blue-700"
+                      className="rounded-sm border border-blue-gray-200 px-3 py-1 bg-blue-gray-50 text-sm font-medium text-blue-gray-700 hover:bg-blue-gray-100 hover:text-blue-gray-900"
                     >
                       Pilih File
                     </label>
@@ -179,6 +179,7 @@ const ModalSuntingPengajuan = ({
 
                   {(file || fileURL) && (
                     <button
+                      type="button"
                       onClick={handleDelete}
                       className="text-red-500 hover:text-red-700"
                     >

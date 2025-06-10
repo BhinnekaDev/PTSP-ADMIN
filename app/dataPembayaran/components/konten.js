@@ -22,14 +22,24 @@ import MemuatRangkaTampilkanTabel from "@/components/memuatRangkaTabel";
 // KONSTANTA KAMI
 import { formatTanggal } from "@/constants/formatTanggal";
 import { bulan } from "@/constants/bulan";
+import ModalSuntingVaKadaluwarsa from "@/components/modalSuntingVaKadaluwarsa";
 
-const judulTabel = ["Pembeli", "Produk", "Tanggal Pemesanan", ""];
+const judulTabel = [
+  "Pembeli",
+  "Produk",
+  "Status",
+  "Tanggal Pemesanan",
+  "Tanggal Kaluwarsa VA",
+  "",
+];
 
 function Konten({ tahunDipilih }) {
   const gambarBawaan = require("@/assets/images/profil.jpg");
   const [bukaModalSuntingPembayaran, setBukaModalSuntingPembayaran] =
     useState(false);
   const [bukaModalLihatPembayaran, setBukaModalLihatPembayaran] =
+    useState(false);
+  const [bukaModalSuntingVaKadaluwarsa, setBukaModalSuntingVaKadaluwarsa] =
     useState(false);
   const [pembuatanTerpilih, setPembuatanTerpilih] = useState(null);
   const [keteranganTerpilih, setKeteranganTerpilih] = useState("");
@@ -123,6 +133,7 @@ function Konten({ tahunDipilih }) {
                         Tanggal_Pemesanan,
                         Keterangan,
                         Status_Pembayaran,
+                        ajukan,
                       },
                       index
                     ) => {
@@ -173,6 +184,33 @@ function Konten({ tahunDipilih }) {
                               </Typography>
                             ))}
                           </td>
+
+                          <td>
+                            <Chip
+                              variant="ghost"
+                              className="text-center"
+                              size="md"
+                              value={
+                                new Date(ajukan.Tanggal_Kadaluwarsa) <
+                                new Date()
+                                  ? "Kedaluwarsa"
+                                  : Status_Pembayaran || "Belum ada status"
+                              }
+                              color={
+                                new Date(ajukan.Tanggal_Kadaluwarsa) <
+                                new Date()
+                                  ? "blue-gray"
+                                  : Status_Pembayaran === "Menunggu Pembayaran"
+                                  ? "red"
+                                  : Status_Pembayaran === "Ditolak"
+                                  ? "green"
+                                  : Status_Pembayaran === "Sedang Ditinjau"
+                                  ? "yellow"
+                                  : "default"
+                              }
+                            />
+                          </td>
+
                           <td className={kelas}>
                             <Typography
                               variant="small"
@@ -182,6 +220,16 @@ function Konten({ tahunDipilih }) {
                               {formatTanggal(Tanggal_Pemesanan)}
                             </Typography>
                           </td>
+                          <td className={kelas}>
+                            <Typography
+                              variant="small"
+                              color="blue-gray"
+                              className="font-normal"
+                            >
+                              {formatTanggal(ajukan.Tanggal_Kadaluwarsa)}
+                            </Typography>
+                          </td>
+
                           <td className={kelas}>
                             {Status_Pembayaran === "Ditolak" ? (
                               <Chip
@@ -205,18 +253,36 @@ function Konten({ tahunDipilih }) {
                                     <AiFillEye className="h-4 w-4" />
                                   </IconButton>
                                 </Tooltip>
-                                <Tooltip content="Sunting">
-                                  <IconButton
-                                    onClick={() => {
-                                      setPembuatanTerpilih(id);
-                                      setKeteranganTerpilih(Keterangan || "");
-                                      setBukaModalSuntingPembayaran(true);
-                                    }}
-                                    variant="text"
-                                  >
-                                    <AiOutlineUpload className="h-4 w-4" />
-                                  </IconButton>
-                                </Tooltip>
+                                {Status_Pembayaran !==
+                                  "Menunggu Pembayaran" && (
+                                  <Tooltip content="Sunting">
+                                    <IconButton
+                                      onClick={() => {
+                                        setPembuatanTerpilih(id);
+                                        setKeteranganTerpilih(Keterangan || "");
+                                        setBukaModalSuntingPembayaran(true);
+                                      }}
+                                      variant="text"
+                                    >
+                                      <AiOutlineUpload className="h-4 w-4" />
+                                    </IconButton>
+                                  </Tooltip>
+                                )}
+
+                                {new Date(ajukan.Tanggal_Kadaluwarsa) <
+                                  new Date() && (
+                                  <Tooltip content="Upload VA Baru">
+                                    <IconButton
+                                      onClick={() => {
+                                        setPembuatanTerpilih(id);
+                                        setBukaModalSuntingVaKadaluwarsa(true);
+                                      }}
+                                      variant="text"
+                                    >
+                                      <AiOutlineUpload className="h-4 w-4" />
+                                    </IconButton>
+                                  </Tooltip>
+                                )}
                               </>
                             )}
                           </td>
@@ -267,6 +333,12 @@ function Konten({ tahunDipilih }) {
         tertutup={setBukaModalSuntingPembayaran}
         pembayaranYangTerpilih={pembuatanTerpilih}
         keterangan={keteranganTerpilih}
+      />
+
+      <ModalSuntingVaKadaluwarsa
+        terbuka={bukaModalSuntingVaKadaluwarsa}
+        tertutup={setBukaModalSuntingVaKadaluwarsa}
+        VaYangTerplih={pembuatanTerpilih}
       />
 
       <ModalLihatPembayaran

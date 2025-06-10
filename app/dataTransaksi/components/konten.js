@@ -18,8 +18,10 @@ import useTampilkanDataPerTahun from "@/hooks/backend/useTampilkanDataPerTahun";
 // KONSTANTA KAMI
 import { formatTanggal } from "@/constants/formatTanggal";
 import { formatRupiah } from "@/constants/formatRupiah";
+import { bulan } from "@/constants/bulan";
 // KOMPONEN KAMI
 import ModalLihatRiwayatTransaksi from "@/components/modalLihatRiwayatTransaksi";
+import MemuatRangkaTampilkanTabel from "@/components/memuatRangkaTabel";
 
 const judulTabel = [
   "Nomor Surat",
@@ -85,229 +87,266 @@ function Konten({ tahunDipilih }) {
       </CardHeader>
 
       <CardBody className="overflow-hidden px-0">
-        <table className="mt-4 w-full min-w-max table-auto text-left">
-          <thead>
-            <tr>
-              {judulTabel.map((konten) => (
-                <th
-                  key={konten}
-                  className="border-y border-blue-gray-100 bg-blue-gray-50/50 p-4"
-                >
-                  <Typography
-                    variant="small"
-                    color="blue-gray"
-                    className="font-normal leading-none opacity-70"
+        {sedangMemuatTransaksi ? (
+          <MemuatRangkaTampilkanTabel />
+        ) : (
+          <table className="mt-4 w-full min-w-max table-auto text-left">
+            <thead>
+              <tr>
+                {judulTabel.map((konten) => (
+                  <th
+                    key={konten}
+                    className="border-y border-blue-gray-100 bg-blue-gray-50/50 p-4"
                   >
-                    {konten}
-                  </Typography>
-                </th>
-              ))}
-            </tr>
-          </thead>
+                    <Typography
+                      variant="small"
+                      color="blue-gray"
+                      className="font-normal leading-none opacity-70"
+                    >
+                      {konten}
+                    </Typography>
+                  </th>
+                ))}
+              </tr>
+            </thead>
 
-          <tbody>
-            {saringTransaksi
-              .filter(
-                (pemesanan) =>
-                  pemesanan.Status_Pembayaran === "Lunas" &&
-                  pemesanan.Status_Pembuatan === "Selesai Pembuatan" &&
-                  pemesanan.Status_Pengisian_IKM === "Telah Diisi" &&
-                  pemesanan.Status_Pesanan === "Selesai"
-              )
-              .map(
-                (
-                  {
-                    id,
-                    pengguna,
-                    Tanggal_Pemesanan,
-                    Total_Harga_Pesanan,
-                    Data_Keranjang,
-                    ajukan,
-                  },
-                  index
-                ) => {
-                  const apakahTerakhir = index === daftarTransaksi.length - 1;
-                  const kelas = apakahTerakhir
-                    ? "p-4"
-                    : "p-4 border-b border-blue-gray-50";
+            <tbody>
+              {saringTransaksi.length === 0 && (
+                <tr>
+                  <td colSpan={8} className="p-4">
+                    <Typography
+                      variant="small"
+                      color="blue-gray"
+                      className="font-normal"
+                    >
+                      Tidak ada transaksi
+                    </Typography>
+                  </td>
+                </tr>
+              )}
+              {saringTransaksi
+                .filter(
+                  (pemesanan) =>
+                    pemesanan.Status_Pembayaran === "Lunas" &&
+                    pemesanan.Status_Pembuatan === "Selesai Pembuatan"
+                )
+                .map(
+                  (
+                    {
+                      id,
+                      pengguna,
+                      Tanggal_Pemesanan,
+                      Total_Harga_Pesanan,
+                      Data_Keranjang,
+                      ajukan,
+                      Status_Pesanan,
+                      Status_Pengisian_IKM,
+                    },
+                    index
+                  ) => {
+                    const apakahTerakhir = index === daftarTransaksi.length - 1;
+                    const kelas = apakahTerakhir
+                      ? "p-4"
+                      : "p-4 border-b border-blue-gray-50";
 
-                  return (
-                    <tr key={id}>
-                      <td className={kelas}>
-                        {Data_Keranjang && Data_Keranjang.length > 0 ? (
-                          [
-                            ...new Set(
-                              Data_Keranjang.map((item) => item.Nomor_Surat)
-                            ),
-                          ].map((nomorSurat, idx) => (
-                            <div key={idx} className="flex flex-col mb-2">
-                              <Typography
-                                variant="small"
-                                color="blue-gray"
-                                className="font-normal"
-                              >
-                                {nomorSurat}
-                              </Typography>
-                            </div>
-                          ))
-                        ) : (
-                          <Typography
-                            variant="small"
-                            color="blue-gray"
-                            className="font-normal"
-                          >
-                            Tidak ada produk
-                          </Typography>
-                        )}
-                      </td>
-                      <td className={kelas}>
-                        <div className="flex items-center gap-3">
-                          <Image
-                            src={pengguna.Foto || gambarBawaan}
-                            alt={pengguna.Nama_Lengkap}
-                            width={40}
-                            height={40}
-                            className="rounded-full"
-                          />
-                          <div className="flex flex-col">
+                    return (
+                      <tr key={id}>
+                        {/* Kolom Nomor Surat */}
+                        <td className={kelas}>
+                          {Data_Keranjang && Data_Keranjang.length > 0 ? (
+                            [
+                              ...new Set(
+                                Data_Keranjang.map((item) => item.Nomor_Surat)
+                              ),
+                            ].map((nomorSurat, idx) => (
+                              <div key={idx} className="flex flex-col mb-2">
+                                <Typography
+                                  variant="small"
+                                  color="blue-gray"
+                                  className="font-normal"
+                                >
+                                  {nomorSurat}
+                                </Typography>
+                              </div>
+                            ))
+                          ) : (
                             <Typography
                               variant="small"
                               color="blue-gray"
                               className="font-normal"
                             >
-                              {pengguna.Nama_Lengkap}
+                              Tidak ada produk
                             </Typography>
-                            <Typography
-                              variant="small"
-                              color="blue-gray"
-                              className="font-normal opacity-70"
-                            >
-                              {pengguna.Email}
-                            </Typography>
-                          </div>
-                        </div>
-                      </td>
-                      <td className={kelas}>
-                        {Data_Keranjang && Data_Keranjang.length > 0 ? (
-                          Data_Keranjang.map((dataKeranjang, idx) => (
-                            <div key={idx} className="flex flex-col mb-2">
+                          )}
+                        </td>
+
+                        {/* Kolom Pengguna */}
+                        <td className={kelas}>
+                          <div className="flex items-center gap-3">
+                            <Image
+                              src={pengguna.Foto || gambarBawaan}
+                              alt={pengguna.Nama_Lengkap}
+                              width={40}
+                              height={40}
+                              className="rounded-full"
+                            />
+                            <div className="flex flex-col">
                               <Typography
                                 variant="small"
                                 color="blue-gray"
                                 className="font-normal"
                               >
-                                {dataKeranjang.Jenis_Produk}
+                                {pengguna.Nama_Lengkap}
                               </Typography>
-                            </div>
-                          ))
-                        ) : (
-                          <Typography
-                            variant="small"
-                            color="blue-gray"
-                            className="font-normal"
-                          >
-                            Tidak ada produk
-                          </Typography>
-                        )}
-                      </td>
-                      <td className={kelas}>
-                        {Data_Keranjang && Data_Keranjang.length > 0 ? (
-                          Data_Keranjang.map((dataKeranjang, idx) => (
-                            <div key={idx} className="flex flex-col mb-2">
                               <Typography
                                 variant="small"
                                 color="blue-gray"
                                 className="font-normal opacity-70"
                               >
-                                {dataKeranjang.Kuantitas} Barang
-                              </Typography>
-
-                              <Typography
-                                variant="small"
-                                color="blue-gray"
-                                className={`font-normal ${
-                                  Total_Harga_Pesanan === "Gratis"
-                                    ? "line-through"
-                                    : ""
-                                }`}
-                              >
-                                {formatRupiah(dataKeranjang.Harga)}
+                                {pengguna.Email}
                               </Typography>
                             </div>
-                          ))
-                        ) : (
+                          </div>
+                        </td>
+
+                        {/* Kolom Produk */}
+                        <td className={kelas}>
+                          {Data_Keranjang && Data_Keranjang.length > 0 ? (
+                            Data_Keranjang.map((dataKeranjang, idx) => (
+                              <div key={idx} className="flex flex-col mb-2">
+                                <Typography
+                                  variant="small"
+                                  color="blue-gray"
+                                  className="font-normal"
+                                >
+                                  {dataKeranjang.Jenis_Produk}
+                                </Typography>
+                              </div>
+                            ))
+                          ) : (
+                            <Typography
+                              variant="small"
+                              color="blue-gray"
+                              className="font-normal"
+                            >
+                              Tidak ada produk
+                            </Typography>
+                          )}
+                        </td>
+
+                        {/* Kolom Harga dan Kuantitas */}
+                        <td className={kelas}>
+                          {Data_Keranjang && Data_Keranjang.length > 0 ? (
+                            Data_Keranjang.map((dataKeranjang, idx) => (
+                              <div key={idx} className="flex flex-col mb-2">
+                                <Typography
+                                  variant="small"
+                                  color="blue-gray"
+                                  className="font-normal opacity-70"
+                                >
+                                  {dataKeranjang.Kuantitas} Barang
+                                </Typography>
+
+                                <Typography
+                                  variant="small"
+                                  color="blue-gray"
+                                  className={`font-normal ${
+                                    Total_Harga_Pesanan === "Gratis"
+                                      ? "line-through"
+                                      : ""
+                                  }`}
+                                >
+                                  {formatRupiah(dataKeranjang.Harga)}
+                                </Typography>
+                              </div>
+                            ))
+                          ) : (
+                            <Typography
+                              variant="small"
+                              color="blue-gray"
+                              className="font-normal"
+                            >
+                              Tidak ada produk
+                            </Typography>
+                          )}
+                        </td>
+
+                        {/* Status Ajuan */}
+                        <td className={kelas}>
+                          <div className="w-max">
+                            <Chip
+                              variant="ghost"
+                              size="sm"
+                              value={
+                                Status_Pesanan === "Belum Selesai"
+                                  ? "Menunggu IKM"
+                                  : Status_Pesanan || "Belum ada status"
+                              }
+                              color={
+                                Status_Pesanan === "Selesai"
+                                  ? "green"
+                                  : Status_Pesanan === "Belum Selesai"
+                                  ? "red"
+                                  : "default"
+                              }
+                            />
+                          </div>
+                        </td>
+
+                        {/* Jenis Ajuan */}
+                        <td className={kelas}>
+                          <div className="w-max">
+                            <Chip
+                              variant="ghost"
+                              size="sm"
+                              value={ajukan.Jenis_Ajukan || "Belum ada Jenis"}
+                              color={
+                                ajukan.Jenis_Ajukan === "Gratis"
+                                  ? "blue"
+                                  : ajukan.Jenis_Ajukan === "Berbayar"
+                                  ? "red"
+                                  : "default"
+                              }
+                            />
+                          </div>
+                        </td>
+
+                        {/* Tanggal Pemesanan */}
+                        <td className={`${kelas} text-center`}>
                           <Typography
                             variant="small"
                             color="blue-gray"
                             className="font-normal"
                           >
-                            Tidak ada produk
+                            {Status_Pengisian_IKM === "Telah Diisi"
+                              ? formatTanggal(Tanggal_Pemesanan)
+                              : "-"}
                           </Typography>
-                        )}
-                      </td>
+                        </td>
 
-                      <td className={kelas}>
-                        <div className="w-max">
-                          <Chip
-                            variant="ghost"
-                            size="sm"
-                            value={ajukan.Status_Ajuan || "Belum ada status"}
-                            color={
-                              ajukan.Status_Ajuan === "Diterima"
-                                ? "green"
-                                : ajukan.Status_Ajuan === "Ditolak"
-                                ? "red"
-                                : ajukan.Status_Ajuan === "Sedang Ditinjau"
-                                ? "yellow"
-                                : "default"
-                            }
-                          />
-                        </div>
-                      </td>
-                      <td className={kelas}>
-                        <div className="w-max">
-                          <Chip
-                            variant="ghost"
-                            size="sm"
-                            value={ajukan.Jenis_Ajukan || "Belum ada Jenis"}
-                            color={
-                              ajukan.Jenis_Ajukan === "Gratis"
-                                ? "green"
-                                : ajukan.Jenis_Ajukan === "Berbayar"
-                                ? "red"
-                                : "default"
-                            }
-                          />
-                        </div>
-                      </td>
-                      <td className={kelas}>
-                        <Typography
-                          variant="small"
-                          color="blue-gray"
-                          className="font-normal"
-                        >
-                          {formatTanggal(Tanggal_Pemesanan)}
-                        </Typography>
-                      </td>
-                      <td className={kelas}>
-                        <Tooltip content="Lihat Selengkapnya">
-                          <IconButton
-                            onClick={() => {
-                              setRiwayatTransaksiYangDipilih(id);
-                              setBukaModalLihatRiwayatTransaksi(true);
-                            }}
-                            variant="text"
-                          >
-                            <EyeIcon className="h-4 w-4" />
-                          </IconButton>
-                        </Tooltip>
-                      </td>
-                    </tr>
-                  );
-                }
-              )}
-          </tbody>
-        </table>
+                        {/* Tombol Lihat */}
+                        <td className={kelas}>
+                          {Status_Pengisian_IKM === "Telah Diisi" && (
+                            <Tooltip content="Lihat Selengkapnya">
+                              <IconButton
+                                onClick={() => {
+                                  setRiwayatTransaksiYangDipilih(id);
+                                  setBukaModalLihatRiwayatTransaksi(true);
+                                }}
+                                variant="text"
+                              >
+                                <EyeIcon className="h-4 w-4" />
+                              </IconButton>
+                            </Tooltip>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  }
+                )}
+            </tbody>
+          </table>
+        )}
       </CardBody>
 
       <CardFooter className="flex items-center justify-between border-t border-blue-gray-50 p-4">

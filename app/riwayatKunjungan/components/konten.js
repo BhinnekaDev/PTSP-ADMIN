@@ -130,7 +130,7 @@ function Konten({ tahunDipilih }) {
                   {
                     id,
                     Data_Pengguna,
-                    Nama_Instansi,
+                    Stasiun,
                     Status_Kunjungan,
                     Keterangan_Penolakan,
                     Tanggal_Kunjungan,
@@ -179,7 +179,7 @@ function Konten({ tahunDipilih }) {
                           color="blue-gray"
                           className="font-normal"
                         >
-                          {Nama_Instansi}
+                          {Stasiun}
                         </Typography>
                       </td>
                       <td className={kelas}>

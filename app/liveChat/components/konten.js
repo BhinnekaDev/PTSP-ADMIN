@@ -5,7 +5,14 @@ import {
   FaceSmileIcon,
   MagnifyingGlassIcon,
 } from "@heroicons/react/24/outline";
-import { BsCheck2All } from "react-icons/bs";
+import {
+  BsCheck2All,
+  BsFileEarmark,
+  BsFileImage,
+  BsFilePdf,
+  BsFileWord,
+  BsFileExcel,
+} from "react-icons/bs";
 import { AiOutlineMessage } from "react-icons/ai";
 import { LuPaperclip } from "react-icons/lu";
 import { MdDelete } from "react-icons/md";
@@ -35,7 +42,7 @@ const LiveChat = () => {
     kirimPesan,
     subscribeToChatRoom,
     fetchChatRooms,
-  } = useKirimPesanPengguna(adminId);
+  } = useKirimPesanPengguna();
 
   const [selectedRoom, setSelectedRoom] = useState(null);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
@@ -48,20 +55,18 @@ const LiveChat = () => {
   const [selengkapnya2, setSelengkapnya2] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [realTimeMessages, setRealTimeMessages] = useState([]);
+  const [uploadProgress, setUploadProgress] = useState(0);
 
   const emojiPickerRef = useRef(null);
   const fileInputRef = useRef(null);
   const menuRef = useRef(null);
   const messagesEndRef = useRef(null);
 
-  // Subscribe to real-time updates when room is selected
   useEffect(() => {
     if (!selectedRoom) return;
 
     const unsubscribe = subscribeToChatRoom(selectedRoom.id, (messages) => {
       setRealTimeMessages(messages);
-
-      // Update the selected room with new messages
       setSelectedRoom((prev) => ({
         ...prev,
         pesan: messages,
@@ -96,11 +101,13 @@ const LiveChat = () => {
         return;
       }
       setSelectedFile(file);
+      setUploadProgress(0);
     }
   };
 
   const handleRemoveFile = () => {
     setSelectedFile(null);
+    setUploadProgress(0);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
@@ -115,15 +122,11 @@ const LiveChat = () => {
         message,
         "admin",
         selectedFile
-          ? {
-              name: selectedFile.name,
-              url: URL.createObjectURL(selectedFile),
-            }
-          : null
       );
 
       setMessage("");
       setSelectedFile(null);
+      setUploadProgress(0);
       if (fileInputRef.current) fileInputRef.current.value = "";
     } catch (error) {
       console.error("Gagal mengirim pesan:", error);
@@ -171,13 +174,66 @@ const LiveChat = () => {
     return room.pesertaDetail.find((p) => p.id !== currentUserId) || {};
   };
 
-  if (sedangMemuat) {
+  const getFileIconComponent = (fileName) => {
+    if (!fileName) return <BsFileEarmark className="text-2xl" />;
+
+    const extension = fileName.split(".").pop().toLowerCase();
+    switch (extension) {
+      case "jpg":
+      case "jpeg":
+      case "png":
+      case "gif":
+        return <BsFileImage className="text-2xl text-blue-500" />;
+      case "pdf":
+        return <BsFilePdf className="text-2xl text-red-500" />;
+      case "doc":
+      case "docx":
+        return <BsFileWord className="text-2xl text-blue-600" />;
+      case "xls":
+      case "xlsx":
+        return <BsFileExcel className="text-2xl text-green-600" />;
+      default:
+        return <BsFileEarmark className="text-2xl" />;
+    }
+  };
+
+  const renderFileMessage = (msg) => {
+    const fileExtension = msg.namaFile?.split(".").pop().toLowerCase();
+    const isImage = ["jpg", "jpeg", "png", "gif"].includes(fileExtension);
+
     return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      <div className="mt-2">
+        {isImage ? (
+          <div className="relative max-w-xs cursor-pointer">
+            <Image
+              src={msg.urlFile}
+              alt={msg.namaFile}
+              width={300}
+              height={200}
+              className="rounded-lg object-cover border border-gray-200"
+              onClick={() => window.open(msg.urlFile, "_blank")}
+            />
+          </div>
+        ) : (
+          <a
+            href={msg.urlFile}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-3 p-3 bg-white bg-opacity-20 rounded-lg hover:bg-opacity-30 border border-gray-200"
+            download
+          >
+            {getFileIconComponent(msg.namaFile)}
+            <div className="flex-1 min-w-0">
+              <p className="font-medium text-sm truncate">{msg.namaFile}</p>
+              <p className="text-xs text-gray-500">
+                {fileExtension.toUpperCase()} File
+              </p>
+            </div>
+          </a>
+        )}
       </div>
     );
-  }
+  };
 
   const displayMessages = selectedRoom?.id
     ? realTimeMessages.length > 0
@@ -242,7 +298,13 @@ const LiveChat = () => {
                       {participant.Nama_Lengkap || "Unknown"}
                     </p>
                     <p className="text-xs text-gray-500 truncate">
-                      {lastMessage?.isi || lastMessage?.teks || "No messages"}
+                      {lastMessage?.isi
+                        ? lastMessage.isi.length > 30
+                          ? `${lastMessage.isi.substring(0, 30)}...`
+                          : lastMessage.isi
+                        : lastMessage?.namaFile
+                        ? `[File] ${lastMessage.namaFile}`
+                        : "No messages"}
                     </p>
                   </div>
 
@@ -303,7 +365,10 @@ const LiveChat = () => {
                   <span className="block text-green-500 text-xs">online</span>
                 </div>
               </div>
-              <button className="text-gray-500 hover:text-gray-700">
+              <button
+                className="text-gray-500 hover:text-gray-700"
+                onClick={hapusPesan}
+              >
                 <MdDelete className="w-5 h-5" />
               </button>
             </div>
@@ -337,7 +402,8 @@ const LiveChat = () => {
                   </div>
 
                   {displayMessages.map((msg, index) => {
-                    if (!msg || (!msg.isi && !msg.teks)) return null;
+                    if (!msg || (!msg.isi && !msg.teks && !msg.urlFile))
+                      return null;
 
                     const teks = msg.isi || msg.teks || "";
                     const waktuPesan = msg.waktu?.toDate
@@ -371,38 +437,32 @@ const LiveChat = () => {
                               : "bg-[#3182B7]"
                           } text-white p-3 rounded-lg max-w-md shadow`}
                         >
-                          {msg.urlFile ? (
-                            <div className="mb-2">
-                              <a
-                                href={msg.urlFile}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-white underline"
-                              >
-                                {msg.namaFile || "File"}
-                              </a>
-                            </div>
-                          ) : null}
+                          {msg.urlFile && renderFileMessage(msg)}
 
-                          <p className="whitespace-pre-wrap">
-                            {selengkapnya2.includes(index) || teks.length <= 50
-                              ? teks
-                              : `${teks.substring(0, 250)}...`}
-                          </p>
+                          {teks && (
+                            <>
+                              <p className="whitespace-pre-wrap">
+                                {selengkapnya2.includes(index) ||
+                                teks.length <= 50
+                                  ? teks
+                                  : `${teks.substring(0, 250)}...`}
+                              </p>
 
-                          {teks.length > 50 && (
-                            <motion.button
-                              initial={{ opacity: 0.5, y: 5 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              exit={{ opacity: 0.5, y: 5 }}
-                              transition={{ duration: 0.2 }}
-                              className="text-white text-sm underline mt-1"
-                              onClick={() => toggleSelengkapnya2(index)}
-                            >
-                              {selengkapnya2.includes(index)
-                                ? "Tampilkan Lebih Sedikit"
-                                : "Lihat Selengkapnya"}
-                            </motion.button>
+                              {teks.length > 50 && (
+                                <motion.button
+                                  initial={{ opacity: 0.5, y: 5 }}
+                                  animate={{ opacity: 1, y: 0 }}
+                                  exit={{ opacity: 0.5, y: 5 }}
+                                  transition={{ duration: 0.2 }}
+                                  className="text-white text-sm underline mt-1"
+                                  onClick={() => toggleSelengkapnya2(index)}
+                                >
+                                  {selengkapnya2.includes(index)
+                                    ? "Tampilkan Lebih Sedikit"
+                                    : "Lihat Selengkapnya"}
+                                </motion.button>
+                              )}
+                            </>
                           )}
 
                           <div className="flex items-center justify-end mt-1 space-x-1">
@@ -441,8 +501,8 @@ const LiveChat = () => {
           <div className="p-3 border-t bg-white">
             {selectedFile && (
               <div className="flex items-center justify-between bg-blue-50 p-2 rounded-lg mb-2">
-                <div className="flex items-center">
-                  <LuPaperclip className="text-blue-500 mr-2" />
+                <div className="flex items-center gap-2">
+                  {getFileIconComponent(selectedFile.name)}
                   <span className="text-sm truncate max-w-xs">
                     {selectedFile.name}
                   </span>
@@ -450,6 +510,15 @@ const LiveChat = () => {
                 <button onClick={handleRemoveFile}>
                   <IoIosClose className="text-red-500 w-5 h-5" />
                 </button>
+              </div>
+            )}
+
+            {uploadProgress > 0 && uploadProgress < 100 && (
+              <div className="w-full bg-gray-200 rounded-full h-2.5 mb-2">
+                <div
+                  className="bg-blue-600 h-2.5 rounded-full"
+                  style={{ width: `${uploadProgress}%` }}
+                ></div>
               </div>
             )}
 
@@ -464,7 +533,7 @@ const LiveChat = () => {
                   ref={fileInputRef}
                   className="hidden"
                   onChange={handleFileChange}
-                  accept="image/*, .pdf, .doc, .docx"
+                  accept="image/*, .pdf, .doc, .docx, .xls, .xlsx"
                 />
               </button>
 
@@ -498,11 +567,15 @@ const LiveChat = () => {
               />
 
               <button
-                className="bg-blue-500 text-white p-2 rounded-full hover:bg-blue-600 disabled:bg-gray-300"
+                className="bg-blue-500 text-white p-2 rounded-full hover:bg-blue-600 disabled:bg-gray-300 flex items-center justify-center"
                 onClick={handleSendMessage}
-                disabled={!message.trim() && !selectedFile}
+                disabled={(!message.trim() && !selectedFile) || sedangMemuat}
               >
-                <PaperAirplaneIcon className="w-5 h-5" />
+                {sedangMemuat ? (
+                  <span className="text-xs animate-pulse">Mengirim...</span>
+                ) : (
+                  <PaperAirplaneIcon className="w-5 h-5" />
+                )}
               </button>
             </div>
           </div>

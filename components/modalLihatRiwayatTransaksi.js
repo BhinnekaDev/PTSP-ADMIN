@@ -426,7 +426,8 @@ const ModalLihatRiwayatTransaksi = ({
                       color="blue-gray"
                       className="font-normal"
                     >
-                      {transaksiTerpilih.pengguna?.NPWP || "Tidak ada NPWP"}
+                      {transaksiTerpilih.pengguna?.No_Identitas ||
+                        "Tidak ada No Identitas"}
                     </Typography>
                     <Typography
                       variant="small"
@@ -538,40 +539,58 @@ const ModalLihatRiwayatTransaksi = ({
                     {(Array.isArray(
                       transaksiTerpilih.transaksi?.Bukti_Pembayaran
                     )
-                      ? transaksiTerpilih.transaksi?.Bukti_Pembayaran
+                      ? transaksiTerpilih.transaksi.Bukti_Pembayaran
                       : [
                           transaksiTerpilih.transaksi?.Bukti_Pembayaran ||
                             gambarBawaan,
                         ]
                     ).map((bukti, indeks) => {
-                      const ekstensi = bukti?.split(".").pop()?.toLowerCase();
+                      const path =
+                        typeof bukti === "string"
+                          ? bukti
+                          : typeof gambarBawaan === "string"
+                          ? gambarBawaan
+                          : "";
+
+                      const ekstensi = path
+                        ? path.split(".").pop()?.toLowerCase()
+                        : "";
+
                       const adalahGambar = [
                         "jpg",
                         "jpeg",
                         "png",
                         "gif",
                         "webp",
-                      ].includes(ekstensi || "");
+                      ].includes(ekstensi);
 
                       return (
                         <div key={indeks} className="flex items-center gap-3">
-                          {adalahGambar ? (
+                          {adalahGambar && path ? (
                             <Image
-                              src={bukti || gambarBawaan}
+                              src={path}
                               alt={`Bukti Pembayaran ${indeks + 1}`}
                               className="cursor-pointer m-5 hover:scale-105 duration-300"
-                              onClick={() => window.open(bukti, "_blank")}
+                              onClick={() => window.open(path, "_blank")}
+                              width={100}
+                              height={100}
+                            />
+                          ) : path ? (
+                            <embed
+                              src={path}
+                              className="cursor-pointer m-5 hover:scale-105 duration-300"
+                              onClick={() => window.open(path, "_blank")}
                               width={100}
                               height={100}
                             />
                           ) : (
-                            <embed
-                              src={bukti || gambarBawaan}
-                              className="cursor-pointer m-5 hover:scale-105 duration-300"
-                              onClick={() => window.open(bukti, "_blank")}
-                              width={100}
-                              height={100}
-                            />
+                            <Typography
+                              variant="small"
+                              color="gray"
+                              className="p-4"
+                            >
+                              Tidak ada bukti pembayaran
+                            </Typography>
                           )}
                         </div>
                       );

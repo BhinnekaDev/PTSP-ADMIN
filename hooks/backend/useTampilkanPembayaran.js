@@ -70,6 +70,23 @@ const useTampilkanPembayaran = (batasHalaman = 5) => {
           }
         }
 
+        if (pemesananData.ID_Ajukan) {
+          try {
+            const ajukanRef = doc(database, "ajukan", pemesananData.ID_Ajukan);
+            const ajukanDoc = await getDoc(ajukanRef);
+
+            if (ajukanDoc.exists()) {
+              pemesananData.ajukan = {
+                ...pemesananData.ajukan,
+                id: ajukanDoc.id,
+                ...ajukanDoc.data(),
+              };
+            }
+          } catch (error) {
+            console.error("Gagal mengambil data ajukan:", error);
+          }
+        }
+
         pemesanans.push(pemesananData);
       }
 

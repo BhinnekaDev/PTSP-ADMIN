@@ -110,19 +110,19 @@ export default function useSuntingKunjungan(idPengajuanKunjungan) {
     }
 
     const subject = `Status Pengajuan Kunjungan Anda: ${status}`;
-    let message = `Halo, \n\n`;
+    let message = `<p>Halo,</p>`;
 
     if (status === "Diterima") {
-      message += `Pengajuan kunjungan Anda telah DITERIMA.\n\n`;
-      message += `Silakan cek aplikasi untuk detail selengkapnya.\n\n`;
-      message += `Terima kasih.`;
+      message += `<p>Pengajuan kunjungan Anda telah <strong>DITERIMA</strong>.</p>`;
+      message += `<p>Silakan cek aplikasi untuk detail selengkapnya.</p>`;
+      message += `<p>Terima kasih.</p>`;
     } else if (status === "Ditolak") {
-      message += `Mohon maaf, pengajuan kunjungan Anda telah DITOLAK.\n\n`;
-      message += `Alasan penolakan: ${keterangan}\n\n`;
-      message += `Silakan perbaiki pengajuan Anda sesuai keterangan di atas.\n`;
+      message += `<p>Mohon maaf, pengajuan kunjungan Anda telah <strong>DITOLAK</strong>.</p>`;
+      message += `<p><strong>Alasan penolakan:</strong> ${keterangan}</p>`;
+      message += `<p>Silakan perbaiki pengajuan Anda sesuai keterangan di atas, kemudian ajukan kembali.</p>`;
     } else if (status === "Sedang Diproses") {
-      message += `Pengajuan kunjungan Anda sedang dalam proses peninjauan.\n\n`;
-      message += `Kami akan mengirimkan notifikasi kembali ketika status berubah.\n`;
+      message += `<p>Pengajuan kunjungan Anda saat ini sedang dalam <strong>proses peninjauan</strong>.</p>`;
+      message += `<p>Kami akan mengirimkan notifikasi kembali ketika status berubah.</p>`;
     }
 
     try {

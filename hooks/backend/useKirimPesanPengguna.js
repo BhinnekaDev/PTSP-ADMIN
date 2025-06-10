@@ -11,7 +11,8 @@ import {
   orderBy,
   onSnapshot,
 } from "firebase/firestore";
-import { database } from "@/lib/firebaseConfig";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { database, storage } from "@/lib/firebaseConfig";
 
 const useKirimPesanPengguna = () => {
   const [chatRooms, setChatRooms] = useState([]);
@@ -130,23 +131,36 @@ const useKirimPesanPengguna = () => {
   }, [fetchPesertaDetail]);
 
   const kirimPesan = useCallback(
-    async (roomId, pengirimId, isiPesan, tipePengirim, fileData = null) => {
+    async (roomId, pengirimId, isiPesan, tipePengirim, file = null) => {
       try {
         const pesanRef = collection(database, `chatRooms/${roomId}/pesan`);
+        let fileUrl = null;
+        let fileName = null;
+
+        if (file) {
+          const timestamp = Date.now();
+          const fileExtension = file.name.split(".").pop();
+          fileName = `Chat_File/${roomId}/${timestamp}.${fileExtension}`;
+
+          const storageRef = ref(storage, fileName);
+          await uploadBytes(storageRef, file);
+          fileUrl = await getDownloadURL(storageRef);
+        }
 
         const pesanData = {
           idPengirim: pengirimId,
           isi: isiPesan,
-          namaFile: fileData?.name || null,
-          urlFile: fileData?.url || null,
+          namaFile: file ? file.name : null,
+          urlFile: fileUrl,
           sudahDibaca: false,
           tipePengirim,
           waktu: serverTimestamp(),
         };
 
         await addDoc(pesanRef, pesanData);
-
         fetchChatRooms();
+
+        return { success: true };
       } catch (err) {
         console.error("Gagal mengirim pesan:", err);
         setError(err);

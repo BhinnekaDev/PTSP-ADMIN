@@ -264,20 +264,11 @@ export default function useSuntingPengajuan(idPemesanan) {
         case "Ditolak":
           subjekEmail = "Pemberitahuan: Pengajuan Ditolak";
           isiEmail =
-            `Dengan hormat,\n\n` +
-            `Kami sampaikan bahwa pengajuan Anda dengan ID ${idPemesanan} tidak dapat kami proses.\n\n` +
-            `Alasan penolakan: ${keterangan}\n\n` +
-            `Silakan lakukan perbaikan sesuai keterangan di atas, kemudian ajukan kembali.\n\n` +
-            `Kami menghargai perhatian dan pengertian Anda.`;
-          break;
-
-        case "Sedang Ditinjau":
-          subjekEmail = "Pemberitahuan: Pengajuan Sedang Ditinjau";
-          isiEmail =
-            `Dengan hormat,\n\n` +
-            `Pengajuan Anda dengan ID ${idPemesanan} saat ini sedang dalam proses peninjauan oleh tim kami.\n\n` +
-            `Kami akan menginformasikan hasilnya segera setelah proses peninjauan selesai.\n\n` +
-            `Terima kasih atas kesabaran dan kepercayaan Anda.`;
+            `<p>Dengan hormat,</p>` +
+            `<p>Kami sampaikan bahwa pengajuan Anda dengan ID <strong>${idPemesanan}</strong> tidak dapat kami proses.</p>` +
+            `<p><strong>Alasan penolakan:</strong> ${keterangan}</p>` +
+            `<p>Silakan lakukan perbaikan sesuai keterangan di atas, kemudian ajukan kembali.</p>` +
+            `<p>Kami menghargai perhatian dan pengertian Anda.</p>`;
           break;
 
         default:
@@ -333,11 +324,9 @@ export default function useSuntingPengajuan(idPemesanan) {
     jenisAjukan,
     fileURL,
 
-    // Status loading
     sedangMemuatSuntingPengajuan,
     sedangMengunggah,
 
-    // Functions
     suntingPengajuan,
   };
 }

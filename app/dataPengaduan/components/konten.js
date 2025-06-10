@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { TrashIcon } from "@heroicons/react/24/solid";
+import { EyeIcon, TrashIcon } from "@heroicons/react/24/solid";
 import {
   Card,
   CardHeader,
@@ -16,8 +16,9 @@ import useTampilkanPengaduan from "@/hooks/backend/useTampilkanPengaduan";
 import useHapusPengaduan from "@/hooks/backend/useHapusPengaduan";
 import ModalKonfirmasiHapusPengaduan from "@/components/modalKonfirmasiHapusPengaduan";
 import useTampilkanDataPerTahun from "@/hooks/backend/useTampilkanDataPerTahun";
-// MODAL KAMI
+// KOMPONEN KAMI
 import MemuatRangkaTampilkanTabel from "@/components/memuatRangkaTabel";
+import ModalLihatPengaduan from "@/components/modalLihatPengaduan";
 // KONSTANTA KAMI
 import { bulan } from "@/constants/bulan";
 import { formatTanggal } from "@/constants/formatTanggal";
@@ -27,6 +28,7 @@ const judulTabel = ["Pengguna", "Pengaduan", "Tanggal Pengaduan", ""];
 function Konten({ tahunDipilih }) {
   const gambarBawaan = require("@/assets/images/profil.jpg");
   const [pengaduanTerpilih, setPengaduanTerpilih] = useState(null);
+  const [bukaModalLihatPengaduan, setBukaModalLihatPengaduan] = useState(false);
   const { hapusPengaduan, sedangMemuatHapus } = useHapusPengaduan();
   const [bukaModalKonfirmasiHapus, setBukaModalKonfirmasiHapus] =
     useState(false);
@@ -181,6 +183,17 @@ function Konten({ tahunDipilih }) {
 
                         {/* Aksi */}
                         <td className={kelas}>
+                          <Tooltip content="Lihat Selengkapnya">
+                            <IconButton
+                              onClick={() => {
+                                setPengaduanTerpilih(id);
+                                setBukaModalLihatPengaduan(true);
+                              }}
+                              variant="text"
+                            >
+                              <EyeIcon className="h-4 w-4" />
+                            </IconButton>
+                          </Tooltip>
                           <Tooltip content="Hapus">
                             <IconButton
                               onClick={() => {
@@ -236,6 +249,12 @@ function Konten({ tahunDipilih }) {
         pengaduanYangTerpilih={pengaduanTerpilih}
         konfirmasiHapusPengaduan={konfirmasiHapusPengaduan}
         sedangMemuatHapusPengaduan={sedangMemuatHapus}
+      />
+
+      <ModalLihatPengaduan
+        terbuka={bukaModalLihatPengaduan}
+        tertutup={setBukaModalLihatPengaduan}
+        pengaduanYangTerpilih={pengaduanTerpilih}
       />
     </Card>
   );

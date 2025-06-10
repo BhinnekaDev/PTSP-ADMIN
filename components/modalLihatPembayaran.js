@@ -81,30 +81,34 @@ const ModalLihatPembayaran = ({
                     )
                   )
                 ) : (
-                  <p className="text-gray-500">Dokumen ajukan tidak tersedia</p>
+                  <p className="flex items-center gap-2 bg-red-100 border-l-4 border-red-500 text-red-800 text-sm font-medium px-4 py-3 rounded-lg shadow-md">
+                    ❗ Menunggu Pembayaran
+                  </p>
                 )}
               </div>
 
-              <div className="flex flex-col items-center">
-                <Image
-                  alt="Gambar Profil"
-                  className="w-24 h-24 border-4 border-blue-500 rounded-full shadow-lg transition-transform duration-300 hover:scale-105"
-                  src={pembayaranTerpilih.pengguna?.Foto || gambarBawaan}
-                />
-                <div className="text-center mt-3">
-                  <h2 className="text-2xl font-bold text-blue-900">
-                    {pembayaranTerpilih.pengguna?.Nama_Lengkap || "N/A"}
-                  </h2>
-                  <p className="text-blue-700">
-                    {pembayaranTerpilih.pengguna?.Email ||
-                      "Email tidak tersedia"}
-                  </p>
-                  <p className="text-blue-700">
-                    {pembayaranTerpilih.pengguna?.Jenis_Kelamin ||
-                      "Tidak diketahui"}
-                  </p>
+              {pembayaranTerpilih.transaksi?.Bukti_Pembayaran?.length > 0 && (
+                <div className="flex flex-col items-center">
+                  <Image
+                    alt="Gambar Profil"
+                    className="w-24 h-24 border-4 border-blue-500 rounded-full shadow-lg transition-transform duration-300 hover:scale-105"
+                    src={pembayaranTerpilih.pengguna?.Foto || gambarBawaan}
+                  />
+                  <div className="text-center mt-3">
+                    <h2 className="text-2xl font-bold text-blue-900">
+                      {pembayaranTerpilih.pengguna?.Nama_Lengkap || "N/A"}
+                    </h2>
+                    <p className="text-blue-700">
+                      {pembayaranTerpilih.pengguna?.Email ||
+                        "Email tidak tersedia"}
+                    </p>
+                    <p className="text-blue-700">
+                      {pembayaranTerpilih.pengguna?.Jenis_Kelamin ||
+                        "Tidak diketahui"}
+                    </p>
+                  </div>
                 </div>
-              </div>
+              )}
             </>
           ) : (
             <p className="text-gray-500 text-center">
