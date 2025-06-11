@@ -15,6 +15,7 @@ import useSuntingNomorVABaru from "@/hooks/backend/useSuntingNomorVABaru";
 
 const ModalSuntingVaKadaluwarsa = ({ terbuka, tertutup, VaYangTerplih }) => {
   const {
+    dataKeranjang,
     nomorVAs,
     setNomorVAs,
     tanggalMasuk,
@@ -58,6 +59,7 @@ const ModalSuntingVaKadaluwarsa = ({ terbuka, tertutup, VaYangTerplih }) => {
             <Input
               type="datetime-local"
               size="lg"
+              label="Tanggal Masuk"
               value={tanggalMasuk}
               onChange={(e) => setTanggalMasuk(e.target.value)}
             />
@@ -68,18 +70,30 @@ const ModalSuntingVaKadaluwarsa = ({ terbuka, tertutup, VaYangTerplih }) => {
             <Input
               type="datetime-local"
               size="lg"
+              label="Tanggal Kadaluwarsa"
               value={tanggalKadaluwarsa}
               onChange={(e) => setTanggalKadaluwarsa(e.target.value)}
             />
 
-            <Typography className="-mb-2" variant="h6">
-              Nomor VA Baru
-            </Typography>
+            {dataKeranjang.map((item, index) => (
+              <div key={index} className="">
+                <Typography variant="h6">
+                  Nomor VA Baru - {item?.Jenis_Produk || "Tidak Tersedia"} (
+                  {item?.Pemilik || "Tidak Tersedia"})
+                </Typography>
+                <Typography className=" font-normal text-sm" variant="h6">
+                  {item?.Nama || "Tidak Tersedia"}
+                </Typography>
+              </div>
+            ))}
+
             {nomorVAs.map((va, i) => (
               <Input
                 key={i}
                 size="lg"
+                type="number"
                 value={va}
+                label="Nomor VA Baru"
                 onChange={(e) => {
                   const updated = [...nomorVAs];
                   updated[i] = e.target.value;

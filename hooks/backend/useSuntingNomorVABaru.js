@@ -28,15 +28,15 @@ export default function useSuntingNomorVABaru(idPemesanan) {
         setDataKeranjang(keranjangData);
         setNomorVAs(keranjangData.map((item) => item.Nomor_VA || ""));
 
-        const pengajuanRef = doc(database, "ajukan", idAjukanDariPemesanan);
-        const pengajuanSnap = await getDoc(pengajuanRef);
+        if (idAjukanDariPemesanan) {
+          const pengajuanRef = doc(database, "ajukan", idAjukanDariPemesanan);
+          const pengajuanSnap = await getDoc(pengajuanRef);
 
-        if (pengajuanSnap.exists()) {
-          const pengajuanData = pengajuanSnap.data();
-          setTanggalMasuk(pengajuanData.Tanggal_Masuk || "");
-          setTanggalKadaluwarsa(pengajuanData.Tanggal_Kadaluwarsa || "");
-        } else {
-          toast.error("Data pengajuan tidak ditemukan!");
+          if (pengajuanSnap.exists()) {
+            const pengajuanData = pengajuanSnap.data();
+            setTanggalMasuk(pengajuanData.Tanggal_Masuk || "");
+            setTanggalKadaluwarsa(pengajuanData.Tanggal_Kadaluwarsa || "");
+          }
         }
       } else {
         toast.error("Data pemesanan tidak ditemukan!");
@@ -46,10 +46,6 @@ export default function useSuntingNomorVABaru(idPemesanan) {
     }
   };
 
-  const validasiFormulir = () => {
-    return true;
-  };
-
   const suntingVaBaru = async () => {
     setSedangMemuatSuntingVaBaru(true);
 
@@ -57,40 +53,48 @@ export default function useSuntingNomorVABaru(idPemesanan) {
       const pemesananRef = doc(database, "pemesanan", idPemesanan);
       const pemesananSnap = await getDoc(pemesananRef);
 
-      let idPengguna = "";
-
-      if (pemesananSnap.exists()) {
-        const data = pemesananSnap.data();
-
-        idPengguna = data.ID_Pengguna || "";
-
-        const keranjangBaru = (data.Data_Keranjang || []).map(
-          (item, index) => ({
-            ...item,
-            Nomor_VA: nomorVAs[index] || "",
-          })
-        );
-
-        await updateDoc(pemesananRef, {
-          Data_Keranjang: keranjangBaru,
-        });
+      if (!pemesananSnap.exists()) {
+        throw new Error("Data pemesanan tidak ditemukan");
       }
+
+      const data = pemesananSnap.data();
+      const idPengguna = data.ID_Pengguna || "";
+
+      const keranjangBaru = (data.Data_Keranjang || []).map((item, index) => ({
+        ...item,
+        Nomor_VA: nomorVAs[index] || "",
+      }));
+
+      await updateDoc(pemesananRef, {
+        Data_Keranjang: keranjangBaru,
+        Status_Pembayaran: "Menunggu Pembayaran",
+        Tanggal_Diperbarui: new Date().toISOString(),
+      });
 
       if (idAjukan) {
         const ajukanRef = doc(database, "ajukan", idAjukan);
-        await updateDoc(ajukanRef, {
-          Tanggal_Masuk: tanggalMasuk,
-          Tanggal_Kadaluwarsa: tanggalKadaluwarsa,
-        });
+        const ajukanSnap = await getDoc(ajukanRef);
+
+        if (ajukanSnap.exists()) {
+          await updateDoc(ajukanRef, {
+            Tanggal_Masuk: tanggalMasuk,
+            Tanggal_Kadaluwarsa: tanggalKadaluwarsa,
+            Status_Pembayaran: "Menunggu Pembayaran",
+          });
+        }
       }
 
       if (idPengguna) {
         await kirimNotifikasiEmail(idPengguna);
       }
 
-      toast.success("Data berhasil disunting!");
+      toast.success(
+        "Data VA berhasil diperbarui! Status pembayaran direset ke 'Menunggu Pembayaran'"
+      );
+      return true;
     } catch (error) {
       toast.error("Gagal menyunting data: " + error.message);
+      return false;
     } finally {
       setSedangMemuatSuntingVaBaru(false);
     }
@@ -130,16 +134,29 @@ export default function useSuntingNomorVABaru(idPemesanan) {
         `<p>Permintaan nomor Virtual Account (VA) baru Anda untuk pengajuan ID <strong>${idPemesanan}</strong> telah berhasil diproses.</p>` +
         `<p>Berikut adalah detail Virtual Account terbaru:</p>` +
         `<ul>
-          <li><strong>Nomor Virtual Account:</strong> ${nomorVAs
-            .filter(Boolean)
-            .join(", ")}</li>
-          <li><strong>Tanggal Pembayaran Masuk:</strong> ${formatTanggal(
-            tanggalMasuk
-          )}</li>
-          <li><strong>Batas Akhir Pembayaran:</strong> ${formatTanggal(
-            tanggalKadaluwarsa
-          )}</li>
-        </ul>` +
+        <li><strong>Nomor Virtual Account dan Detail:</strong>
+          <ul>
+            ${dataKeranjang
+              .filter((_, index) => nomorVAs[index])
+              .map(
+                (item, index) =>
+                  `<li>
+                    <strong>${nomorVAs[index]}</strong> - 
+                    Pemilik: ${item.Pemilik || "Tidak ada informasi pemilik"} - 
+                    Produk: ${item.Nama || "Tanpa nama"}
+                  </li>`
+              )
+              .join("")}
+          </ul>
+        </li>
+        <li><strong>Tanggal Pembayaran Masuk:</strong> ${formatTanggal(
+          tanggalMasuk
+        )}</li>
+        <li><strong>Batas Akhir Pembayaran:</strong> ${formatTanggal(
+          tanggalKadaluwarsa
+        )}</li>
+      </ul>` +
+        `<p>Status pembayaran saat ini: <strong>Menunggu Pembayaran</strong></p>` +
         `<p>Segera lakukan pembayaran sebelum batas waktu berakhir.</p>` +
         `<p>Terima kasih atas perhatian dan kerja sama Anda.</p>`;
 

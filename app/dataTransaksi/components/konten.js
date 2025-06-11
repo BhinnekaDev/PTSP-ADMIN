@@ -111,16 +111,17 @@ function Konten({ tahunDipilih }) {
             </thead>
 
             <tbody>
-              {saringTransaksi.length === 0 && (
+              {saringTransaksi.filter(
+                (pemesanan) =>
+                  pemesanan.Status_Pembayaran === "Lunas" &&
+                  pemesanan.Status_Pembuatan === "Selesai Pembuatan"
+              ).length === 0 && (
                 <tr>
-                  <td colSpan={8} className="p-4">
-                    <Typography
-                      variant="small"
-                      color="blue-gray"
-                      className="font-normal"
-                    >
-                      Tidak ada transaksi
-                    </Typography>
+                  <td
+                    colSpan="8"
+                    className="p-4 text-center text-blue-gray-500"
+                  >
+                    Tidak Ada Data
                   </td>
                 </tr>
               )}

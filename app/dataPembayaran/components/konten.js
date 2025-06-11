@@ -112,9 +112,12 @@ function Konten({ tahunDipilih }) {
             </thead>
             <tbody>
               {saringPemesanan.filter((pemesanan) =>
-                ["Sedang Ditinjau", "Ditolak", "Menunggu Pembayaran"].includes(
-                  pemesanan.Status_Pembayaran
-                )
+                [
+                  "Sedang Ditinjau",
+                  "Ditolak",
+                  "Menunggu Pembayaran",
+                  "Menunggu Admin",
+                ].includes(pemesanan.Status_Pembayaran)
               ).length > 0 ? (
                 saringPemesanan
                   .filter((pemesanan) =>
@@ -122,6 +125,7 @@ function Konten({ tahunDipilih }) {
                       "Sedang Ditinjau",
                       "Ditolak",
                       "Menunggu Pembayaran",
+                      "Menunggu Admin",
                     ].includes(pemesanan.Status_Pembayaran)
                   )
                   .map(
@@ -191,21 +195,29 @@ function Konten({ tahunDipilih }) {
                               className="text-center"
                               size="md"
                               value={
-                                new Date(ajukan.Tanggal_Kadaluwarsa) <
-                                new Date()
+                                Status_Pembayaran === "Menunggu Admin"
+                                  ? "Membuat VA"
+                                  : ["Sedang Ditinjau", "Ditolak"].includes(
+                                      Status_Pembayaran
+                                    )
+                                  ? Status_Pembayaran
+                                  : new Date(ajukan.Tanggal_Kadaluwarsa) <
+                                    new Date()
                                   ? "Kedaluwarsa"
                                   : Status_Pembayaran || "Belum ada status"
                               }
                               color={
-                                new Date(ajukan.Tanggal_Kadaluwarsa) <
-                                new Date()
-                                  ? "blue-gray"
-                                  : Status_Pembayaran === "Menunggu Pembayaran"
-                                  ? "red"
+                                Status_Pembayaran === "Menunggu Admin"
+                                  ? "blue"
                                   : Status_Pembayaran === "Ditolak"
                                   ? "green"
                                   : Status_Pembayaran === "Sedang Ditinjau"
                                   ? "yellow"
+                                  : new Date(ajukan.Tanggal_Kadaluwarsa) <
+                                    new Date()
+                                  ? "blue-gray"
+                                  : Status_Pembayaran === "Menunggu Pembayaran"
+                                  ? "red"
                                   : "default"
                               }
                             />
@@ -253,8 +265,10 @@ function Konten({ tahunDipilih }) {
                                     <AiFillEye className="h-4 w-4" />
                                   </IconButton>
                                 </Tooltip>
-                                {Status_Pembayaran !==
-                                  "Menunggu Pembayaran" && (
+                                {![
+                                  "Menunggu Pembayaran",
+                                  "Menunggu Admin",
+                                ].includes(Status_Pembayaran) && (
                                   <Tooltip content="Sunting">
                                     <IconButton
                                       onClick={() => {
@@ -269,8 +283,7 @@ function Konten({ tahunDipilih }) {
                                   </Tooltip>
                                 )}
 
-                                {new Date(ajukan.Tanggal_Kadaluwarsa) <
-                                  new Date() && (
+                                {Status_Pembayaran === "Menunggu Admin" && (
                                   <Tooltip content="Upload VA Baru">
                                     <IconButton
                                       onClick={() => {

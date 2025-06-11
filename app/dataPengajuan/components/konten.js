@@ -171,17 +171,34 @@ function Konten({ tahunDipilih }) {
                           </div>
                         </td>
                         <td className={kelas}>
-                          {Data_Keranjang.map((Data_Keranjang, indeks) => (
-                            <Typography
-                              key={indeks}
-                              variant="small"
-                              color="blue-gray"
-                              className="font-normal"
-                            >
-                              {Data_Keranjang.Nama}
-                            </Typography>
-                          ))}
+                          {Data_Keranjang.length > 1
+                            ? Data_Keranjang.map((item, indeks) => (
+                                <Typography
+                                  key={indeks}
+                                  variant="small"
+                                  color="blue-gray"
+                                  className="font-normal"
+                                >
+                                  •{" "}
+                                  {item.Nama.length > 30
+                                    ? item.Nama.slice(0, 30) + "..."
+                                    : item.Nama}
+                                </Typography>
+                              ))
+                            : Data_Keranjang.map((item, indeks) => (
+                                <Typography
+                                  key={indeks}
+                                  variant="small"
+                                  color="blue-gray"
+                                  className="font-normal"
+                                >
+                                  {item.Nama.length > 30
+                                    ? item.Nama.slice(0, 30) + "..."
+                                    : item.Nama}
+                                </Typography>
+                              ))}
                         </td>
+
                         <td className={kelas}>
                           <div className="w-max">
                             <Chip
