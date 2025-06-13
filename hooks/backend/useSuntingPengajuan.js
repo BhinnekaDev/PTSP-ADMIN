@@ -78,7 +78,6 @@ export default function useSuntingPengajuan(idPemesanan) {
     }
   };
 
-  // Fungsi validasi formulir
   const validasiFormulir = () => {
     if (!statusPengajuan) {
       toast.error("Masukkan status pengajuan");
@@ -367,10 +366,8 @@ export default function useSuntingPengajuan(idPemesanan) {
                         (item, index) =>
                           `<li>
                             <strong>${nomorVAs[index]}</strong> - 
-                            Pemilik: ${
-                              item.Pemilik || "Tidak ada informasi pemilik"
-                            } - 
-                            Produk: ${item.Nama || "Tanpa nama"}
+                            ${item.Pemilik || "Tidak ada informasi pemilik"} - 
+                            ${item.Nama || "Tanpa nama"}
                           </li>`
                       )
                       .join("")}
@@ -384,7 +381,6 @@ export default function useSuntingPengajuan(idPemesanan) {
                 )}</li>
               </ul>` +
               `<p>Mohon untuk melakukan pembayaran sebelum batas waktu yang telah ditentukan.</p>` +
-              `<p>Anda akan menerima email pengingat 3 hari dan 1 hari sebelum batas akhir pembayaran.</p>` +
               `<p>Atas perhatian dan kerja sama Anda, kami ucapkan terima kasih.</p>`;
           } else {
             isiEmail =
@@ -422,7 +418,6 @@ export default function useSuntingPengajuan(idPemesanan) {
     }
   };
 
-  // Fungsi untuk memformat tanggal
   const formatTanggal = (dateString) => {
     if (!dateString) return "-";
     const options = {

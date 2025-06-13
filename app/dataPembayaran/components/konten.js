@@ -196,7 +196,7 @@ function Konten({ tahunDipilih }) {
                               size="md"
                               value={
                                 Status_Pembayaran === "Menunggu Admin"
-                                  ? "Membuat VA"
+                                  ? "Request VA Baru"
                                   : ["Sedang Ditinjau", "Ditolak"].includes(
                                       Status_Pembayaran
                                     )

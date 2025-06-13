@@ -59,7 +59,6 @@ const usePDFPengajuan = (
   doc.text(`Nomor Ajukan: ${nomorAjukan}`, 10, 86);
   doc.text(`Tanggal Pengajuan: ${new Date().toLocaleString()}`, 10, 94);
   doc.text(`Jenis Pengajuan: ${jenisAjukan}`, 10, 102);
-  doc.text(`Nomor Transaksi: -`, 10, 110);
   doc.text(`Detail Penerima: ${namaPengguna}`, 10, 118);
   doc.text(`Email: ${emailPengguna}`, 10, 126);
 

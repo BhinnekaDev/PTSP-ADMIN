@@ -142,8 +142,8 @@ export default function useSuntingNomorVABaru(idPemesanan) {
                 (item, index) =>
                   `<li>
                     <strong>${nomorVAs[index]}</strong> - 
-                    Pemilik: ${item.Pemilik || "Tidak ada informasi pemilik"} - 
-                    Produk: ${item.Nama || "Tanpa nama"}
+                    ${item.Pemilik || "Tidak ada informasi pemilik"} - 
+                    ${item.Nama || "Tanpa nama"}
                   </li>`
               )
               .join("")}

@@ -76,31 +76,27 @@ const ModalSuntingVaKadaluwarsa = ({ terbuka, tertutup, VaYangTerplih }) => {
             />
 
             {dataKeranjang.map((item, index) => (
-              <div key={index} className="">
+              <div key={index} className="mb-4">
                 <Typography variant="h6">
                   Nomor VA Baru - {item?.Jenis_Produk || "Tidak Tersedia"} (
                   {item?.Pemilik || "Tidak Tersedia"})
                 </Typography>
-                <Typography className=" font-normal text-sm" variant="h6">
+                <Typography className="font-normal text-sm" variant="h6">
                   {item?.Nama || "Tidak Tersedia"}
                 </Typography>
+                <Input
+                  size="lg"
+                  type="number"
+                  value={nomorVAs[index] || ""}
+                  label="Nomor VA Baru"
+                  onChange={(e) => {
+                    const updated = [...nomorVAs];
+                    updated[index] = e.target.value;
+                    setNomorVAs(updated);
+                  }}
+                  className="mt-2"
+                />
               </div>
-            ))}
-
-            {nomorVAs.map((va, i) => (
-              <Input
-                key={i}
-                size="lg"
-                type="number"
-                value={va}
-                label="Nomor VA Baru"
-                onChange={(e) => {
-                  const updated = [...nomorVAs];
-                  updated[i] = e.target.value;
-                  setNomorVAs(updated);
-                }}
-                className="mb-2"
-              />
             ))}
           </form>
         </DialogBody>
