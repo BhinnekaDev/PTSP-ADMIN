@@ -18,7 +18,6 @@ import Memuat from "@/components/memuat";
 const ModalSuntingPembuatan = ({ terbuka, tertutup, pembuatanYangDipilih }) => {
   const {
     kirim,
-    kirimFile,
     nomorSurat,
     setKirimFile,
     setNomorSurat,
@@ -26,11 +25,9 @@ const ModalSuntingPembuatan = ({ terbuka, tertutup, pembuatanYangDipilih }) => {
     dataKeranjang,
   } = useKirimFile(pembuatanYangDipilih);
 
-  const handleFileChange = (e, indeks) => {
+  const handleFileChange = (e) => {
     const file = e.target.files[0];
-    const updatedFiles = [...kirimFile];
-    updatedFiles[indeks] = file;
-    setKirimFile(updatedFiles);
+    setKirimFile(file); // Sekarang menyimpan file tunggal, bukan array
   };
 
   return (
@@ -73,21 +70,34 @@ const ModalSuntingPembuatan = ({ terbuka, tertutup, pembuatanYangDipilih }) => {
               />
             </div>
 
-            {dataKeranjang.map((keranjang, indeks) => (
-              <div key={indeks} className="keranjang-item mb-4">
-                <div className="w-full mt-2">
-                  <Typography className="mb-2" variant="h6">
-                    Berkas Untuk {keranjang.Nama}
-                  </Typography>
-                  <Input
-                    type="file"
-                    size="lg"
-                    onChange={(e) => handleFileChange(e, indeks)}
-                    className="file-input"
-                  />
+            <div className="w-full mt-2">
+              <Typography className="mb-2" variant="h6">
+                Berkas untuk Semua Produk
+                <div className="space-y-3">
+                  {dataKeranjang.map((keranjang, indeks) => (
+                    <div key={indeks} className="flex items-start">
+                      <Typography
+                        variant="small"
+                        className="flex items-start gap-2"
+                      >
+                        <span className="font-bold min-w-[20px]">
+                          {indeks + 1}.
+                        </span>
+                        <span>{keranjang.Nama}</span>
+                      </Typography>
+                    </div>
+                  ))}
                 </div>
-              </div>
-            ))}
+              </Typography>
+              <Input
+                type="file"
+                size="lg"
+                onChange={handleFileChange}
+                className="file-input"
+              />
+            </div>
+
+            {/* Tetap menampilkan daftar produk untuk informasi */}
           </form>
         </DialogBody>
 

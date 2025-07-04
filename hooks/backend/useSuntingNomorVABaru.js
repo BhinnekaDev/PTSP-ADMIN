@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { toast } from "react-toastify";
 import { doc, updateDoc, getDoc } from "firebase/firestore";
-import { database } from "@/lib/firebaseConfig";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { database, storage } from "@/lib/firebaseConfig";
 import { kirimEmail } from "@/hooks/backend/useNotifikasiEmail";
 
 export default function useSuntingNomorVABaru(idPemesanan) {
@@ -10,9 +11,13 @@ export default function useSuntingNomorVABaru(idPemesanan) {
   const [sedangMemuatSuntingVaBaru, setSedangMemuatSuntingVaBaru] =
     useState(false);
   const [idAjukan, setIdAjukan] = useState("");
-
   const [tanggalMasuk, setTanggalMasuk] = useState("");
   const [tanggalKadaluwarsa, setTanggalKadaluwarsa] = useState("");
+
+  // State baru untuk upload file
+  const [file, setFile] = useState(null);
+  const [fileURL, setFileURL] = useState("");
+  const [sedangMengunggah, setSedangMengunggah] = useState(false);
 
   const ambilDataPengajuan = async () => {
     try {
@@ -36,6 +41,7 @@ export default function useSuntingNomorVABaru(idPemesanan) {
             const pengajuanData = pengajuanSnap.data();
             setTanggalMasuk(pengajuanData.Tanggal_Masuk || "");
             setTanggalKadaluwarsa(pengajuanData.Tanggal_Kadaluwarsa || "");
+            setFileURL(pengajuanData.File_URL || ""); // Ambil URL file yang sudah ada
           }
         }
       } else {
@@ -46,10 +52,37 @@ export default function useSuntingNomorVABaru(idPemesanan) {
     }
   };
 
+  // Fungsi baru untuk upload file
+  const uploadFile = async () => {
+    if (!file) return null;
+
+    setSedangMengunggah(true);
+    try {
+      const storageRef = ref(storage, `Pengajuan/${idPemesanan}/${file.name}`);
+      await uploadBytes(storageRef, file);
+      const url = await getDownloadURL(storageRef);
+      return url;
+    } catch (error) {
+      toast.error("Gagal mengunggah file: " + error.message);
+      return null;
+    } finally {
+      setSedangMengunggah(false);
+    }
+  };
+
   const suntingVaBaru = async () => {
     setSedangMemuatSuntingVaBaru(true);
 
     try {
+      // Upload file jika ada
+      let fileUrl = fileURL;
+      if (file) {
+        fileUrl = await uploadFile();
+        if (!fileUrl) {
+          throw new Error("Gagal mengunggah file");
+        }
+      }
+
       const pemesananRef = doc(database, "pemesanan", idPemesanan);
       const pemesananSnap = await getDoc(pemesananRef);
 
@@ -80,12 +113,13 @@ export default function useSuntingNomorVABaru(idPemesanan) {
             Tanggal_Masuk: tanggalMasuk,
             Tanggal_Kadaluwarsa: tanggalKadaluwarsa,
             Status_Pembayaran: "Menunggu Pembayaran",
+            ...(fileUrl && { File_URL: fileUrl }), // Update file URL jika ada
           });
         }
       }
 
       if (idPengguna) {
-        await kirimNotifikasiEmail(idPengguna);
+        await kirimNotifikasiEmail(idPengguna, fileUrl);
       }
 
       toast.success(
@@ -100,7 +134,7 @@ export default function useSuntingNomorVABaru(idPemesanan) {
     }
   };
 
-  const kirimNotifikasiEmail = async (idPengguna) => {
+  const kirimNotifikasiEmail = async (idPengguna, fileUrl) => {
     try {
       let emailPengguna = "";
       let namaPengguna = "";
@@ -155,6 +189,11 @@ export default function useSuntingNomorVABaru(idPemesanan) {
         <li><strong>Batas Akhir Pembayaran:</strong> ${formatTanggal(
           tanggalKadaluwarsa
         )}</li>
+        ${
+          fileUrl
+            ? `<li><strong>File Terlampir:</strong> Tersedia (lihat di sistem)</li>`
+            : ""
+        }
       </ul>` +
         `<p>Status pembayaran saat ini: <strong>Menunggu Pembayaran</strong></p>` +
         `<p>Segera lakukan pembayaran sebelum batas waktu berakhir.</p>` +
@@ -196,5 +235,9 @@ export default function useSuntingNomorVABaru(idPemesanan) {
     setTanggalKadaluwarsa,
     sedangMemuatSuntingVaBaru,
     suntingVaBaru,
+    file,
+    setFile,
+    fileURL,
+    sedangMengunggah,
   };
 }

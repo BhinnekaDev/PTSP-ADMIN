@@ -9,12 +9,11 @@ import {
 } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { toast } from "react-toastify";
-// PERPUSTAKAAN KAMI
 import { database, storage } from "@/lib/firebaseConfig";
 import { kirimEmail } from "@/hooks/backend/useNotifikasiEmail";
 
 const useKirimFile = (idPemesanan) => {
-  const [kirimFile, setKirimFile] = useState([]);
+  const [kirimFile, setKirimFile] = useState(null);
   const [nomorSurat, setNomorSurat] = useState("");
   const [dataKeranjang, setDataKeranjang] = useState([]);
   const [sedangMemuatKirimFile, setSedangMemuatKirimFile] = useState(false);
@@ -42,11 +41,12 @@ const useKirimFile = (idPemesanan) => {
           nama: data.Nama_Lengkap || "",
         };
       }
+
+      return { email: "", nama: "" };
     } catch (error) {
       console.error("Gagal mengambil data pengguna:", error);
+      return { email: "", nama: "" };
     }
-
-    return { email: "", nama: "" };
   };
 
   const ambilDataKeranjang = async () => {
@@ -67,7 +67,7 @@ const useKirimFile = (idPemesanan) => {
   };
 
   const kirim = async () => {
-    if (kirimFile.length === 0) {
+    if (!kirimFile) {
       toast.error("File belum dipilih.");
       return;
     }
@@ -85,39 +85,31 @@ const useKirimFile = (idPemesanan) => {
       const dataPemesanan = pemesananSnap.data();
       const idPengguna = dataPemesanan.ID_Pengguna;
 
-      if (!idPengguna)
+      if (!idPengguna) {
         throw new Error("ID Pengguna tidak ditemukan di pemesanan.");
-
-      const { email, nama: namaPengguna } = await ambilDataPengguna(idPengguna);
-
-      const updatedDataKeranjang = [...dataKeranjang];
-
-      if (kirimFile.length !== dataKeranjang.length) {
-        toast.error("Jumlah file tidak sesuai dengan jumlah data keranjang.");
-        return;
       }
 
-      for (let i = 0; i < kirimFile.length; i++) {
-        const file = kirimFile[i];
-        const keranjang = updatedDataKeranjang[i];
+      const fileRef = ref(
+        storage,
+        `Penerimaan/${idPengguna}/${kirimFile.name}`
+      );
+      await uploadBytes(fileRef, kirimFile);
+      const downloadURL = await getDownloadURL(fileRef);
 
-        const fileRef = ref(storage, `Penerimaan/${idPengguna}/${file.name}`);
-        await uploadBytes(fileRef, file);
+      const penerimaanRef = doc(collection(database, "penerimaan"));
+      await setDoc(penerimaanRef, {
+        File: downloadURL,
+        Tanggal_Pembuatan: serverTimestamp(),
+      });
 
-        const downloadURL = await getDownloadURL(fileRef);
+      const idPenerimaan = penerimaanRef.id;
 
-        const penerimaanRef = doc(collection(database, "penerimaan"));
-        await setDoc(penerimaanRef, {
-          File: downloadURL,
-          Tanggal_Pembuatan: serverTimestamp(),
-        });
-
-        const idPenerimaan = penerimaanRef.id;
-
-        keranjang.File = downloadURL;
-        keranjang.ID_Penerimaan = idPenerimaan;
-        keranjang.Nomor_Surat = nomorSurat;
-      }
+      const updatedDataKeranjang = dataKeranjang.map((keranjang) => ({
+        ...keranjang,
+        File: downloadURL,
+        ID_Penerimaan: idPenerimaan,
+        Nomor_Surat: nomorSurat,
+      }));
 
       await updateDoc(pemesananRef, {
         Data_Keranjang: updatedDataKeranjang,
@@ -126,18 +118,20 @@ const useKirimFile = (idPemesanan) => {
 
       toast.success("File berhasil dikirim dan data diperbarui.");
 
-      if (email) {
+      const { email: emailPengguna, nama: namaPengguna } =
+        await ambilDataPengguna(idPengguna);
+      if (emailPengguna) {
         try {
           const subject = "File Anda Telah Selesai";
           const message = `
-        Halo ${namaPengguna || "Pengguna"},<br><br>
-        File Anda terkait pemesanan dengan ID <strong>${idPemesanan}</strong> telah selesai dan dapat diakses melalui platform kami.<br><br>
-        Silakan <a href="https://ptsp-six.vercel.app/Transaksi?openDialog=true&id=${idPemesanan}" target="_blank">klik di sini untuk melanjutkan</a>.<br><br>
-        Terima kasih.
-      `;
+            Halo ${namaPengguna || "Pengguna"},<br><br>
+            File Anda terkait pemesanan dengan ID <strong>${idPemesanan}</strong> telah selesai dan dapat diakses melalui platform kami.<br><br>
+            Silakan <a href="https://ptsp-six.vercel.app/Transaksi?openDialog=true&id=${idPemesanan}" target="_blank">klik di sini untuk melanjutkan</a>.<br><br>
+            Terima kasih.
+          `;
 
           await kirimEmail(
-            email,
+            emailPengguna,
             subject,
             message,
             namaPengguna || "Pengguna",

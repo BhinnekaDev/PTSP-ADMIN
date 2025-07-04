@@ -107,7 +107,138 @@ export default function useSuntingPengajuan(idPemesanan) {
     return true;
   };
 
-  // Fungsi untuk menjadwalkan pengingat pembayaran
+  // Fungsi untuk mengirim email pengingat
+  const kirimEmailPengingat = async (
+    idPengguna,
+    idPemesanan,
+    tanggalKadaluwarsa,
+    hariSebelum
+  ) => {
+    try {
+      let emailPengguna = "";
+      let namaPengguna = "";
+
+      const peroranganRef = doc(database, "perorangan", idPengguna);
+      const peroranganSnap = await getDoc(peroranganRef);
+
+      if (peroranganSnap.exists()) {
+        const peroranganData = peroranganSnap.data();
+        emailPengguna = peroranganData.Email;
+        namaPengguna = peroranganData.Nama_Lengkap;
+      } else {
+        const perusahaanRef = doc(database, "perusahaan", idPengguna);
+        const perusahaanSnap = await getDoc(perusahaanRef);
+
+        if (perusahaanSnap.exists()) {
+          const perusahaanData = perusahaanSnap.data();
+          emailPengguna = perusahaanData.Email;
+          namaPengguna = perusahaanData.Nama_Lengkap;
+        }
+      }
+
+      if (!emailPengguna) {
+        console.warn("Email pengguna tidak ditemukan");
+        return;
+      }
+
+      const subjekEmail = `Pengingat Pembayaran - ${hariSebelum} Hari Menjelang Batas Akhir`;
+      const isiEmail =
+        `<p>Dengan hormat,</p>` +
+        `<p>Ini adalah pengingat bahwa pembayaran untuk pengajuan ID <strong>${idPemesanan}</strong> akan kadaluwarsa dalam <strong>${hariSebelum}</strong>.</p>` +
+        `<p>Batas akhir pembayaran: <strong>${formatTanggal(
+          tanggalKadaluwarsa
+        )}</strong></p>` +
+        `<p>Mohon segera lakukan pembayaran sebelum batas waktu yang telah ditentukan.</p>` +
+        `<p>Terima kasih atas perhatian Anda.</p>`;
+
+      await kirimEmail(emailPengguna, subjekEmail, isiEmail, namaPengguna);
+    } catch (error) {
+      console.error("Gagal mengirim email pengingat:", error);
+    }
+  };
+
+  // Fungsi untuk mengirim notifikasi kadaluwarsa
+  const kirimNotifikasiKadaluwarsa = async (
+    idPengguna,
+    idPemesanan,
+    tanggalKadaluwarsa
+  ) => {
+    try {
+      let emailPengguna = "";
+      let namaPengguna = "";
+
+      const peroranganRef = doc(database, "perorangan", idPengguna);
+      const peroranganSnap = await getDoc(peroranganRef);
+
+      if (peroranganSnap.exists()) {
+        const peroranganData = peroranganSnap.data();
+        emailPengguna = peroranganData.Email;
+        namaPengguna = peroranganData.Nama_Lengkap;
+      } else {
+        const perusahaanRef = doc(database, "perusahaan", idPengguna);
+        const perusahaanSnap = await getDoc(perusahaanRef);
+
+        if (perusahaanSnap.exists()) {
+          const perusahaanData = perusahaanSnap.data();
+          emailPengguna = perusahaanData.Email;
+          namaPengguna = perusahaanData.Nama_Lengkap;
+        }
+      }
+
+      if (!emailPengguna) {
+        console.warn("Email pengguna tidak ditemukan");
+        return;
+      }
+
+      const subjekEmail = `Pemberitahuan: Batas Waktu Pembayaran Telah Lewat`;
+      const isiEmail =
+        `<p>Dengan hormat,</p>` +
+        `<p>Kami ingin memberitahukan bahwa batas waktu pembayaran untuk pengajuan ID <strong>${idPemesanan}</strong> telah lewat pada <strong>${formatTanggal(
+          tanggalKadaluwarsa
+        )}</strong>.</p>` +
+        `<p>Jika Anda telah melakukan pembayaran setelah batas waktu, mohon segera menghubungi tim kami untuk konfirmasi.</p>` +
+        `<p>Jika belum melakukan pembayaran, pengajuan Anda mungkin akan dibatalkan secara otomatis.</p>` +
+        `<p>Terima kasih atas perhatiannya.</p>`;
+
+      await kirimEmail(emailPengguna, subjekEmail, isiEmail, namaPengguna);
+    } catch (error) {
+      console.error("Gagal mengirim notifikasi kadaluwarsa:", error);
+    }
+  };
+
+  const jadwalkanNotifikasiKadaluwarsa = async (
+    idPengguna,
+    idPemesanan,
+    tanggalKadaluwarsa
+  ) => {
+    try {
+      const tanggalKadaluwarsaObj = new Date(tanggalKadaluwarsa);
+      const waktuSetelahKadaluwarsa = new Date(tanggalKadaluwarsaObj);
+      waktuSetelahKadaluwarsa.setMinutes(
+        waktuSetelahKadaluwarsa.getMinutes() + 1
+      );
+
+      if (waktuSetelahKadaluwarsa > new Date()) {
+        scheduleJob(waktuSetelahKadaluwarsa, async () => {
+          await kirimNotifikasiKadaluwarsa(
+            idPengguna,
+            idPemesanan,
+            tanggalKadaluwarsa
+          );
+        });
+      } else {
+        await kirimNotifikasiKadaluwarsa(
+          idPengguna,
+          idPemesanan,
+          tanggalKadaluwarsa
+        );
+      }
+    } catch (error) {
+      console.error("Gagal menjadwalkan notifikasi kadaluwarsa:", error);
+    }
+  };
+
+  // Fungsi untuk menjadwalkan pengingat pembayaran (updated)
   const jadwalkanPengingatPembayaran = async (
     idPengguna,
     idPemesanan,
@@ -160,147 +291,19 @@ export default function useSuntingPengajuan(idPemesanan) {
           );
         });
       }
+
+      // Jadwalkan notifikasi kadaluwarsa
+      await jadwalkanNotifikasiKadaluwarsa(
+        idPengguna,
+        idPemesanan,
+        tanggalKadaluwarsa
+      );
     } catch (error) {
       console.error("Gagal menjadwalkan pengingat:", error);
     }
   };
 
-  const kirimEmailPengingat = async (
-    idPengguna,
-    idPemesanan,
-    tanggalKadaluwarsa,
-    hariSebelum
-  ) => {
-    try {
-      let emailPengguna = "";
-      let namaPengguna = "";
-
-      const peroranganRef = doc(database, "perorangan", idPengguna);
-      const peroranganSnap = await getDoc(peroranganRef);
-
-      if (peroranganSnap.exists()) {
-        const peroranganData = peroranganSnap.data();
-        emailPengguna = peroranganData.Email;
-        namaPengguna = peroranganData.Nama_Lengkap;
-      } else {
-        const perusahaanRef = doc(database, "perusahaan", idPengguna);
-        const perusahaanSnap = await getDoc(perusahaanRef);
-
-        if (perusahaanSnap.exists()) {
-          const perusahaanData = perusahaanSnap.data();
-          emailPengguna = perusahaanData.Email;
-          namaPengguna = perusahaanData.Nama_Lengkap;
-        }
-      }
-
-      if (!emailPengguna) {
-        console.warn("Email pengguna tidak ditemukan");
-        return;
-      }
-
-      const subjekEmail = `Pengingat Pembayaran - ${hariSebelum} Hari Menjelang Batas Akhir`;
-      const isiEmail =
-        `<p>Dengan hormat,</p>` +
-        `<p>Ini adalah pengingat bahwa pembayaran untuk pengajuan ID <strong>${idPemesanan}</strong> akan kadaluwarsa dalam <strong>${hariSebelum}</strong>.</p>` +
-        `<p>Batas akhir pembayaran: <strong>${formatTanggal(
-          tanggalKadaluwarsa
-        )}</strong></p>` +
-        `<p>Mohon segera lakukan pembayaran sebelum batas waktu yang telah ditentukan.</p>` +
-        `<p>Terima kasih atas perhatian Anda.</p>`;
-
-      await kirimEmail(emailPengguna, subjekEmail, isiEmail, namaPengguna);
-    } catch (error) {
-      console.error("Gagal mengirim email pengingat:", error);
-    }
-  };
-
-  const suntingPengajuan = async () => {
-    setSedangMemuatSuntingPengajuan(true);
-
-    if (!validasiFormulir()) {
-      setSedangMemuatSuntingPengajuan(false);
-      return;
-    }
-
-    try {
-      let fileUrl = fileURL;
-      if (file) {
-        fileUrl = await uploadFile();
-        if (!fileUrl && jenisAjukan === "Berbayar") {
-          throw new Error("Gagal mengunggah file");
-        }
-      }
-
-      const pemesananRef = doc(database, "pemesanan", idPemesanan);
-      const pemesananSnap = await getDoc(pemesananRef);
-      const pemesananData = pemesananSnap.exists()
-        ? pemesananSnap.data()
-        : null;
-
-      if (!pemesananData) {
-        throw new Error("Data pemesanan tidak ditemukan!");
-      }
-
-      const updatedKeranjang = dataKeranjang.map((item, index) => ({
-        ...item,
-        Nomor_VA:
-          jenisAjukan === "Berbayar" && statusPengajuan === "Diterima"
-            ? nomorVAs[index]
-            : null,
-      }));
-
-      await updateDoc(pemesananRef, {
-        Data_Keranjang: updatedKeranjang,
-        Status_Pembayaran:
-          jenisAjukan === "Gratis" && statusPengajuan === "Diterima"
-            ? "Lunas"
-            : pemesananData.Status_Pembayaran,
-        Total_Harga_Pesanan:
-          jenisAjukan === "Gratis" && statusPengajuan === "Diterima"
-            ? 0
-            : pemesananData.Total_Harga_Pesanan,
-      });
-
-      const pengajuanRef = doc(database, "ajukan", idAjukan);
-      const pengajuanUpdateData = {
-        Status_Ajuan: statusPengajuan,
-        ...(statusPengajuan === "Ditolak" && {
-          Keterangan: keterangan,
-          Status_Pembayaran: "Menunggu Pembayaran",
-        }),
-        ...(jenisAjukan === "Berbayar" && {
-          Tanggal_Masuk: tanggalMasuk,
-          Tanggal_Kadaluwarsa: tanggalKadaluwarsa,
-          ...(fileUrl && { File_URL: fileUrl }),
-        }),
-      };
-
-      await updateDoc(pengajuanRef, pengajuanUpdateData);
-
-      if (jenisAjukan === "Berbayar" && statusPengajuan === "Diterima") {
-        await jadwalkanPengingatPembayaran(
-          pemesananData.ID_Pengguna,
-          idPemesanan,
-          tanggalKadaluwarsa
-        );
-      }
-
-      await kirimNotifikasiEmail(
-        pemesananData.ID_Pengguna,
-        (await getDoc(pengajuanRef)).data(),
-        pemesananData
-      );
-
-      toast.success("Pengajuan berhasil disunting!");
-      return true;
-    } catch (error) {
-      toast.error("Gagal menyunting pengajuan: " + error.message);
-      return false;
-    } finally {
-      setSedangMemuatSuntingPengajuan(false);
-    }
-  };
-
+  // Fungsi untuk mengirim notifikasi email (existing)
   const kirimNotifikasiEmail = async (
     idPengguna,
     pengajuanData,
@@ -418,6 +421,95 @@ export default function useSuntingPengajuan(idPemesanan) {
     }
   };
 
+  // Fungsi untuk menyunting pengajuan (existing)
+  const suntingPengajuan = async () => {
+    setSedangMemuatSuntingPengajuan(true);
+
+    if (!validasiFormulir()) {
+      setSedangMemuatSuntingPengajuan(false);
+      return;
+    }
+
+    try {
+      let fileUrl = fileURL;
+      if (file) {
+        fileUrl = await uploadFile();
+        if (!fileUrl && jenisAjukan === "Berbayar") {
+          throw new Error("Gagal mengunggah file");
+        }
+      }
+
+      const pemesananRef = doc(database, "pemesanan", idPemesanan);
+      const pemesananSnap = await getDoc(pemesananRef);
+      const pemesananData = pemesananSnap.exists()
+        ? pemesananSnap.data()
+        : null;
+
+      if (!pemesananData) {
+        throw new Error("Data pemesanan tidak ditemukan!");
+      }
+
+      const updatedKeranjang = dataKeranjang.map((item, index) => ({
+        ...item,
+        Nomor_VA:
+          jenisAjukan === "Berbayar" && statusPengajuan === "Diterima"
+            ? nomorVAs[index]
+            : null,
+      }));
+
+      await updateDoc(pemesananRef, {
+        Data_Keranjang: updatedKeranjang,
+        Status_Pembayaran:
+          jenisAjukan === "Gratis" && statusPengajuan === "Diterima"
+            ? "Lunas"
+            : pemesananData.Status_Pembayaran,
+        Total_Harga_Pesanan:
+          jenisAjukan === "Gratis" && statusPengajuan === "Diterima"
+            ? 0
+            : pemesananData.Total_Harga_Pesanan,
+      });
+
+      const pengajuanRef = doc(database, "ajukan", idAjukan);
+      const pengajuanUpdateData = {
+        Status_Ajuan: statusPengajuan,
+        ...(statusPengajuan === "Ditolak" && {
+          Keterangan: keterangan,
+          Status_Pembayaran: "Menunggu Pembayaran",
+        }),
+        ...(jenisAjukan === "Berbayar" && {
+          Tanggal_Masuk: tanggalMasuk,
+          Tanggal_Kadaluwarsa: tanggalKadaluwarsa,
+          ...(fileUrl && { File_URL: fileUrl }),
+        }),
+      };
+
+      await updateDoc(pengajuanRef, pengajuanUpdateData);
+
+      if (jenisAjukan === "Berbayar" && statusPengajuan === "Diterima") {
+        await jadwalkanPengingatPembayaran(
+          pemesananData.ID_Pengguna,
+          idPemesanan,
+          tanggalKadaluwarsa
+        );
+      }
+
+      await kirimNotifikasiEmail(
+        pemesananData.ID_Pengguna,
+        (await getDoc(pengajuanRef)).data(),
+        pemesananData
+      );
+
+      toast.success("Pengajuan berhasil disunting!");
+      return true;
+    } catch (error) {
+      toast.error("Gagal menyunting pengajuan: " + error.message);
+      return false;
+    } finally {
+      setSedangMemuatSuntingPengajuan(false);
+    }
+  };
+
+  // Fungsi untuk memformat tanggal (existing)
   const formatTanggal = (dateString) => {
     if (!dateString) return "-";
     const options = {
