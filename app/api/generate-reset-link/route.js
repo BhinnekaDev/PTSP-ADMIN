@@ -5,6 +5,7 @@ export async function POST(req) {
   try {
     let email;
 
+    // Parsing aman
     try {
       const body = await req.json();
       email = body?.email;
