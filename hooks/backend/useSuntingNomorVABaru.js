@@ -14,7 +14,6 @@ export default function useSuntingNomorVABaru(idPemesanan) {
   const [tanggalMasuk, setTanggalMasuk] = useState("");
   const [tanggalKadaluwarsa, setTanggalKadaluwarsa] = useState("");
 
-  // State baru untuk upload file
   const [file, setFile] = useState(null);
   const [fileURL, setFileURL] = useState("");
   const [sedangMengunggah, setSedangMengunggah] = useState(false);
