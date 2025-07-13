@@ -3,18 +3,8 @@ import { auth } from "@/lib/firebaseAdmin";
 
 export async function POST(req) {
   try {
-    let email;
-
-    // Parsing aman
-    try {
-      const body = await req.json();
-      email = body?.email;
-    } catch (err) {
-      return NextResponse.json(
-        { error: "Body tidak valid atau kosong" },
-        { status: 400 }
-      );
-    }
+    const body = await req.json();
+    const email = body?.email;
 
     if (!email) {
       return NextResponse.json(
@@ -24,15 +14,11 @@ export async function POST(req) {
     }
 
     const resetLink = await auth.generatePasswordResetLink(email);
-
     return NextResponse.json({ resetLink }, { status: 200 });
   } catch (error) {
     console.error("❌ Error saat generate reset link:", error);
     return NextResponse.json(
-      {
-        error: "Gagal membuat reset link.",
-        details: error.message,
-      },
+      { error: "Gagal membuat reset link", detail: error.message },
       { status: 500 }
     );
   }
