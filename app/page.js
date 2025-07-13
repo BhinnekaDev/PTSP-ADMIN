@@ -81,13 +81,22 @@ export default function Masuk() {
     },
   };
   const kontrol = useAnimation();
+
   useEffect(() => {
+    let isMounted = true;
+
     const animate = async () => {
-      await kontrol.start("visible");
-      kontrol.start(ulangiBawahAtas);
+      if (isMounted) {
+        await kontrol.start("visible");
+        kontrol.start(ulangiBawahAtas);
+      }
     };
 
     animate();
+
+    return () => {
+      isMounted = false;
+    };
   }, [kontrol]);
 
   return (
