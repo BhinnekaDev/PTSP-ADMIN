@@ -3,7 +3,6 @@ import { auth } from "@/lib/firebaseAdmin";
 
 export async function POST(req) {
   try {
-    // Validasi method jika diperlukan (opsional tapi aman)
     if (req.method && req.method !== "POST") {
       return NextResponse.json(
         { error: "Method not allowed" },
@@ -11,7 +10,6 @@ export async function POST(req) {
       );
     }
 
-    // Parsing JSON secara aman
     let email;
     try {
       const body = await req.json();
