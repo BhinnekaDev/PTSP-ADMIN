@@ -3,15 +3,8 @@ import { auth } from "@/lib/firebaseAdmin";
 
 export async function POST(req) {
   try {
-    // Check if the request method is POST
-    if (req.method && req.method !== "POST") {
-      return NextResponse.json(
-        { error: "Method not allowed" },
-        { status: 405 }
-      );
-    }
-
     let email;
+
     try {
       const body = await req.json();
       email = body?.email;
