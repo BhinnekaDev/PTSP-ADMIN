@@ -41,6 +41,7 @@ export default function Masuk() {
     }
     resetKataSandi(passwordBaru);
   };
+
   const handleLogin = () => {
     masukDenganEmail(email, password);
   };
@@ -61,7 +62,6 @@ export default function Masuk() {
     hidden: { opacity: 0 },
     visible: { opacity: 1, transition: { duration: 0.9, delay: 1.3 } },
   };
-
   const munculAwan1 = {
     hidden: { x: -44, opacity: 0 },
     visible: { x: 0, opacity: 1, transition: { duration: 0.7, delay: 0.9 } },
@@ -84,20 +84,17 @@ export default function Masuk() {
 
   useEffect(() => {
     let isMounted = true;
-
     const animate = async () => {
       if (isMounted) {
         await kontrol.start("visible");
         kontrol.start(ulangiBawahAtas);
       }
     };
-
     animate();
-
     return () => {
       isMounted = false;
     };
-  }, [kontrol]);
+  }, [kontrol, ulangiBawahAtas]);
 
   return (
     <div className="bg-[#eff0f3] h-screen w-full p-28 flex justify-center">
