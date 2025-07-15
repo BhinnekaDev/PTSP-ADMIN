@@ -122,7 +122,7 @@ function Konten({ tahunDipilih }) {
 
             <tbody>
               {saringPengajuan.filter(
-                ({ ajukan }) => ajukan.Status_Ajuan !== "Diterima"
+                ({ ajukan }) => ajukan.Status_Ajukan !== "Diterima"
               ).length === 0 ? (
                 <tr>
                   <td
@@ -134,7 +134,7 @@ function Konten({ tahunDipilih }) {
                 </tr>
               ) : (
                 daftarPengajuan
-                  .filter(({ ajukan }) => ajukan.Status_Ajuan !== "Diterima")
+                  .filter(({ ajukan }) => ajukan.Status_Ajukan !== "Diterima")
                   .map(({ id, pengguna, Data_Keranjang, ajukan }, index) => {
                     const apakahTerakhir = index === daftarPengajuan.length - 1;
                     const kelas = apakahTerakhir
@@ -204,13 +204,13 @@ function Konten({ tahunDipilih }) {
                             <Chip
                               variant="ghost"
                               size="sm"
-                              value={ajukan.Status_Ajuan || "Belum ada status"}
+                              value={ajukan.Status_Ajukan || "Belum ada status"}
                               color={
-                                ajukan.Status_Ajuan === "Diterima"
+                                ajukan.Status_Ajukan === "Diterima"
                                   ? "green"
-                                  : ajukan.Status_Ajuan === "Ditolak"
+                                  : ajukan.Status_Ajukan === "Ditolak"
                                   ? "red"
-                                  : ajukan.Status_Ajuan === "Sedang Ditinjau"
+                                  : ajukan.Status_Ajukan === "Sedang Ditinjau"
                                   ? "yellow"
                                   : "default"
                               }

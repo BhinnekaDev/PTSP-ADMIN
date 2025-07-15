@@ -87,14 +87,16 @@ export default function Masuk() {
     const animate = async () => {
       if (isMounted) {
         await kontrol.start("visible");
-        kontrol.start(ulangiBawahAtas);
+        requestAnimationFrame(() => {
+          if (isMounted) kontrol.start(ulangiBawahAtas);
+        });
       }
     };
     animate();
     return () => {
       isMounted = false;
     };
-  }, [kontrol, ulangiBawahAtas]);
+  }, []);
 
   return (
     <div className="bg-[#eff0f3] h-screen w-full p-28 flex justify-center">

@@ -44,7 +44,7 @@ export default function useSuntingPengajuan(idPemesanan) {
 
           if (pengajuanSnap.exists()) {
             const pengajuanData = pengajuanSnap.data();
-            setStatusPengajuan(pengajuanData.Status_Ajuan || "");
+            setStatusPengajuan(pengajuanData.Status_Ajukan || "");
             setJenisAjukan(pengajuanData.Jenis_Ajukan || "");
             setTanggalMasuk(pengajuanData.Tanggal_Masuk || "");
             setTanggalKadaluwarsa(pengajuanData.Tanggal_Kadaluwarsa || "");
@@ -471,7 +471,7 @@ export default function useSuntingPengajuan(idPemesanan) {
 
       const pengajuanRef = doc(database, "ajukan", idAjukan);
       const pengajuanUpdateData = {
-        Status_Ajuan: statusPengajuan,
+        Status_Ajukan: statusPengajuan,
         ...(statusPengajuan === "Ditolak" && {
           Keterangan: keterangan,
           Status_Pembayaran: "Menunggu Pembayaran",
