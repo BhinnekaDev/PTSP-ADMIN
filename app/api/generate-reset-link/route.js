@@ -13,6 +13,7 @@ export async function POST(req) {
       );
     }
 
+    // Generate reset link
     const resetLink = await auth.generatePasswordResetLink(email);
     return NextResponse.json({ resetLink }, { status: 200 });
   } catch (error) {
