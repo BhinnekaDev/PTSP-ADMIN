@@ -68,15 +68,16 @@ const ModalLihatPembayaran = ({
         >
           {pembayaranTerpilih ? (
             <>
-              <div className="flex flex-col items-center mb-4 md:mb-0">
+              <div className="flex flex-col items-center mb-4 md:mb-0 w-full">
                 {pembayaranTerpilih.transaksi?.Bukti_Pembayaran?.length > 0 ? (
                   pembayaranTerpilih.transaksi.Bukti_Pembayaran.map(
                     (file, index) => (
                       <embed
                         key={index}
                         alt={`Dokumen Pengajuan ${index + 1}`}
-                        className="w-80 h-64 border-4 border-gray-300 rounded-lg transition-transform duration-300 hover:scale-105 shadow-lg mb-2"
+                        className="w-full h-[500px] border-4 border-gray-300 rounded-lg transition-transform duration-300 hover:scale-105 shadow-lg mb-4"
                         src={file}
+                        type="application/pdf"
                       />
                     )
                   )

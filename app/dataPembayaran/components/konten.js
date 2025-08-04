@@ -184,7 +184,9 @@ function Konten({ tahunDipilih }) {
                                 color="blue-gray"
                                 className="font-normal"
                               >
-                                {Data_Keranjang.Nama}
+                                {Data_Keranjang.Nama.length > 10
+                                  ? Data_Keranjang.Nama.slice(0, 10) + "..."
+                                  : Data_Keranjang.Nama}
                               </Typography>
                             ))}
                           </td>
@@ -210,7 +212,7 @@ function Konten({ tahunDipilih }) {
                                 Status_Pembayaran === "Menunggu Admin"
                                   ? "blue"
                                   : Status_Pembayaran === "Ditolak"
-                                  ? "green"
+                                  ? "deep-orange"
                                   : Status_Pembayaran === "Sedang Ditinjau"
                                   ? "yellow"
                                   : new Date(ajukan.Tanggal_Kadaluwarsa) <
@@ -247,8 +249,7 @@ function Konten({ tahunDipilih }) {
                               <Chip
                                 variant="ghost"
                                 size="sm"
-                                value={Status_Pembayaran}
-                                color="red"
+                                value="X"
                                 className="text-center"
                               />
                             ) : (

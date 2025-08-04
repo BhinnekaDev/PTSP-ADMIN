@@ -6,7 +6,6 @@ import {
   Typography,
   Button,
   CardBody,
-  Chip,
   CardFooter,
   IconButton,
   Tooltip,

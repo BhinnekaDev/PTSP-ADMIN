@@ -17,6 +17,7 @@ import {
   IconButton,
   Tooltip,
 } from "@material-tailwind/react";
+import Image from "next/image";
 // PENGAIT KAMI
 import useTampilkanInformasi from "@/hooks/backend/useTampilkanInformasi";
 import useHapusInformasi from "@/hooks/backend/useHapusInformasi";
@@ -42,6 +43,7 @@ const judulTabel = [
 ];
 
 function Konten({ tahunDipilih }) {
+  const gambarBawaan = require("@/assets/images/logo-bmkg.png");
   const [bukaModalTambahInformasi, setBukaModalTambahInformasi] =
     useState(false);
   const [bukaModalSuntingInformasi, setBukaModalSuntingInformasi] =
@@ -163,10 +165,13 @@ function Konten({ tahunDipilih }) {
                     >
                       <td className="p-4">
                         <div className="flex items-center gap-3">
-                          <Avatar
-                            src="https://via.placeholder.com/150"
+                          <Image
+                            src={gambarBawaan}
                             alt={Nama}
                             size="sm"
+                            width={40}
+                            height={40}
+                            className="rounded-full"
                           />
                           <div className="flex flex-col">
                             <Typography

@@ -22,7 +22,7 @@ import useTampilkanRiwayatTransaksi from "@/hooks/backend/useTampilkanRiwayatTra
 import { formatTanggal } from "@/constants/formatTanggal";
 import { formatRupiah } from "@/constants/formatRupiah";
 
-const judulTabel = ["Pembeli", "NIK & Koresponden", "Tanggal Ajukan", ""];
+const judulTabel = ["Pembeli", "Nama Pengajuan", "Tanggal Ajukan", ""];
 const judulTabel2 = ["Pembeli", "Bukti Pembayaran", ""];
 const judulTabel3 = ["Pembeli", "Surat Penerimaan", ""];
 const judulTabel4 = [
@@ -421,14 +421,6 @@ const ModalLihatRiwayatTransaksi = ({
                   </td>
 
                   <td className="p-4">
-                    <Typography
-                      variant="small"
-                      color="blue-gray"
-                      className="font-normal"
-                    >
-                      {transaksiTerpilih.pengguna?.No_Identitas ||
-                        "Tidak ada No Identitas"}
-                    </Typography>
                     <Typography
                       variant="small"
                       color="blue-gray"

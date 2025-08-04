@@ -82,7 +82,7 @@ const ModalSuntingPembayaran = ({
                 Keterangan
               </Typography>
               <Input
-                type="text"
+                label="Masukkan keterangan untuk penolakan"
                 size="lg"
                 value={keterangan}
                 onChange={(e) => setKeterangan(e.target.value)}

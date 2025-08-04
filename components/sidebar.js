@@ -257,22 +257,22 @@ function Sidebar({ pengarah }) {
         <Accordion
           open={
             bukaDropdown === 3 ||
-            lokasiSaatIni === "/dataIKM" ||
             lokasiSaatIni === "/dataPengajuan" ||
             lokasiSaatIni === "/dataPembayaran" ||
             lokasiSaatIni === "/dataPembuatan" ||
-            lokasiSaatIni === "/dataTransaksi"
+            lokasiSaatIni === "/dataTransaksi" ||
+            lokasiSaatIni === "/dataIKM"
           }
           icon={
             <ChevronDownIcon
               strokeWidth={2.5}
               className={`mx-auto h-4 w-4 transition-transform ${
                 bukaDropdown === 3 ||
-                lokasiSaatIni === "/dataIKM" ||
                 lokasiSaatIni === "/dataPengajuan" ||
                 lokasiSaatIni === "/dataPembuatan" ||
                 lokasiSaatIni === "/dataPembuatan" ||
-                lokasiSaatIni === "/dataTransaksi"
+                lokasiSaatIni === "/dataTransaksi" ||
+                lokasiSaatIni === "/dataIKM"
                   ? "rotate-180"
                   : ""
               }`}

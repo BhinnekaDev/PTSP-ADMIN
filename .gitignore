@@ -39,3 +39,6 @@ services
 
 .env.local
 .env
+
+# Firebase Admin private key
+firebase-admin-key.json

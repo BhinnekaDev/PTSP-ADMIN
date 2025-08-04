@@ -17,6 +17,7 @@ import {
   IconButton,
   Tooltip,
 } from "@material-tailwind/react";
+import Image from "next/image";
 // KOMPONEN KAMI
 import ModalTambahJasa from "@/components/modalTambahJasa";
 import ModalSuntingJasa from "@/components/modalSuntingJasa";
@@ -41,6 +42,7 @@ const judulTabel = [
 ];
 
 function Konten({ tahunDipilih }) {
+  const gambarBawaan = require("@/assets/images/logo-bmkg.png");
   const [bukaModalTambahJasa, setBukaModalTambahJasa] = useState(false);
   const [bukaModalSuntingJasa, setBukaModalSuntingJasa] = useState(false);
   const [bukaModalLihatJasa, setBukaModalLihatJasa] = useState(false);
@@ -158,10 +160,13 @@ function Konten({ tahunDipilih }) {
                     <tr key={id}>
                       <td className={kelas}>
                         <div className="flex items-center gap-3">
-                          <Avatar
-                            src="https://via.placeholder.com/150"
+                          <Image
+                            src={gambarBawaan}
                             alt={Nama}
                             size="sm"
+                            width={40}
+                            height={40}
+                            className="rounded-full"
                           />
                           <div className="flex flex-col">
                             <Typography
@@ -206,14 +211,8 @@ function Konten({ tahunDipilih }) {
                           <Chip
                             variant="ghost"
                             size="sm"
-                            value={
-                              Status === "Tersedia"
-                                ? "Tersedia"
-                                : "Tidak Tersedia"
-                            }
-                            color={
-                              Status === "Tersedia" ? "green" : "blue-gray"
-                            }
+                            value={Status ? "Tersedia" : "Tidak Tersedia"}
+                            color={Status ? "green" : "blue-gray"}
                           />
                         </div>
                       </td>

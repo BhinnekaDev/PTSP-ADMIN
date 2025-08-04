@@ -89,7 +89,8 @@ export default function useSuntingPengajuan(idPemesanan) {
       return false;
     }
 
-    if (jenisAjukan === "Berbayar") {
+    // Hanya validasi tanggal jika status Diterima dan jenis Berbayar
+    if (statusPengajuan === "Diterima" && jenisAjukan === "Berbayar") {
       if (!tanggalMasuk) {
         toast.error("Masukkan tanggal masuk pembayaran");
         return false;
@@ -213,20 +214,38 @@ export default function useSuntingPengajuan(idPemesanan) {
   ) => {
     try {
       const tanggalKadaluwarsaObj = new Date(tanggalKadaluwarsa);
-      const waktuSetelahKadaluwarsa = new Date(tanggalKadaluwarsaObj);
-      waktuSetelahKadaluwarsa.setMinutes(
-        waktuSetelahKadaluwarsa.getMinutes() + 1
+
+      // Pastikan tanggal kadaluwarsa valid
+      if (isNaN(tanggalKadaluwarsaObj.getTime())) {
+        throw new Error("Tanggal kadaluwarsa tidak valid");
+      }
+
+      // Tambahkan logging untuk debugging
+      console.log(
+        "Menjadwalkan notifikasi kadaluwarsa untuk:",
+        tanggalKadaluwarsaObj
       );
 
-      if (waktuSetelahKadaluwarsa > new Date()) {
-        scheduleJob(waktuSetelahKadaluwarsa, async () => {
+      // Jadwalkan tepat pada waktu kadaluwarsa
+      scheduleJob(tanggalKadaluwarsaObj, async () => {
+        console.log("Mengirim notifikasi kadaluwarsa sekarang...");
+        try {
           await kirimNotifikasiKadaluwarsa(
             idPengguna,
             idPemesanan,
             tanggalKadaluwarsa
           );
-        });
-      } else {
+          console.log("Notifikasi kadaluwarsa berhasil dikirim");
+        } catch (err) {
+          console.error("Gagal mengirim notifikasi kadaluwarsa:", err);
+        }
+      });
+
+      // Jika waktu kadaluwarsa sudah lewat, kirim segera
+      if (tanggalKadaluwarsaObj <= new Date()) {
+        console.log(
+          "Waktu kadaluwarsa sudah lewat, mengirim notifikasi segera"
+        );
         await kirimNotifikasiKadaluwarsa(
           idPengguna,
           idPemesanan,
@@ -235,6 +254,19 @@ export default function useSuntingPengajuan(idPemesanan) {
       }
     } catch (error) {
       console.error("Gagal menjadwalkan notifikasi kadaluwarsa:", error);
+      // Coba kirim langsung sebagai fallback
+      try {
+        await kirimNotifikasiKadaluwarsa(
+          idPengguna,
+          idPemesanan,
+          tanggalKadaluwarsa
+        );
+      } catch (fallbackError) {
+        console.error(
+          "Fallback pengiriman notifikasi juga gagal:",
+          fallbackError
+        );
+      }
     }
   };
 
@@ -486,6 +518,14 @@ export default function useSuntingPengajuan(idPemesanan) {
       await updateDoc(pengajuanRef, pengajuanUpdateData);
 
       if (jenisAjukan === "Berbayar" && statusPengajuan === "Diterima") {
+        if (
+          !tanggalKadaluwarsa ||
+          isNaN(new Date(tanggalKadaluwarsa).getTime())
+        ) {
+          throw new Error("Tanggal kadaluwarsa tidak valid");
+        }
+
+        console.log("Menjadwalkan pengingat untuk:", tanggalKadaluwarsa);
         await jadwalkanPengingatPembayaran(
           pemesananData.ID_Pengguna,
           idPemesanan,

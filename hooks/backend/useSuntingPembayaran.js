@@ -111,7 +111,7 @@ export default function useSuntingPembayaran(idPemesanan) {
         if (statusPembayaran === "Lunas") {
           isiEmail = `Pembayaran Anda telah lunas.\n\nTerima kasih telah menggunakan layanan kami.`;
         } else {
-          isiEmail = `Status pembayaran Anda untuk pemesanan dengan ID ${idPemesanan} ditolak.`;
+          isiEmail = `Status pembayaran Anda untuk pemesanan dengan ID <strong>${idPemesanan}</strong> ditolak.`;
 
           if (statusPembayaran === "Ditolak" && keterangan) {
             isiEmail += `\n\nKeterangan: ${keterangan.trim()}`;
