@@ -6,16 +6,17 @@ import { auth } from "@/lib/firebaseAdmin";
 export async function POST(req) {
   try {
     const body = await req.json();
-    const email = body?.email;
+    const email = body?.email?.trim();
 
-    if (!email || !email.includes("@")) {
+    // Validasi dasar email
+    if (!email || !email.includes("@") || email.length < 6) {
       return NextResponse.json(
         { error: "Email harus valid dan diisi." },
         { status: 400 }
       );
     }
 
-    // Tambahkan opsi tambahan jika perlu
+    // Generate reset password link
     const resetLink = await auth.generatePasswordResetLink(email, {
       url: process.env.NEXT_PUBLIC_SITE_URL || "https://yourdomain.com",
       handleCodeInApp: false,
