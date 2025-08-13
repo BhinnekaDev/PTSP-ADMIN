@@ -6,7 +6,6 @@ function Konten() {
   return (
     <Card className="h-full w-full p-4">
       <GrafikPartisipan />
-      <div></div>
     </Card>
   );
 }

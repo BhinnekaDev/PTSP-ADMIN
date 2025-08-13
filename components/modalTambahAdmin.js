@@ -66,7 +66,7 @@ const ModalTambahAdmin = ({ terbuka, tertutup }) => {
 
       <DialogHeader className="text-black">Tambah Admin Baru</DialogHeader>
       <DialogBody divider>
-        <form className="flex flex-col gap-4">
+        <form className="flex flex-col gap-4 overflow-x-scroll">
           <div className="flex flex-row gap-4">
             <div className="w-full">
               <Typography className="mb-2" variant="h6">

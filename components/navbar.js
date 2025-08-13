@@ -10,6 +10,7 @@ import {
 import {
   ChevronDownIcon,
   MagnifyingGlassIcon,
+  Bars3Icon,
 } from "@heroicons/react/24/outline";
 // KOMPONEN KAMI
 import ModalTambahAdmin from "@/components/modalTambahAdmin";
@@ -17,7 +18,7 @@ import ModalTambahInformasi from "@/components/modalTambahInformasi";
 import ModalTambahJasa from "@/components/modalTambahJasa";
 import useTampilkanDataPerTahun from "@/hooks/backend/useTampilkanDataPerTahun";
 
-function Napbar({ tahunDipilih, setTahunDipilih }) {
+function Napbar({ tahunDipilih, setTahunDipilih, setSidebarOpen }) {
   const [masukan, setMasukan] = useState("");
   const [bukaData, setBukaData] = useState(false);
   const [bukaTahun, setBukaTahun] = useState(false);
@@ -40,8 +41,16 @@ function Napbar({ tahunDipilih, setTahunDipilih }) {
   }, []);
 
   return (
-    <Navbar className="max-w-screen-2xl bg-white shadow-md">
-      <div className="flex justify-between text-blue-gray-900">
+    <Navbar className="w-full bg-white shadow-md px-0 md:px-2 lg:px-8">
+      <div className="flex items-center lg:justify-between text-blue-gray-900">
+        <button
+          variant="text"
+          className="lg:hidden p-2 flex items-center justify-center"
+          onClick={() => setSidebarOpen(true)}
+        >
+          <Bars3Icon className="h-6 w-6 text-black" />
+        </button>
+
         <div className="items-center gap-x-2 lg:flex w-full">
           <div className="relative flex gap-2 md:w-max">
             <input

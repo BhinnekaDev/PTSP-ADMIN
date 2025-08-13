@@ -18,8 +18,8 @@ function SuntingProfil({ adminData }) {
   const opsiJenisKelamin = ["Pria", "Wanita"];
 
   return (
-    <div className="bg-gray-100 p-4 rounded-xl">
-      <div className="grid grid-cols-3 gap-4 mb-4">
+    <div className="bg-gray-100 p-4 h-full flex flex-col sm:justify-end rounded-xl">
+      <div className="sm:grid sm:grid-cols-3 sm:gap-4 sm:mb-4 space-y-4 overflow-y-auto sm:overflow-hidden h-[65%]">
         <div className="flex flex-col">
           <Typography className="mb-1 font-[family-name:var(--font-geist-sans)] font-bold text-lg">
             Nama Depan
@@ -29,7 +29,7 @@ function SuntingProfil({ adminData }) {
             name="Nama_Depan"
             value={data.Nama_Depan}
             onChange={tanganiPerubahan}
-            className="border border-gray-300 rounded-lg p-3 w-full focus:ring-2 focus:ring-blue-500 focus:outline-none hover:scale-105 hover:border-[#0F67B1] transition-all duration-200"
+            className="border border-gray-300 rounded-lg p-2 sm:p-3 w-full focus:ring-2 focus:ring-blue-500 focus:outline-none hover:scale-105 hover:border-[#0F67B1] transition-all duration-200"
             placeholder="Masukkan Nama Depan"
           />
         </div>
@@ -42,7 +42,7 @@ function SuntingProfil({ adminData }) {
             name="Nama_Belakang"
             value={data.Nama_Belakang}
             onChange={tanganiPerubahan}
-            className="border border-gray-300 rounded-lg p-3 w-full focus:ring-2 focus:ring-blue-500 focus:outline-none hover:scale-105 hover:border-[#0F67B1] transition-all duration-200"
+            className="border border-gray-300 rounded-lg p-2 sm:p-3 w-full focus:ring-2 focus:ring-blue-500 focus:outline-none hover:scale-105 hover:border-[#0F67B1] transition-all duration-200"
             placeholder="Masukkan Nama Belakang"
           />
         </div>
@@ -55,7 +55,7 @@ function SuntingProfil({ adminData }) {
             name="Nama_Pengguna"
             value={data.Nama_Pengguna}
             onChange={tanganiPerubahan}
-            className="border border-gray-300 rounded-lg p-3 w-full focus:ring-2 focus:ring-blue-500 focus:outline-none hover:scale-105 hover:border-[#0F67B1] transition-all duration-200"
+            className="border border-gray-300 rounded-lg p-2 sm:p-3 w-full focus:ring-2 focus:ring-blue-500 focus:outline-none hover:scale-105 hover:border-[#0F67B1] transition-all duration-200"
             placeholder="Masukkan Nama Pengguna"
           />
         </div>
@@ -68,7 +68,7 @@ function SuntingProfil({ adminData }) {
             name="Email"
             value={data.Email}
             onChange={tanganiPerubahan}
-            className="border border-gray-300 rounded-lg p-3 w-full focus:ring-2 focus:ring-blue-500 focus:outline-none hover:scale-105 hover:border-[#0F67B1] transition-all duration-200"
+            className="border border-gray-300 rounded-lg p-2 sm:p-3 w-full focus:ring-2 focus:ring-blue-500 focus:outline-none hover:scale-105 hover:border-[#0F67B1] transition-all duration-200"
             placeholder="Masukkan Email"
           />
         </div>
@@ -80,7 +80,7 @@ function SuntingProfil({ adminData }) {
             name="Jenis_Kelamin"
             value={data.Jenis_Kelamin}
             onChange={tanganiPerubahan}
-            className="border border-gray-300 rounded-lg p-3 w-full focus:ring-2 focus:ring-blue-500 focus:outline-none"
+            className="border border-gray-300 rounded-lg p-2 sm:p-3 w-full focus:ring-2 focus:ring-blue-500 focus:outline-none"
           >
             <option value="">Pilih Jenis Kelamin</option>
             {opsiJenisKelamin.map((option, index) => (
@@ -100,7 +100,7 @@ function SuntingProfil({ adminData }) {
             name="Kata_Sandi"
             value={data.Kata_Sandi}
             onChange={tanganiPerubahan}
-            className="border border-gray-300 rounded-lg p-3 w-full focus:ring-2 focus:ring-blue-500 focus:outline-none hover:scale-105 hover:border-[#0F67B1] transition-all duration-200"
+            className="border border-gray-300 rounded-lg p-2 sm:p-3 w-full focus:ring-2 focus:ring-blue-500 focus:outline-none hover:scale-105 hover:border-[#0F67B1] transition-all duration-200"
             placeholder="Masukkan Kata Sandi"
           />
           <button
@@ -117,7 +117,7 @@ function SuntingProfil({ adminData }) {
         </div>
       </div>
 
-      <div className="flex items-center justify-center w-full mt-8">
+      <div className="flex items-center justify-center w-full mt-6 sm:mt-auto">
         <button
           type="button"
           onClick={tanganiPengiriman}
@@ -126,7 +126,7 @@ function SuntingProfil({ adminData }) {
             memuat
               ? "opacity-50 cursor-not-allowed"
               : "hover:bg-blue-700 hover:text-gray-200 hover:scale-105 opacity-100"
-          } text-white font-bold text-lg py-2 px-4 rounded-lg w-64 transition-all duration-300 ease-in-out`}
+          } text-white font-bold text-lg p-1 sm:py-2 sm:px-4 rounded-full sm:rounded-lg w-64 transition-all duration-300 ease-in-out`}
         >
           {memuat ? <Memuat /> : "Simpan"}
         </button>

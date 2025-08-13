@@ -100,10 +100,10 @@ const GrafikPartisipan = () => {
         color="transparent"
         className="flex flex-col gap-4 rounded-none md:flex-row md:items-center"
       >
-        <div className="w-max rounded-lg bg-[#0F67B1] p-5 text-white">
-          <UserGroupIcon className="h-6 w-6" />
-        </div>
-        <div>
+        <div className="flex items-center gap-2">
+          <div className="rounded-lg bg-[#0F67B1] p-2 lg:p-5 text-white">
+            <UserGroupIcon className="h-6 w-6" />
+          </div>
           <Typography variant="h6" color="blue-gray">
             Partisipan
           </Typography>

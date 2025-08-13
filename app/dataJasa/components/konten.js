@@ -113,7 +113,7 @@ function Konten({ tahunDipilih }) {
         </div>
       </CardHeader>
 
-      <CardBody className="overflow-hidden px-0">
+      <CardBody className="overflow-x-scroll lg:overflow-hidden px-0">
         {sedangMemuatTampilkanJasa ? (
           <MemuatRangkaTampilkanTabel />
         ) : (

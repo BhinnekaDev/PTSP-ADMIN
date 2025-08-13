@@ -97,7 +97,7 @@ const Konten = ({ tahunDipilih }) => {
         </div>
       </CardHeader>
 
-      <CardBody className="overflow-hidden px-0">
+      <CardBody className="overflow-x-scroll lg:overflow-hidden px-0">
         {sedangMemuatTampilkanAdmin ? (
           <MemuatRangkaTampilkanTabel />
         ) : (
@@ -196,7 +196,7 @@ const Konten = ({ tahunDipilih }) => {
                             </Typography>
                           </div>
                         </td>
-                        <td className="text-center hidden md:table-cell">
+                        <td className="text-center md:table-cell">
                           <span
                             className={(() => {
                               const adminIdInStorage = localStorage.getItem(id);

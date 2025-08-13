@@ -19,3 +19,21 @@ body {
   background: var(--background);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Scrollbar tipis */
+.scrollbar-thin {
+  scrollbar-width: thin; /* Firefox */
+}
+
+.scrollbar-thin::-webkit-scrollbar {
+  width: 6px; /* Chrome, Edge, Safari */
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background-color: rgba(156, 163, 175, 0.8); /* gray-400 */
+  border-radius: 9999px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  background-color: transparent;
+}

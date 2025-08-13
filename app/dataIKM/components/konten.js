@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import {
   ArrowDownTrayIcon,
   EyeIcon,
-  TrashIcon,
 } from "@heroicons/react/24/solid";
 import Image from "next/image";
 import {
@@ -81,7 +80,7 @@ function Konten({ tahunDipilih }) {
         </div>
       </CardHeader>
 
-      <CardBody className="overflow-hidden px-0">
+      <CardBody className="overflow-x-scroll lg:overflow-hidden px-0">
         <table className="mt-4 w-full min-w-max table-auto text-left">
           <thead>
             <tr>

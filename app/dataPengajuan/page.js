@@ -1,5 +1,6 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { Drawer } from "@material-tailwind/react";
 import { useRouter } from "next/navigation";
 import { ToastContainer } from "react-toastify";
 // KOMPONEN KAMI
@@ -10,13 +11,43 @@ import Konten from "@/app/dataPengajuan/components/konten";
 const DataPengajuan = () => {
   const pengarah = useRouter();
   const [tahunDipilih, setTahunDipilih] = useState("Pilih Tahun");
+const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(false);
+
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 1024) {
+        setIsDesktop(true);
+      } else {
+        setIsDesktop(false);
+      }
+    };
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   return (
-    <section className="p-4 flex h-screen bg-[#eff0f3]">
+    <section className="lg:p-2 xl:p-4 flex h-screen overflow-hidden bg-[#eff0f3]">
+      {isDesktop && <Sidebar pengarah={pengarah} />}
+      {!isDesktop && (
+        <Drawer
+          open={sidebarOpen}
+          onClose={() => setSidebarOpen(false)}
+          placement="left"
+          className="lg:hidden"
+        >
+          <Sidebar pengarah={pengarah} />
+        </Drawer>
+      )}
       <ToastContainer />
-      <Sidebar pengarah={pengarah} />
-      <div className="flex flex-col flex-1 gap-4 mx-3">
-        <Napbar tahunDipilih={tahunDipilih} setTahunDipilih={setTahunDipilih} />
+      <div className="flex flex-col gap-4 lg:ml-4 w-full">
+        <Napbar
+          tahunDipilih={tahunDipilih}
+          setTahunDipilih={setTahunDipilih}
+          sidebarOpen={sidebarOpen}
+          setSidebarOpen={setSidebarOpen}
+        />
         <Konten tahunDipilih={tahunDipilih} />
       </div>
     </section>

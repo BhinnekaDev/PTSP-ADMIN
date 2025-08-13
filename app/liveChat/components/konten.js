@@ -4,7 +4,9 @@ import {
   PaperAirplaneIcon,
   FaceSmileIcon,
   MagnifyingGlassIcon,
+  Bars3Icon,
 } from "@heroicons/react/24/outline";
+import { useMediaQuery } from "react-responsive";
 import {
   BsCheck2All,
   BsFileEarmark,
@@ -17,13 +19,16 @@ import { AiOutlineMessage } from "react-icons/ai";
 import { LuPaperclip } from "react-icons/lu";
 import { MdDelete } from "react-icons/md";
 import { IoIosClose } from "react-icons/io";
+import { FaChevronLeft } from "react-icons/fa";
 import EmojiPicker from "emoji-picker-react";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import useKirimPesanPengguna from "@/hooks/backend/useKirimPesanPengguna";
 import ModalKonfirmasiHapusChat from "@/components/modalKonfirmasiHapusChat";
 
-const LiveChat = () => {
+const LiveChat = ({ setSidebarOpen }) => {
+  const [selectedRoom, setSelectedRoom] = useState(null);
+  const isDesktop = useMediaQuery({ minWidth: 768 });
   const gambarBawaan = require("@/assets/images/profil.jpg");
   const [currentUserId, setCurrentUserId] = useState(null);
   const [adminId, setAdminId] = useState(null);
@@ -44,7 +49,6 @@ const LiveChat = () => {
     fetchChatRooms,
   } = useKirimPesanPengguna();
 
-  const [selectedRoom, setSelectedRoom] = useState(null);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [tampilkanModalHapus, setTampilkanModalHapus] = useState(false);
   const [pesanTerpilih, setPesanTerpilih] = useState(null);
@@ -242,48 +246,130 @@ const LiveChat = () => {
     : [];
 
   return (
-    <div className="flex h-screen border rounded-lg shadow-lg overflow-hidden bg-white">
+    <div className="flex w-full h-full border rounded-lg shadow-lg overflow-hidden bg-white">
       {/* Sidebar */}
-      <div className="w-1/3 border-r flex flex-col">
-        <div className="p-4 border-b">
-          <h2 className="text-lg font-bold">Pesan</h2>
-          <div className="relative mt-2">
-            <input
-              type="text"
-              placeholder="Cari percakapan"
-              className="w-full p-2 border rounded-lg pl-10"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-            <MagnifyingGlassIcon className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
+      {(isDesktop || (!isDesktop && !selectedRoom)) && (
+        <div className={`${isDesktop ? "w-1/3" : "w-full"} border-r flex-col`}>
+          <div className="p-4 border-b">
+            <div className="flex items-center gap-2 mb-2">
+              <button
+                variant="text"
+                className="lg:hidden p-2 flex items-center justify-center"
+                onClick={() => setSidebarOpen(true)}
+              >
+                <Bars3Icon className="h-6 w-6 text-black" />
+              </button>
+
+              <h2 className="text-lg font-bold text-black">Pesan</h2>
+            </div>
+            <div className="relative mt-2">
+              <input
+                type="text"
+                placeholder="Cari percakapan"
+                className="w-full p-2 border rounded-lg pl-10"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+              <MagnifyingGlassIcon className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
+            </div>
+          </div>
+
+          <div className="flex-1 overflow-y-auto">
+            {filteredChatRooms.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-full text-gray-500">
+                <AiOutlineMessage className="w-12 h-12 mb-2" />
+                <p>Tidak ada percakapan</p>
+              </div>
+            ) : (
+              filteredChatRooms.map((room) => {
+                const participant = getParticipantInfo(room);
+                const lastMessage =
+                  room.pesan?.length > 0
+                    ? room.pesan[room.pesan.length - 1]
+                    : null;
+
+                return (
+                  <div
+                    key={room.id}
+                    className={`flex items-center gap-3 p-3 hover:bg-gray-100 cursor-pointer ${
+                      selectedRoom?.id === room.id ? "bg-gray-200" : ""
+                    }`}
+                    onClick={() => setSelectedRoom(room)}
+                    onContextMenu={(e) => klikKananPesan(e, room.id)}
+                  >
+                    <Image
+                      src={participant.Foto || gambarBawaan}
+                      alt="Profil"
+                      width={40}
+                      height={40}
+                      className="rounded-full object-cover"
+                      onError={(e) => {
+                        e.target.src = gambarBawaan;
+                      }}
+                    />
+
+                    <div className="flex-1 min-w-0">
+                      <p className="font-bold text-sm text-black truncate">
+                        {participant.Nama_Lengkap || "Unknown"}
+                      </p>
+                      <p className="text-xs text-gray-600 truncate">
+                        {lastMessage?.isi
+                          ? lastMessage.isi.length > 30
+                            ? `${lastMessage.isi.substring(0, 30)}...`
+                            : lastMessage.isi
+                          : lastMessage?.namaFile
+                          ? `[File] ${lastMessage.namaFile}`
+                          : "No messages"}
+                      </p>
+                    </div>
+
+                    {lastMessage && (
+                      <div className="flex flex-col items-end">
+                        <p className="text-xs text-gray-400 whitespace-nowrap">
+                          {lastMessage.waktu?.toDate
+                            ? new Date(
+                                lastMessage.waktu.toDate()
+                              ).toLocaleTimeString([], {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })
+                            : lastMessage.waktu?.toLocaleTimeString([], {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              }) || ""}
+                        </p>
+                        {lastMessage.idPengirim === currentUserId && (
+                          <BsCheck2All
+                            className={`w-3 h-3 mt-1 ${
+                              lastMessage.sudahDibaca
+                                ? "text-blue-500"
+                                : "text-gray-400"
+                            }`}
+                          />
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })
+            )}
           </div>
         </div>
+      )}
 
-        <div className="flex-1 overflow-y-auto">
-          {filteredChatRooms.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full text-gray-500">
-              <AiOutlineMessage className="w-12 h-12 mb-2" />
-              <p>Tidak ada percakapan</p>
-            </div>
-          ) : (
-            filteredChatRooms.map((room) => {
-              const participant = getParticipantInfo(room);
-              const lastMessage =
-                room.pesan?.length > 0
-                  ? room.pesan[room.pesan.length - 1]
-                  : null;
-
-              return (
-                <div
-                  key={room.id}
-                  className={`flex items-center gap-3 p-3 hover:bg-gray-100 cursor-pointer ${
-                    selectedRoom?.id === room.id ? "bg-gray-200" : ""
-                  }`}
-                  onClick={() => setSelectedRoom(room)}
-                  onContextMenu={(e) => klikKananPesan(e, room.id)}
-                >
+      {/* Main Chat Area */}
+      {(isDesktop || (!isDesktop && selectedRoom)) && (
+        <div className={`${isDesktop ? "w-2/3" : "w-full"} flex flex-col`}>
+          {selectedRoom ? (
+            <>
+              <div className="p-4 border-b flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <FaChevronLeft
+                    className="w-5 h-5 text-gray-500 cursor-pointer"
+                    onClick={() => setSelectedRoom(null)}
+                  />
                   <Image
-                    src={participant.Foto || gambarBawaan}
+                    src={getParticipantInfo(selectedRoom)?.Foto || gambarBawaan}
                     alt="Profil"
                     width={40}
                     height={40}
@@ -292,295 +378,231 @@ const LiveChat = () => {
                       e.target.src = gambarBawaan;
                     }}
                   />
-
-                  <div className="flex-1 min-w-0">
-                    <p className="font-bold text-sm truncate">
-                      {participant.Nama_Lengkap || "Unknown"}
-                    </p>
-                    <p className="text-xs text-gray-500 truncate">
-                      {lastMessage?.isi
-                        ? lastMessage.isi.length > 30
-                          ? `${lastMessage.isi.substring(0, 30)}...`
-                          : lastMessage.isi
-                        : lastMessage?.namaFile
-                        ? `[File] ${lastMessage.namaFile}`
-                        : "No messages"}
-                    </p>
-                  </div>
-
-                  {lastMessage && (
-                    <div className="flex flex-col items-end">
-                      <p className="text-xs text-gray-400 whitespace-nowrap">
-                        {lastMessage.waktu?.toDate
-                          ? new Date(
-                              lastMessage.waktu.toDate()
-                            ).toLocaleTimeString([], {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })
-                          : lastMessage.waktu?.toLocaleTimeString([], {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            }) || ""}
-                      </p>
-                      {lastMessage.idPengirim === currentUserId && (
-                        <BsCheck2All
-                          className={`w-3 h-3 mt-1 ${
-                            lastMessage.sudahDibaca
-                              ? "text-blue-500"
-                              : "text-gray-400"
-                          }`}
-                        />
-                      )}
-                    </div>
-                  )}
-                </div>
-              );
-            })
-          )}
-        </div>
-      </div>
-
-      {/* Main Chat Area */}
-      <div className="w-2/3 flex flex-col">
-        {selectedRoom ? (
-          <>
-            <div className="p-4 border-b flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <Image
-                  src={getParticipantInfo(selectedRoom)?.Foto || gambarBawaan}
-                  alt="Profil"
-                  width={40}
-                  height={40}
-                  className="rounded-full object-cover"
-                  onError={(e) => {
-                    e.target.src = gambarBawaan;
-                  }}
-                />
-                <div>
-                  <span className="font-bold">
-                    {getParticipantInfo(selectedRoom)?.Nama_Lengkap ||
-                      "Unknown"}
-                  </span>
-                  <span className="block text-green-500 text-xs">online</span>
-                </div>
-              </div>
-              <button
-                className="text-gray-500 hover:text-gray-700"
-                onClick={hapusPesan}
-              >
-                <MdDelete className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="flex-1 p-4 bg-gray-50 overflow-y-auto">
-              {displayMessages.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-full">
-                  <AiOutlineMessage className="w-24 h-24 text-gray-200 mb-4" />
-                  <p className="text-gray-500">Belum ada pesan</p>
-                </div>
-              ) : (
-                <>
-                  <div className="flex justify-center my-4">
-                    <span className="bg-gray-200 text-gray-800 px-4 py-1 rounded-full text-xs font-semibold">
-                      {displayMessages[0]?.waktu?.toDate
-                        ? new Date(
-                            displayMessages[0].waktu.toDate()
-                          ).toLocaleDateString("id-ID", {
-                            weekday: "long",
-                            day: "numeric",
-                            month: "long",
-                          })
-                        : new Date(
-                            displayMessages[0]?.waktu
-                          ).toLocaleDateString("id-ID", {
-                            weekday: "long",
-                            day: "numeric",
-                            month: "long",
-                          }) || ""}
+                  <div>
+                    <span className="font-bold text-black">
+                      {getParticipantInfo(selectedRoom)?.Nama_Lengkap ||
+                        "Unknown"}
                     </span>
+                    <span className="block text-green-500 text-xs">online</span>
                   </div>
-
-                  {displayMessages.map((msg, index) => {
-                    if (!msg || (!msg.isi && !msg.teks && !msg.urlFile))
-                      return null;
-
-                    const teks = msg.isi || msg.teks || "";
-                    const waktuPesan = msg.waktu?.toDate
-                      ? msg.waktu.toDate().toLocaleTimeString([], {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })
-                      : msg.waktu?.toLocaleTimeString([], {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        }) || "00:00";
-
-                    return (
-                      <div
-                        key={`${
-                          msg.id ||
-                          `${msg.pengirim}_${msg.waktu?.seconds || index}`
-                        }_${index}`}
-                        className={`flex mb-4 ${
-                          msg.idPengirim === currentUserId ||
-                          msg.pengirim === currentUserId
-                            ? "justify-end"
-                            : "justify-start"
-                        }`}
-                      >
-                        <div
-                          className={`${
-                            msg.idPengirim === currentUserId ||
-                            msg.pengirim === currentUserId
-                              ? "bg-[#72C02C]"
-                              : "bg-[#3182B7]"
-                          } text-white p-3 rounded-lg max-w-md shadow`}
-                        >
-                          {msg.urlFile && renderFileMessage(msg)}
-
-                          {teks && (
-                            <>
-                              <p className="whitespace-pre-wrap">
-                                {selengkapnya2.includes(index) ||
-                                teks.length <= 50
-                                  ? teks
-                                  : `${teks.substring(0, 250)}...`}
-                              </p>
-
-                              {teks.length > 50 && (
-                                <motion.button
-                                  initial={{ opacity: 0.5, y: 5 }}
-                                  animate={{ opacity: 1, y: 0 }}
-                                  exit={{ opacity: 0.5, y: 5 }}
-                                  transition={{ duration: 0.2 }}
-                                  className="text-white text-sm underline mt-1"
-                                  onClick={() => toggleSelengkapnya2(index)}
-                                >
-                                  {selengkapnya2.includes(index)
-                                    ? "Tampilkan Lebih Sedikit"
-                                    : "Lihat Selengkapnya"}
-                                </motion.button>
-                              )}
-                            </>
-                          )}
-
-                          <div className="flex items-center justify-end mt-1 space-x-1">
-                            <span className="text-xs opacity-80">
-                              {waktuPesan}
-                            </span>
-                            {(msg.idPengirim === currentUserId ||
-                              msg.pengirim === currentUserId) && (
-                              <BsCheck2All
-                                className={`w-3 h-3 ${
-                                  msg.sudahDibaca || msg.status === "terbaca"
-                                    ? "text-blue-200"
-                                    : "text-gray-300"
-                                }`}
-                              />
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                  <div ref={messagesEndRef} />
-                </>
-              )}
-            </div>
-          </>
-        ) : (
-          <div className="flex-1 flex flex-col items-center justify-center bg-gray-50">
-            <AiOutlineMessage className="w-24 h-24 text-gray-200 mb-4" />
-            <p className="text-gray-500">Pilih percakapan untuk memulai</p>
-          </div>
-        )}
-
-        {/* Message Input */}
-        {selectedRoom && (
-          <div className="p-3 border-t bg-white">
-            {selectedFile && (
-              <div className="flex items-center justify-between bg-blue-50 p-2 rounded-lg mb-2">
-                <div className="flex items-center gap-2">
-                  {getFileIconComponent(selectedFile.name)}
-                  <span className="text-sm truncate max-w-xs">
-                    {selectedFile.name}
-                  </span>
                 </div>
-                <button onClick={handleRemoveFile}>
-                  <IoIosClose className="text-red-500 w-5 h-5" />
+                <button
+                  className="text-gray-500 hover:text-gray-700"
+                  onClick={hapusPesan}
+                >
+                  <MdDelete className="w-5 h-5" />
                 </button>
               </div>
-            )}
 
-            {uploadProgress > 0 && uploadProgress < 100 && (
-              <div className="w-full bg-gray-200 rounded-full h-2.5 mb-2">
-                <div
-                  className="bg-blue-600 h-2.5 rounded-full"
-                  style={{ width: `${uploadProgress}%` }}
-                ></div>
+              <div className="flex-1 p-4 bg-gray-50 overflow-y-auto">
+                {displayMessages.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center h-full">
+                    <AiOutlineMessage className="w-24 h-24 text-gray-200 mb-4" />
+                    <p className="text-gray-500">Belum ada pesan</p>
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex justify-center my-4">
+                      <span className="bg-gray-200 text-gray-800 px-4 py-1 rounded-full text-xs font-semibold">
+                        {displayMessages[0]?.waktu?.toDate
+                          ? new Date(
+                              displayMessages[0].waktu.toDate()
+                            ).toLocaleDateString("id-ID", {
+                              weekday: "long",
+                              day: "numeric",
+                              month: "long",
+                            })
+                          : new Date(
+                              displayMessages[0]?.waktu
+                            ).toLocaleDateString("id-ID", {
+                              weekday: "long",
+                              day: "numeric",
+                              month: "long",
+                            }) || ""}
+                      </span>
+                    </div>
+
+                    {displayMessages.map((msg, index) => {
+                      if (!msg || (!msg.isi && !msg.teks && !msg.urlFile))
+                        return null;
+
+                      const teks = msg.isi || msg.teks || "";
+                      const waktuPesan = msg.waktu?.toDate
+                        ? msg.waktu.toDate().toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })
+                        : msg.waktu?.toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          }) || "00:00";
+
+                      return (
+                        <div
+                          key={`${
+                            msg.id ||
+                            `${msg.pengirim}_${msg.waktu?.seconds || index}`
+                          }_${index}`}
+                          className={`flex mb-4 ${
+                            msg.idPengirim === currentUserId ||
+                            msg.pengirim === currentUserId
+                              ? "justify-end"
+                              : "justify-start"
+                          }`}
+                        >
+                          <div
+                            className={`${
+                              msg.idPengirim === currentUserId ||
+                              msg.pengirim === currentUserId
+                                ? "bg-[#72C02C]"
+                                : "bg-[#3182B7]"
+                            } text-white p-3 rounded-lg max-w-md shadow`}
+                          >
+                            {msg.urlFile && renderFileMessage(msg)}
+
+                            {teks && (
+                              <>
+                                <p className="whitespace-pre-wrap">
+                                  {selengkapnya2.includes(index) ||
+                                  teks.length <= 50
+                                    ? teks
+                                    : `${teks.substring(0, 250)}...`}
+                                </p>
+
+                                {teks.length > 50 && (
+                                  <motion.button
+                                    initial={{ opacity: 0.5, y: 5 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0.5, y: 5 }}
+                                    transition={{ duration: 0.2 }}
+                                    className="text-white text-sm underline mt-1"
+                                    onClick={() => toggleSelengkapnya2(index)}
+                                  >
+                                    {selengkapnya2.includes(index)
+                                      ? "Tampilkan Lebih Sedikit"
+                                      : "Lihat Selengkapnya"}
+                                  </motion.button>
+                                )}
+                              </>
+                            )}
+
+                            <div className="flex items-center justify-end mt-1 space-x-1">
+                              <span className="text-xs opacity-80">
+                                {waktuPesan}
+                              </span>
+                              {(msg.idPengirim === currentUserId ||
+                                msg.pengirim === currentUserId) && (
+                                <BsCheck2All
+                                  className={`w-3 h-3 ${
+                                    msg.sudahDibaca || msg.status === "terbaca"
+                                      ? "text-blue-200"
+                                      : "text-gray-300"
+                                  }`}
+                                />
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                    <div ref={messagesEndRef} />
+                  </>
+                )}
               </div>
-            )}
+            </>
+          ) : (
+            <div className="flex-1 flex flex-col items-center justify-center bg-gray-50">
+              <AiOutlineMessage className="w-24 h-24 text-gray-200 mb-4" />
+              <p className="text-gray-500">Pilih percakapan untuk memulai</p>
+            </div>
+          )}
 
-            <div className="flex items-center gap-2">
-              <button
-                className="text-gray-500 hover:text-blue-500 p-2 rounded-full"
-                onClick={() => fileInputRef.current.click()}
-              >
-                <LuPaperclip className="w-5 h-5" />
-                <input
-                  type="file"
-                  ref={fileInputRef}
-                  className="hidden"
-                  onChange={handleFileChange}
-                  accept="image/*, .pdf, .doc, .docx, .xls, .xlsx"
-                />
-              </button>
-
-              <button
-                className="text-gray-500 hover:text-yellow-500 p-2 rounded-full"
-                onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-              >
-                <FaceSmileIcon className="w-5 h-5" />
-              </button>
-
-              {showEmojiPicker && (
-                <div
-                  ref={emojiPickerRef}
-                  className="absolute bottom-16 right-16 z-50"
-                >
-                  <EmojiPicker
-                    onEmojiClick={handleBukaEmoji}
-                    width={300}
-                    height={350}
-                  />
+          {/* Message Input */}
+          {selectedRoom && (
+            <div className="p-3 border-t bg-white">
+              {selectedFile && (
+                <div className="flex items-center justify-between bg-blue-50 p-2 rounded-lg mb-2">
+                  <div className="flex items-center gap-2">
+                    {getFileIconComponent(selectedFile.name)}
+                    <span className="text-sm truncate max-w-xs">
+                      {selectedFile.name}
+                    </span>
+                  </div>
+                  <button onClick={handleRemoveFile}>
+                    <IoIosClose className="text-red-500 w-5 h-5" />
+                  </button>
                 </div>
               )}
 
-              <input
-                type="text"
-                className="flex-1 border rounded-full py-2 px-4 focus:outline-none focus:ring-2 focus:ring-blue-200"
-                placeholder="Ketik pesan..."
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
-              />
+              {uploadProgress > 0 && uploadProgress < 100 && (
+                <div className="w-full bg-gray-200 rounded-full h-2.5 mb-2">
+                  <div
+                    className="bg-blue-600 h-2.5 rounded-full"
+                    style={{ width: `${uploadProgress}%` }}
+                  ></div>
+                </div>
+              )}
 
-              <button
-                className="bg-blue-500 text-white p-2 rounded-full hover:bg-blue-600 disabled:bg-gray-300 flex items-center justify-center"
-                onClick={handleSendMessage}
-                disabled={(!message.trim() && !selectedFile) || sedangMemuat}
-              >
-                {sedangMemuat ? (
-                  <span className="text-xs animate-pulse">Mengirim...</span>
-                ) : (
-                  <PaperAirplaneIcon className="w-5 h-5" />
+              <div className="flex items-center gap-2">
+                <button
+                  className="text-gray-500 hover:text-blue-500 p-2 rounded-full"
+                  onClick={() => fileInputRef.current.click()}
+                >
+                  <LuPaperclip className="w-5 h-5" />
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    className="hidden"
+                    onChange={handleFileChange}
+                    accept="image/*, .pdf, .doc, .docx, .xls, .xlsx"
+                  />
+                </button>
+
+                <button
+                  className="text-gray-500 hover:text-yellow-500 p-2 rounded-full"
+                  onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                >
+                  <FaceSmileIcon className="w-5 h-5" />
+                </button>
+
+                {showEmojiPicker && (
+                  <div
+                    ref={emojiPickerRef}
+                    className="absolute bottom-16 right-16 z-50"
+                  >
+                    <EmojiPicker
+                      onEmojiClick={handleBukaEmoji}
+                      width={300}
+                      height={350}
+                    />
+                  </div>
                 )}
-              </button>
+
+                <input
+                  type="text"
+                  className="flex-1 border rounded-full py-2 px-4 text-black focus:outline-none focus:ring-2 focus:ring-blue-200"
+                  placeholder="Ketik pesan..."
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
+                />
+
+                <button
+                  className="bg-blue-500 text-white p-2 rounded-full hover:bg-blue-600 disabled:bg-gray-300 flex items-center justify-center"
+                  onClick={handleSendMessage}
+                  disabled={(!message.trim() && !selectedFile) || sedangMemuat}
+                >
+                  {sedangMemuat ? (
+                    <span className="text-xs animate-pulse">Mengirim...</span>
+                  ) : (
+                    <PaperAirplaneIcon className="w-5 h-5" />
+                  )}
+                </button>
+              </div>
             </div>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
+      )}
 
       {/* Delete Confirmation Modal */}
       {tampilkanModalHapus && (

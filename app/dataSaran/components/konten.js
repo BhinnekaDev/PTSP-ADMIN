@@ -85,7 +85,7 @@ function Konten({ tahunDipilih }) {
         </div>
       </CardHeader>
 
-      <CardBody className="overflow-hidden px-0">
+      <CardBody className="overflow-x-scroll lg:overflow-hidden px-0">
         <table className="mt-4 w-full min-w-max table-auto text-left">
           <thead>
             <tr>
