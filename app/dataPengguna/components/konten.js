@@ -25,8 +25,6 @@ import { bulan } from "@/constants/bulan";
 
 const judulTabel = [
   "Pengguna",
-  "NPWP & Nomor Identitas",
-  "Status",
   "Tanggal Pembuatan Akun",
   "",
 ];
@@ -143,9 +141,6 @@ function Konten({ tahunDipilih }) {
                       Foto,
                       Nama_Lengkap,
                       Email,
-                      No_Identitas,
-                      NPWP,
-                      aktif,
                       Tanggal_Pembuatan_Akun,
                     },
                     index
@@ -183,34 +178,6 @@ function Konten({ tahunDipilih }) {
                                 {Email}
                               </Typography>
                             </div>
-                          </div>
-                        </td>
-                        <td className={kelas}>
-                          <div className="flex flex-col">
-                            <Typography
-                              variant="small"
-                              color="blue-gray"
-                              className="font-normal"
-                            >
-                              {No_Identitas}
-                            </Typography>
-                            <Typography
-                              variant="small"
-                              color="blue-gray"
-                              className="font-normal opacity-70"
-                            >
-                              {NPWP}
-                            </Typography>
-                          </div>
-                        </td>
-                        <td className={kelas}>
-                          <div className="w-max">
-                            <Chip
-                              variant="ghost"
-                              size="sm"
-                              value={aktif ? "Aktif" : "Tidak Aktif"}
-                              color={aktif ? "green" : "blue-gray"}
-                            />
                           </div>
                         </td>
                         <td className={kelas}>

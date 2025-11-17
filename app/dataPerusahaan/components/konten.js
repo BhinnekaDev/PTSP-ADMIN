@@ -27,7 +27,6 @@ import { bulan } from "@/constants/bulan";
 const judulTabel = [
   "Perusahaan",
   "NPWP & Nomor Identitas",
-  "Status",
   "Tanggal Pembuatan Akun",
   "",
 ];
@@ -144,7 +143,6 @@ function Konten({ tahunDipilih }) {
                       Email,
                       No_Identitas,
                       NPWP_Perusahaan,
-                      aktif,
                       Tanggal_Pembuatan_Akun,
                     },
                     index
@@ -202,14 +200,6 @@ function Konten({ tahunDipilih }) {
                               {NPWP_Perusahaan}
                             </Typography>
                           </div>
-                        </td>
-                        <td className={kelas}>
-                          <Chip
-                            variant="ghost"
-                            size="sm"
-                            value={aktif ? "Aktif" : "Tidak Aktif"}
-                            color={aktif ? "green" : "blue-gray"}
-                          />
                         </td>
                         <td className={kelas}>
                           <Typography
