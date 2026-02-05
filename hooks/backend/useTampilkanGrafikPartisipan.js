@@ -25,7 +25,7 @@ const useTampilkanGrafikPartisipan = () => {
               dataBaru[index] = snapshot.size;
               return dataBaru;
             });
-          }
+          },
         );
 
         unsubscribers.push(unsubscribe);

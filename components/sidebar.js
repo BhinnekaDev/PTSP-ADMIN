@@ -33,7 +33,7 @@ import { ChevronDownIcon } from "@heroicons/react/24/outline";
 import { IoChatboxEllipses } from "react-icons/io5";
 import { RiCustomerService2Fill } from "react-icons/ri";
 import { HiOutlineLightBulb } from "react-icons/hi";
-import { AiTwotoneAlert } from "react-icons/ai";
+import { AiTwotoneAlert, AiOutlineQuestionCircle } from "react-icons/ai";
 import "react-toastify/dist/ReactToastify.css";
 import Image from "next/image";
 // PENGAIT KAMI
@@ -66,7 +66,7 @@ function Sidebar({ pengarah }) {
 
   const totalData = Object.values(jumlahData).reduce(
     (total, jumlah) => total + jumlah,
-    0
+    0,
   );
 
   return (
@@ -385,7 +385,8 @@ function Sidebar({ pengarah }) {
           open={
             bukaDropdown === 4 ||
             lokasiSaatIni === "/dataSaran" ||
-            lokasiSaatIni === "/dataPengaduan"
+            lokasiSaatIni === "/dataPengaduan" ||
+            lokasiSaatIni === "/dataFAQ"
           }
           icon={
             <ChevronDownIcon
@@ -393,7 +394,8 @@ function Sidebar({ pengarah }) {
               className={`mx-auto h-4 w-4 transition-transform ${
                 bukaDropdown === 4 ||
                 lokasiSaatIni === "/dataSaran" ||
-                lokasiSaatIni === "/dataPengaduan"
+                lokasiSaatIni === "/dataPengaduan" ||
+                lokasiSaatIni === "/dataFAQ"
                   ? "rotate-180"
                   : ""
               }`}
@@ -442,6 +444,18 @@ function Sidebar({ pengarah }) {
                   <AiTwotoneAlert className="h-5 w-5" />
                 </ListItemPrefix>
                 Pengaduan
+              </ListItem>
+
+              <ListItem
+                onClick={() => pengarah.push("/dataFAQ")}
+                className={`px-2 xl:p-3 ${
+                  lokasiSaatIni === "/dataFAQ" ? "bg-[#0F67B1] text-white" : ""
+                }`}
+              >
+                <ListItemPrefix>
+                  <AiOutlineQuestionCircle className="h-5 w-5" />
+                </ListItemPrefix>
+                FAQ
               </ListItem>
 
               <hr className="border border-gray-400 w-64 self-center" />
