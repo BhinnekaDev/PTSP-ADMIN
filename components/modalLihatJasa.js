@@ -49,10 +49,10 @@ const ModalLihatJasa = ({ terbuka, tertutup, jasaYangTerpilih }) => {
             {namaJasa}
           </Typography>
           <div className="flex justify-between items-center">
-            <Typography className="text-gray-600">
+            {/* <Typography className="text-gray-600">
               <span className="font-semibold">Nomor Rekening:</span>{" "}
               {noRekening}
-            </Typography>
+            </Typography> */}
             <Typography className="text-gray-600">
               <span className="font-semibold">Pemilik:</span> {pemilikJasa}
             </Typography>

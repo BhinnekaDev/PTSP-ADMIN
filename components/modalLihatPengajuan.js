@@ -4,6 +4,7 @@ import {
   DialogHeader,
   DialogBody,
   IconButton,
+  Typography,
 } from "@material-tailwind/react";
 import Image from "next/image";
 import { XMarkIcon } from "@heroicons/react/24/outline";
@@ -60,53 +61,313 @@ const ModalLihatPengajuan = ({ terbuka, tertutup, pengajuanYangTerpilih }) => {
 
         <DialogBody
           divider
-          className="flex flex-col md:flex-row justify-evenly items-center p-6 bg-white rounded-b-lg"
+          className="flex flex-col justify-evenly items-center p-6 bg-white rounded-b-lg"
         >
           {pengajuanTerpilih ? (
             <>
-              <div className="flex flex-col items-center mb-4 md:mb-0">
-                {pengajuanTerpilih.ajukan?.File_Ajukan?.length > 0 ? (
-                  pengajuanTerpilih.ajukan.File_Ajukan.map((file, index) => (
-                    <div key={index} className="mb-2">
-                      <embed
-                        alt={`Dokumen Pengajuan ${index + 1}`}
-                        className="w-80 h-64 border-4 border-gray-300 rounded-lg transition-transform duration-300 hover:scale-105 shadow-lg"
-                        src={file}
-                      />
-                      <h3
-                        className="text-center mt-3 font-semibold text-blue-700 cursor-pointer hover:underline"
-                        onClick={() => window.open(file, "_blank")}
-                      >
-                        {pengajuanTerpilih.ajukan?.Nama_Ajukan ||
-                          "Nama ajukan tidak tersedia"}
-                      </h3>
-                    </div>
-                  ))
-                ) : (
-                  <p className="text-gray-500">Dokumen ajukan tidak tersedia</p>
-                )}
-              </div>
+              <div className="flex flex-row justify-evenly w-full mb-8">
+                <div className="flex flex-col items-center mb-4 md:mb-0">
+                  {pengajuanTerpilih.ajukan?.File_Ajukan?.length > 0 ? (
+                    pengajuanTerpilih.ajukan.File_Ajukan.map((file, index) => (
+                      <div key={index} className="mb-2">
+                        <embed
+                          alt={`Dokumen Pengajuan ${index + 1}`}
+                          className="w-80 h-64 border-4 border-gray-300 rounded-lg transition-transform duration-300 hover:scale-105 shadow-lg"
+                          src={file}
+                        />
+                        <h3
+                          className="text-center mt-3 font-semibold text-blue-700 cursor-pointer hover:underline"
+                          onClick={() => window.open(file, "_blank")}
+                        >
+                          {pengajuanTerpilih.ajukan?.Nama_Ajukan ||
+                            "Nama ajukan tidak tersedia"}
+                        </h3>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-gray-500">
+                      Dokumen ajukan tidak tersedia
+                    </p>
+                  )}
+                </div>
 
-              <div className="flex flex-col items-center">
-                <Image
-                  alt="Gambar Profil"
-                  className="w-24 h-24 border-4 border-blue-500 rounded-full shadow-lg transition-transform duration-300 hover:scale-105"
-                  src={pengajuanTerpilih.pengguna?.Foto || gambarBawaan}
-                />
-                <div className="text-center mt-3">
-                  <h2 className="text-2xl font-bold text-blue-900">
-                    {pengajuanTerpilih.pengguna?.Nama_Lengkap || "N/A"}
-                  </h2>
-                  <p className="text-blue-700">
-                    {pengajuanTerpilih.pengguna?.Email ||
-                      "Email tidak tersedia"}
-                  </p>
-                  <p className="text-blue-700">
-                    {pengajuanTerpilih.pengguna?.Jenis_Kelamin ||
-                      "Tidak diketahui"}
-                  </p>
+                <div className="flex flex-col items-center">
+                  <Image
+                    alt="Gambar Profil"
+                    className="w-24 h-24 border-4 border-blue-500 rounded-full shadow-lg transition-transform duration-300 hover:scale-105"
+                    src={pengajuanTerpilih.pengguna?.Foto || gambarBawaan}
+                  />
+                  <div className="text-center mt-3">
+                    <h2 className="text-2xl font-bold text-blue-900">
+                      {pengajuanTerpilih.pengguna?.Nama_Lengkap || "N/A"}
+                    </h2>
+                    <p className="text-blue-700">
+                      {pengajuanTerpilih.pengguna?.Email ||
+                        "Email tidak tersedia"}
+                    </p>
+                    <p className="text-blue-700">
+                      {pengajuanTerpilih.pengguna?.Jenis_Kelamin ||
+                        "Tidak diketahui"}
+                    </p>
+                  </div>
                 </div>
               </div>
+
+              <table className="mt-4 w-full min-w-max table-fixed text-left">
+                <thead>
+                  <tr>
+                    <th
+                      // key={konten}
+                      className="border-y border-blue-gray-100 bg-blue-gray-50/50 p-4"
+                    >
+                      <Typography
+                        variant="small"
+                        color="blue-gray"
+                        className="font-normal leading-none opacity-70"
+                      >
+                        Pembeli
+                      </Typography>
+                    </th>
+                    <th
+                      // key={konten}
+                      className="border-y border-blue-gray-100 bg-blue-gray-50/50 p-4"
+                    >
+                      <Typography
+                        variant="small"
+                        color="blue-gray"
+                        className="font-normal leading-none opacity-70"
+                      >
+                        Asal Pembeli
+                      </Typography>
+                    </th>
+                    <th
+                      // key={konten}
+                      className="border-y border-blue-gray-100 bg-blue-gray-50/50 p-4"
+                    >
+                      <Typography
+                        variant="small"
+                        color="blue-gray"
+                        className="font-normal leading-none opacity-70"
+                      >
+                        No Telepon
+                      </Typography>
+                    </th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  <>
+                    <tr>
+                      <td className="p-4">
+                        <div className="flex items-center gap-3">
+                          <Image
+                            // src={transaksiTerpilih.pengguna?.Foto || gambarBawaan}
+                            // alt={
+                            //   transaksiTerpilih.pengguna?.Nama_Lengkap ||
+                            //   "Tidak ada nama"
+                            // }
+                            width={40}
+                            height={40}
+                            className="rounded-full"
+                          />
+                          <div className="flex flex-col">
+                            <Typography
+                              variant="small"
+                              color="blue-gray"
+                              className="font-normal"
+                            >
+                              {/* {transaksiTerpilih.pengguna?.Nama_Lengkap ||
+                                                    "Tidak ada nama"} */}
+                              Saya
+                            </Typography>
+                            <Typography
+                              variant="small"
+                              color="blue-gray"
+                              className="font-normal opacity-70"
+                            >
+                              {/* {transaksiTerpilih.pengguna?.Email ||
+                                                    "Tidak ada email"} */}{" "}
+                              Saya@gmail.com
+                            </Typography>
+                          </div>
+                        </div>
+                      </td>
+
+                      <td className="p-4">
+                        <Typography
+                          variant="small"
+                          color="blue-gray"
+                          className="font-normal opacity-70"
+                        >
+                          {/* {transaksiTerpilih.ajukan?.Nama_Ajukan ||
+                                                "Tidak ada nama ajukan"} */}{" "}
+                          Bandung
+                        </Typography>
+                      </td>
+
+                      <td className="p-4">
+                        <Typography
+                          variant="small"
+                          color="blue-gray"
+                          className="font-normal"
+                        >
+                          {/* {formatTanggal(
+                                                transaksiTerpilih.ajukan?.Tanggal_Pembuatan_Ajukan
+                                              ) || "Tidak ada tanggal ajukan"} */}{" "}
+                          Nomor Telepon
+                        </Typography>
+                      </td>
+                    </tr>
+                  </>
+                </tbody>
+              </table>
+
+              <table className="mt-4 w-full min-w-max table-fixed text-left">
+                <thead>
+                  <tr>
+                    <th
+                      // key={konten}
+                      className="border-y border-blue-gray-100 bg-blue-gray-50/50 p-4"
+                    >
+                      <Typography
+                        variant="small"
+                        color="blue-gray"
+                        className="font-normal leading-none opacity-70"
+                      >
+                        Nama Produk
+                      </Typography>
+                    </th>
+                    <th
+                      // key={konten}
+                      className="border-y border-blue-gray-100 bg-blue-gray-50/50 p-4"
+                    >
+                      <Typography
+                        variant="small"
+                        color="blue-gray"
+                        className="font-normal leading-none opacity-70"
+                      >
+                        Pemilik Produk
+                      </Typography>
+                    </th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  <>
+                    <tr>
+                      <td className="p-4">
+                        <Typography
+                          variant="small"
+                          color="blue-gray"
+                          className="font-normal opacity-70"
+                        >
+                          {/* {transaksiTerpilih.pengguna?.Email ||
+                                                    "Tidak ada email"} */}{" "}
+                          Nama Produk
+                        </Typography>
+                      </td>
+
+                      <td className="p-4">
+                        <Typography
+                          variant="small"
+                          color="blue-gray"
+                          className="font-normal opacity-70"
+                        >
+                          {/* {transaksiTerpilih.ajukan?.Nama_Ajukan ||
+                                                "Tidak ada nama ajukan"} */}{" "}
+                          Meteorologi
+                        </Typography>
+                      </td>
+                    </tr>
+                  </>
+                </tbody>
+              </table>
+
+              <table className="mt-4 w-full min-w-max table-fixed text-left">
+                <thead>
+                  <tr>
+                    <th
+                      // key={konten}
+                      className="border-y border-blue-gray-100 bg-blue-gray-50/50 p-4"
+                    >
+                      <Typography
+                        variant="small"
+                        color="blue-gray"
+                        className="font-normal leading-none opacity-70"
+                      >
+                        Status
+                      </Typography>
+                    </th>
+                    <th
+                      // key={konten}
+                      className="border-y border-blue-gray-100 bg-blue-gray-50/50 p-4"
+                    >
+                      <Typography
+                        variant="small"
+                        color="blue-gray"
+                        className="font-normal leading-none opacity-70"
+                      >
+                        jenis Pengajuan
+                      </Typography>
+                    </th>
+                    <th
+                      // key={konten}
+                      className="border-y border-blue-gray-100 bg-blue-gray-50/50 p-4"
+                    >
+                      <Typography
+                        variant="small"
+                        color="blue-gray"
+                        className="font-normal leading-none opacity-70"
+                      >
+                        Tanggal Pengajuan
+                      </Typography>
+                    </th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  <>
+                    <tr>
+                      <td className="p-4">
+                        <Typography
+                          variant="small"
+                          color="blue-gray"
+                          className="font-normal opacity-70"
+                        >
+                          {/* {transaksiTerpilih.pengguna?.Email ||
+                                                    "Tidak ada email"} */}{" "}
+                          Sedang Ditinjau
+                        </Typography>
+                      </td>
+
+                      <td className="p-4">
+                        <Typography
+                          variant="small"
+                          color="blue-gray"
+                          className="font-normal opacity-70"
+                        >
+                          {/* {transaksiTerpilih.ajukan?.Nama_Ajukan ||
+                                                "Tidak ada nama ajukan"} */}{" "}
+                          Gratis
+                        </Typography>
+                      </td>
+
+                      <td className="p-4">
+                        <Typography
+                          variant="small"
+                          color="blue-gray"
+                          className="font-normal"
+                        >
+                          {/* {formatTanggal(
+                                                transaksiTerpilih.ajukan?.Tanggal_Pembuatan_Ajukan
+                                              ) || "Tidak ada tanggal ajukan"} */}{" "}
+                          05 Februari 2023
+                        </Typography>
+                      </td>
+                    </tr>
+                  </>
+                </tbody>
+              </table>
             </>
           ) : (
             <p className="text-gray-500 text-center">

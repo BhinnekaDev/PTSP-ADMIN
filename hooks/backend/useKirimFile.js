@@ -114,7 +114,7 @@ const useKirimFile = (idPemesanan) => {
       await updateDoc(pemesananRef, {
         Data_Keranjang: updatedDataKeranjang,
         Status_Pembuatan: "Selesai Pembuatan",
-      });
+    });
 
       toast.success("File berhasil dikirim dan data diperbarui.");
 
@@ -126,7 +126,7 @@ const useKirimFile = (idPemesanan) => {
           const message = `
             Halo ${namaPengguna || "Pengguna"},<br><br>
             File Anda terkait pemesanan dengan ID <strong>${idPemesanan}</strong> telah selesai dan dapat diakses melalui platform kami.<br><br>
-            Silakan <a href="https://ptsp-six.vercel.app/Transaksi?openDialog=true&id=${idPemesanan}" target="_blank">klik di sini untuk melanjutkan</a>.<br><br>
+            Silakan <a href="https://ptsp-bengkulu.devbmkg.my.id/Transaksi?openDialog=true&id=${idPemesanan}" target="_blank">klik di sini untuk melanjutkan</a>.<br><br>
             Terima kasih.
           `;
 
