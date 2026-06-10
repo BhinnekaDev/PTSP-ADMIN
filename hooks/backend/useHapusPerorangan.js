@@ -37,7 +37,7 @@ const useHapusPerorangan = () => {
         } catch (error) {
           console.error("Gagal menghapus foto dari storage:", error);
           toast.warn(
-            "Foto tidak dapat dihapus, tetapi data perorangan tetap akan dihapus."
+            "Foto tidak dapat dihapus, tetapi data perorangan tetap akan dihapus.",
           );
         }
       } else {

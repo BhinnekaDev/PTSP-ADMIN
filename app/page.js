@@ -101,7 +101,7 @@ export default function Masuk() {
   return (
     <div className="bg-[#eff0f3] h-screen items-center md:h-screen w-full md:p-24 xl:p-28 flex flex-col lg:flex-row justify-center overflow-hidden">
       <ToastContainer />
-      <Card className="absolute md:hidden lg:block lg:relative top-0 left-0 w-full h-full lg:max-h-[550px] bg-transparent lg:bg-[#0F67B1] rounded-br-none rounded-tr-none shadow-none lg:shadow-lg z-0">
+      <Card className="absolute md:hidden lg:block lg:relative top-0 left-0 w-full h-full lg:h-[550px] bg-transparent lg:bg-[#0F67B1] rounded-br-none rounded-tr-none shadow-none lg:shadow-lg z-0">
         <div className="h-screen relative overflow-hidden">
           <motion.div
             initial="hidden"

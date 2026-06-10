@@ -107,13 +107,13 @@ function Sidebar({ pengarah }) {
             </div>
           ) : (
             <ListItemSuffix>
-              <Chip
+              {/* <Chip
                 value={totalData.toString()}
                 size="sm"
                 variant="ghost"
                 color="blue-gray"
                 className="rounded-full"
-              />
+              /> */}
             </ListItemSuffix>
           )}
         </ListItem>
@@ -606,13 +606,13 @@ function Sidebar({ pengarah }) {
             </ListItemPrefix>
             <div className="flex items-center justify-between w-full">
               <span>Pesan</span>
-              <Chip
+              {/* <Chip
                 value="56"
                 size="sm"
                 variant="ghost"
                 color="blue-gray"
                 className="rounded-full text-black bg-[#DFE5E7] px-2 py-0.5 text-xs font-bold"
-              />
+              /> */}
             </div>
           </ListItem>
         </Accordion>

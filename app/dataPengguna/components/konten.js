@@ -23,11 +23,7 @@ import ModalKonfirmasiHapusPerorangan from "@/components/modalKonfirmasiHapusPer
 import { formatTanggal } from "@/constants/formatTanggal";
 import { bulan } from "@/constants/bulan";
 
-const judulTabel = [
-  "Pengguna",
-  "Tanggal Pembuatan Akun",
-  "",
-];
+const judulTabel = ["Pengguna", "Tanggal Pembuatan Akun", ""];
 
 function Konten({ tahunDipilih }) {
   const gambarBawaan = require("@/assets/images/profil.jpg");
@@ -37,6 +33,7 @@ function Konten({ tahunDipilih }) {
   const [bukaModalHapusPerorangan, setBukaModalHapusPerorangan] =
     useState(false);
   const [peroranganYangTerpilih, setPeroranganYangTerpilih] = useState(null);
+  const [errorGambar, setErrorGambar] = useState({}); // State untuk menangani error gambar
 
   const { hapusPerorangan } = useHapusPerorangan();
 
@@ -90,6 +87,29 @@ function Konten({ tahunDipilih }) {
     return bulanTahunDipilih === tahunDipilih;
   });
 
+  // Fungsi untuk menangani error gambar
+  const handleErrorGambar = (id) => {
+    setErrorGambar((prev) => ({ ...prev, [id]: true }));
+  };
+
+  // Fungsi untuk mendapatkan sumber gambar yang benar
+  const getSumberGambar = (pengguna) => {
+    // Prioritas 1: Foto_URL dari Firestore
+    if (pengguna.Foto_URL && !errorGambar[pengguna.id]) {
+      return pengguna.Foto_URL;
+    }
+    // Prioritas 2: Field Foto (jika ada)
+    if (pengguna.Foto && !errorGambar[pengguna.id]) {
+      return pengguna.Foto;
+    }
+    // Prioritas 3: fotoProfil dari hasil penggabungan
+    if (pengguna.fotoProfil && !errorGambar[pengguna.id]) {
+      return pengguna.fotoProfil;
+    }
+    // Default: gambar bawaan
+    return gambarBawaan;
+  };
+
   return (
     <>
       <Card className="h-full w-full">
@@ -139,43 +159,55 @@ function Konten({ tahunDipilih }) {
                     {
                       id,
                       Foto,
+                      Foto_URL, // Tambahkan Foto_URL di sini
                       Nama_Lengkap,
                       Email,
                       Tanggal_Pembuatan_Akun,
+                      fotoProfil, // Tambahkan fotoProfil dari hook
                     },
-                    index
+                    index,
                   ) => {
                     const apakahTerakhir = index === daftarPengguna.length - 1;
                     const kelas = apakahTerakhir
                       ? "p-4"
                       : "p-4 border-b border-blue-gray-50";
 
+                    // Gabungkan semua sumber foto
+                    const pengguna = {
+                      id,
+                      Foto,
+                      Foto_URL,
+                      fotoProfil,
+                    };
+
                     return (
                       <tr key={id}>
                         <td className={kelas}>
                           <div className="flex items-center gap-3">
-                            <Image
-                              src={Foto || gambarBawaan}
-                              alt={Nama_Lengkap}
-                              size="sm"
-                              width={40}
-                              height={40}
-                              className="rounded-full"
-                            />
+                            <div className="relative w-10 h-10 rounded-full overflow-hidden bg-gray-100">
+                              <img
+                                src={getSumberGambar(pengguna)}
+                                alt={Nama_Lengkap || "Pengguna"}
+                                width={40}
+                                height={40}
+                                className="object-cover w-full h-full"
+                                onError={() => handleErrorGambar(id)}
+                              />
+                            </div>
                             <div className="flex flex-col">
                               <Typography
                                 variant="small"
                                 color="blue-gray"
                                 className="font-normal"
                               >
-                                {Nama_Lengkap}
+                                {Nama_Lengkap || "Tidak ada nama"}
                               </Typography>
                               <Typography
                                 variant="small"
                                 color="blue-gray"
                                 className="font-normal opacity-70"
                               >
-                                {Email}
+                                {Email || "Tidak ada email"}
                               </Typography>
                             </div>
                           </div>
@@ -194,6 +226,7 @@ function Konten({ tahunDipilih }) {
                             <IconButton
                               variant="text"
                               onClick={() => konfirmasiHapus(id)}
+                              color="red"
                             >
                               <TrashIcon className="h-4 w-4" />
                             </IconButton>
@@ -201,7 +234,7 @@ function Konten({ tahunDipilih }) {
                         </td>
                       </tr>
                     );
-                  }
+                  },
                 )}
               </tbody>
             </table>

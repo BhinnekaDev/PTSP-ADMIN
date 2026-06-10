@@ -10,6 +10,7 @@ import {
   query,
   orderBy,
   onSnapshot,
+  where,
 } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { database, storage } from "@/lib/firebaseConfig";
@@ -89,12 +90,12 @@ const useKirimPesanPengguna = () => {
           }
 
           const pesertaDetail = await Promise.all(
-            peserta.map((pesertaId) => fetchPesertaDetail(pesertaId))
+            peserta.map((pesertaId) => fetchPesertaDetail(pesertaId)),
           );
 
           const pesanRef = collection(
             database,
-            `chatRooms/${chatDoc.id}/pesan`
+            `chatRooms/${chatDoc.id}/pesan`,
           );
           const pesanQuery = query(pesanRef, orderBy("waktu", "asc"));
           const pesanSnapshot = await getDocs(pesanQuery);
@@ -112,7 +113,7 @@ const useKirimPesanPengguna = () => {
             pesertaDetail: pesertaDetail.filter(Boolean),
             pesan: pesanData,
           };
-        })
+        }),
       );
 
       setChatRooms(
@@ -120,7 +121,7 @@ const useKirimPesanPengguna = () => {
           const isAdminInRoom = room.peserta.includes(adminId);
           const isOneOnOneChat = room.peserta.length === 2;
           return isAdminInRoom && isOneOnOneChat;
-        })
+        }),
       );
     } catch (err) {
       console.error("Gagal memuat chatRooms:", err);
@@ -167,7 +168,7 @@ const useKirimPesanPengguna = () => {
         throw err;
       }
     },
-    [fetchChatRooms]
+    [fetchChatRooms],
   );
 
   const subscribeToChatRoom = useCallback((roomId, callback) => {
@@ -186,6 +187,91 @@ const useKirimPesanPengguna = () => {
     return unsubscribe;
   }, []);
 
+  // ========== FUNGSI TANDAI PESAN SEBAGAI DIBACA (TANPA INDEKS TAMBAHAN) ==========
+  const tandaiPesanSebagaiDibaca = useCallback(
+    async (roomId, userId) => {
+      if (!roomId || !userId) {
+        console.error("roomId atau userId tidak valid");
+        return false;
+      }
+
+      try {
+        const pesanRef = collection(database, `chatRooms/${roomId}/pesan`);
+
+        // Query hanya berdasarkan sudahDibaca == false (indeks sudah ada)
+        const pesanQuery = query(pesanRef, where("sudahDibaca", "==", false));
+
+        const pesanSnapshot = await getDocs(pesanQuery);
+
+        if (pesanSnapshot.empty) {
+          console.log("Tidak ada pesan yang perlu ditandai");
+          return true;
+        }
+
+        // Filter manual di JavaScript untuk mengecualikan pesan dari user sendiri
+        const updatePromises = [];
+        pesanSnapshot.docs.forEach((pesanDoc) => {
+          const pesanData = pesanDoc.data();
+          if (pesanData.idPengirim !== userId) {
+            updatePromises.push(
+              updateDoc(pesanDoc.ref, {
+                sudahDibaca: true,
+                waktuDibaca: serverTimestamp(),
+              }),
+            );
+          }
+        });
+
+        if (updatePromises.length === 0) {
+          console.log("Tidak ada pesan dari lawan bicara yang perlu ditandai");
+          return true;
+        }
+
+        await Promise.all(updatePromises);
+
+        console.log(
+          `${updatePromises.length} pesan ditandai sebagai sudah dibaca`,
+        );
+
+        // Refresh chat rooms untuk update UI
+        await fetchChatRooms();
+
+        return true;
+      } catch (err) {
+        console.error("Gagal menandai pesan sebagai dibaca:", err);
+        setError(err);
+        return false;
+      }
+    },
+    [fetchChatRooms],
+  );
+
+  // ========== FUNGSI HITUNG PESAN BELUM DIBACA ==========
+  const hitungPesanBelumDibaca = useCallback(async (roomId, userId) => {
+    if (!roomId || !userId) return 0;
+
+    try {
+      const pesanRef = collection(database, `chatRooms/${roomId}/pesan`);
+      const pesanQuery = query(pesanRef, where("sudahDibaca", "==", false));
+
+      const pesanSnapshot = await getDocs(pesanQuery);
+
+      // Filter manual untuk menghitung pesan dari lawan bicara
+      let count = 0;
+      pesanSnapshot.docs.forEach((pesanDoc) => {
+        const pesanData = pesanDoc.data();
+        if (pesanData.idPengirim !== userId) {
+          count++;
+        }
+      });
+
+      return count;
+    } catch (err) {
+      console.error("Gagal menghitung pesan belum dibaca:", err);
+      return 0;
+    }
+  }, []);
+
   useEffect(() => {
     fetchChatRooms();
   }, [fetchChatRooms]);
@@ -197,6 +283,8 @@ const useKirimPesanPengguna = () => {
     kirimPesan,
     subscribeToChatRoom,
     fetchChatRooms,
+    tandaiPesanSebagaiDibaca,
+    hitungPesanBelumDibaca,
   };
 };
 

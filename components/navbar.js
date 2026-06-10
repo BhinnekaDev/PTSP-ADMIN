@@ -16,6 +16,7 @@ import {
 import ModalTambahAdmin from "@/components/modalTambahAdmin";
 import ModalTambahInformasi from "@/components/modalTambahInformasi";
 import ModalTambahJasa from "@/components/modalTambahJasa";
+import ModalTambahAPK from "@/components/modalTambahAPK";
 import useTampilkanDataPerTahun from "@/hooks/backend/useTampilkanDataPerTahun";
 
 function Napbar({ tahunDipilih, setTahunDipilih, setSidebarOpen }) {
@@ -23,6 +24,7 @@ function Napbar({ tahunDipilih, setTahunDipilih, setSidebarOpen }) {
   const [bukaData, setBukaData] = useState(false);
   const [bukaTahun, setBukaTahun] = useState(false);
   const [bukaModalTambahAdmin, setBukaModalTambahAdmin] = useState(false);
+  const [bukaModalTambahAPK, setBukaModalTambahAPK] = useState(false);
   const [bukaModalTambahInformasi, setBukaModalTambahInformasi] =
     useState(false);
   const [bukaModalTambahJasa, setBukaModalTambahJasa] = useState(false);
@@ -101,44 +103,54 @@ function Napbar({ tahunDipilih, setTahunDipilih, setSidebarOpen }) {
               </MenuList>
             </Menu>
 
-            <Menu open={bukaData} handler={setBukaData}>
-              <MenuHandler>
-                <Button
-                  size="sm"
-                  className="hidden items-center gap-2 lg:flex focus:ring-0 bg-[#0F67B1]"
-                >
-                  <p>Tambah Data</p>
-                  <ChevronDownIcon
-                    strokeWidth={2.5}
-                    className={`h-3.5 w-3.5 transition-transform ${
-                      bukaData ? "rotate-180" : ""
-                    }`}
-                  />
-                </Button>
-              </MenuHandler>
-              <MenuList className="hidden max-h-72 w-20 lg:block">
-                <MenuItem
-                  onClick={() => setBukaModalTambahAdmin(true)}
-                  className="flex items-center gap-2"
-                >
-                  Tambah Admin
-                </MenuItem>
+            <div className="flex gap-2">
+              <Button
+                onClick={() => setBukaModalTambahAPK(true)}
+                size="sm"
+                className="hidden items-center gap-2 lg:flex focus:ring-0 bg-white text-[#0F67B1] border-2 border-[#0F67B1]"
+              >
+                <p>Upload .apk</p>
+              </Button>
 
-                <MenuItem
-                  onClick={() => setBukaModalTambahInformasi(true)}
-                  className="flex items-center gap-2"
-                >
-                  Tambah Informasi
-                </MenuItem>
+              <Menu open={bukaData} handler={setBukaData}>
+                <MenuHandler>
+                  <Button
+                    size="sm"
+                    className="hidden items-center gap-2 lg:flex focus:ring-0 bg-[#0F67B1]"
+                  >
+                    <p>Tambah Data</p>
+                    <ChevronDownIcon
+                      strokeWidth={2.5}
+                      className={`h-3.5 w-3.5 transition-transform ${
+                        bukaData ? "rotate-180" : ""
+                      }`}
+                    />
+                  </Button>
+                </MenuHandler>
+                <MenuList className="hidden max-h-72 w-20 lg:block">
+                  <MenuItem
+                    onClick={() => setBukaModalTambahAdmin(true)}
+                    className="flex items-center gap-2"
+                  >
+                    Tambah Admin
+                  </MenuItem>
 
-                <MenuItem
-                  onClick={() => setBukaModalTambahJasa(true)}
-                  className="flex items-center gap-2"
-                >
-                  Tambah Jasa
-                </MenuItem>
-              </MenuList>
-            </Menu>
+                  <MenuItem
+                    onClick={() => setBukaModalTambahInformasi(true)}
+                    className="flex items-center gap-2"
+                  >
+                    Tambah Informasi
+                  </MenuItem>
+
+                  <MenuItem
+                    onClick={() => setBukaModalTambahJasa(true)}
+                    className="flex items-center gap-2"
+                  >
+                    Tambah Jasa
+                  </MenuItem>
+                </MenuList>
+              </Menu>
+            </div>
           </div>
         </div>
       </div>
@@ -146,6 +158,11 @@ function Napbar({ tahunDipilih, setTahunDipilih, setSidebarOpen }) {
       <ModalTambahAdmin
         terbuka={bukaModalTambahAdmin}
         tertutup={setBukaModalTambahAdmin}
+      />
+
+      <ModalTambahAPK
+        terbuka={bukaModalTambahAPK}
+        tertutup={setBukaModalTambahAPK}
       />
 
       <ModalTambahInformasi

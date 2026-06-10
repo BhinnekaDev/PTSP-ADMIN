@@ -6,9 +6,10 @@ import {
   MagnifyingGlassIcon,
   Bars3Icon,
 } from "@heroicons/react/24/outline";
-import { useMediaQuery } from "react-responsive";
+import dynamic from "next/dynamic";
 import {
   BsCheck2All,
+  BsCheck2,
   BsFileEarmark,
   BsFileImage,
   BsFilePdf,
@@ -20,26 +21,24 @@ import { LuPaperclip } from "react-icons/lu";
 import { MdDelete } from "react-icons/md";
 import { IoIosClose } from "react-icons/io";
 import { FaChevronLeft } from "react-icons/fa";
-import EmojiPicker from "emoji-picker-react";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import useKirimPesanPengguna from "@/hooks/backend/useKirimPesanPengguna";
+import useHapusChat from "@/hooks/backend/useHapusChat";
 import ModalKonfirmasiHapusChat from "@/components/modalKonfirmasiHapusChat";
+
+// Import gambar (lebih aman untuk SSR)
+import gambarBawaan from "@/assets/images/profil.jpg";
+
+// Dynamic import untuk EmojiPicker (skip SSR)
+const EmojiPickerWrapper = dynamic(() => import("emoji-picker-react"), {
+  ssr: false,
+});
 
 const LiveChat = ({ setSidebarOpen }) => {
   const [selectedRoom, setSelectedRoom] = useState(null);
-  const isDesktop = useMediaQuery({ minWidth: 768 });
-  const gambarBawaan = require("@/assets/images/profil.jpg");
   const [currentUserId, setCurrentUserId] = useState(null);
-  const [adminId, setAdminId] = useState(null);
-
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const id = localStorage.getItem("ID_Admin");
-      setCurrentUserId(id);
-      setAdminId(id);
-    }
-  }, []);
+  const [isClient, setIsClient] = useState(false);
 
   const {
     chatRooms,
@@ -47,27 +46,37 @@ const LiveChat = ({ setSidebarOpen }) => {
     kirimPesan,
     subscribeToChatRoom,
     fetchChatRooms,
+    tandaiPesanSebagaiDibaca,
   } = useKirimPesanPengguna();
+
+  const { hapusRoomChat, sedangMemuatHapus } = useHapusChat();
 
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [tampilkanModalHapus, setTampilkanModalHapus] = useState(false);
   const [pesanTerpilih, setPesanTerpilih] = useState(null);
-  const [showDeleteIcon, setShowDeleteIcon] = useState(false);
-  const [iconPosition, setIconPosition] = useState({ x: 0, y: 0 });
   const [selectedFile, setSelectedFile] = useState(null);
   const [message, setMessage] = useState("");
   const [selengkapnya2, setSelengkapnya2] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [realTimeMessages, setRealTimeMessages] = useState([]);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [totalUnreadCount, setTotalUnreadCount] = useState(0);
 
   const emojiPickerRef = useRef(null);
   const fileInputRef = useRef(null);
   const menuRef = useRef(null);
   const messagesEndRef = useRef(null);
 
+  // Client-side only initialization
   useEffect(() => {
-    if (!selectedRoom) return;
+    setIsClient(true);
+    const id = localStorage.getItem("ID_Admin");
+    setCurrentUserId(id);
+  }, []);
+
+  // Subscribe ke chat room
+  useEffect(() => {
+    if (!selectedRoom || !isClient) return;
 
     const unsubscribe = subscribeToChatRoom(selectedRoom.id, (messages) => {
       setRealTimeMessages(messages);
@@ -78,7 +87,57 @@ const LiveChat = ({ setSidebarOpen }) => {
     });
 
     return () => unsubscribe();
-  }, [selectedRoom, subscribeToChatRoom]);
+  }, [selectedRoom, subscribeToChatRoom, isClient]);
+
+  // MARK AS READ: Tandai pesan sebagai dibaca saat room dipilih
+  useEffect(() => {
+    if (!selectedRoom || !currentUserId || !isClient) return;
+
+    const markAsRead = async () => {
+      console.log("🔵 Mark as read for room:", selectedRoom.id);
+      await tandaiPesanSebagaiDibaca(selectedRoom.id, currentUserId);
+    };
+
+    markAsRead();
+  }, [selectedRoom, currentUserId, isClient, tandaiPesanSebagaiDibaca]);
+
+  // MARK AS READ: Tandai pesan baru yang masuk saat room aktif
+  useEffect(() => {
+    if (!selectedRoom || !currentUserId || !isClient) return;
+    if (realTimeMessages.length === 0) return;
+
+    const roomId = selectedRoom.id;
+
+    const hasUnreadFromOther = realTimeMessages.some(
+      (msg) => msg.idPengirim !== currentUserId && msg.sudahDibaca === false,
+    );
+
+    if (hasUnreadFromOther) {
+      console.log("🔵 New unread message detected, marking as read...");
+      tandaiPesanSebagaiDibaca(roomId, currentUserId);
+    }
+  }, [
+    realTimeMessages,
+    selectedRoom,
+    currentUserId,
+    isClient,
+    tandaiPesanSebagaiDibaca,
+  ]);
+
+  // Hitung total pesan belum dibaca untuk semua room (badge notifikasi)
+  useEffect(() => {
+    if (!chatRooms.length || !currentUserId) return;
+
+    let total = 0;
+    for (const room of chatRooms) {
+      const unreadCount =
+        room.pesan?.filter(
+          (msg) => msg.idPengirim !== currentUserId && !msg.sudahDibaca,
+        ).length || 0;
+      total += unreadCount;
+    }
+    setTotalUnreadCount(total);
+  }, [chatRooms, currentUserId]);
 
   const filteredChatRooms = chatRooms.filter((room) => {
     const participantName =
@@ -88,12 +147,14 @@ const LiveChat = ({ setSidebarOpen }) => {
   });
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [realTimeMessages]);
+    if (isClient) {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [realTimeMessages, isClient]);
 
   const toggleSelengkapnya2 = (index) => {
     setSelengkapnya2((prev) =>
-      prev.includes(index) ? prev.filter((i) => i !== index) : [...prev, index]
+      prev.includes(index) ? prev.filter((i) => i !== index) : [...prev, index],
     );
   };
 
@@ -125,7 +186,7 @@ const LiveChat = ({ setSidebarOpen }) => {
         currentUserId,
         message,
         "admin",
-        selectedFile
+        selectedFile,
       );
 
       setMessage("");
@@ -169,9 +230,24 @@ const LiveChat = ({ setSidebarOpen }) => {
     });
   };
 
-  const hapusPesan = () => {
+  const bukaModalHapus = () => {
     setTampilkanModalHapus(true);
     setShowDeleteIcon(false);
+  };
+
+  const handleHapusPercakapan = async () => {
+    if (!pesanTerpilih) return;
+
+    const berhasil = await hapusRoomChat(pesanTerpilih);
+
+    if (berhasil) {
+      setTampilkanModalHapus(false);
+      if (selectedRoom?.id === pesanTerpilih) {
+        setSelectedRoom(null);
+      }
+      setPesanTerpilih(null);
+      await fetchChatRooms();
+    }
   };
 
   const getParticipantInfo = (room) => {
@@ -245,22 +321,136 @@ const LiveChat = ({ setSidebarOpen }) => {
       : selectedRoom.pesan
     : [];
 
+  // Hitung pesan belum dibaca untuk room tertentu
+  const getUnreadCount = (room) => {
+    if (!currentUserId) return 0;
+    return (
+      room.pesan?.filter(
+        (msg) => msg.idPengirim !== currentUserId && !msg.sudahDibaca,
+      ).length || 0
+    );
+  };
+
   return (
     <div className="flex w-full h-full border rounded-lg shadow-lg overflow-hidden bg-white">
-      {/* Sidebar */}
-      {(isDesktop || (!isDesktop && !selectedRoom)) && (
-        <div className={`${isDesktop ? "w-1/3" : "w-full"} border-r flex-col`}>
+      {/* Sidebar Desktop */}
+      <div className="hidden md:block md:w-1/3 border-r flex-col">
+        <div className="p-4 border-b">
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="text-lg font-bold text-black">Pesan</h2>
+          </div>
+        </div>
+
+        <div className="flex-1 overflow-y-auto">
+          {sedangMemuat ? (
+            <div className="flex justify-center p-4">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+            </div>
+          ) : filteredChatRooms.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-full text-gray-500">
+              <AiOutlineMessage className="w-12 h-12 mb-2" />
+              <p>Tidak ada percakapan</p>
+            </div>
+          ) : (
+            filteredChatRooms.map((room) => {
+              const participant = getParticipantInfo(room);
+              const lastMessage =
+                room.pesan?.length > 0
+                  ? room.pesan[room.pesan.length - 1]
+                  : null;
+              const unreadCount = getUnreadCount(room);
+
+              return (
+                <div
+                  key={room.id}
+                  className={`flex items-center gap-3 p-3 hover:bg-gray-100 cursor-pointer relative ${
+                    selectedRoom?.id === room.id ? "bg-gray-200" : ""
+                  }`}
+                  onClick={() => setSelectedRoom(room)}
+                  onContextMenu={(e) => klikKananPesan(e, room.id)}
+                >
+                  <Image
+                    src={participant.Foto || gambarBawaan}
+                    alt="Profil"
+                    width={40}
+                    height={40}
+                    className="rounded-full object-cover"
+                    onError={(e) => {
+                      e.target.src = gambarBawaan;
+                    }}
+                  />
+
+                  <div className="flex-1 min-w-0">
+                    <p className="font-bold text-sm text-black truncate">
+                      {participant.Nama_Lengkap || "Unknown"}
+                    </p>
+                    <p className="text-xs text-gray-600 truncate">
+                      {lastMessage?.isi
+                        ? lastMessage.isi.length > 30
+                          ? `${lastMessage.isi.substring(0, 30)}...`
+                          : lastMessage.isi
+                        : lastMessage?.namaFile
+                          ? `[File] ${lastMessage.namaFile}`
+                          : "No messages"}
+                    </p>
+                  </div>
+
+                  <div className="flex flex-col items-end gap-1">
+                    {lastMessage && (
+                      <p className="text-xs text-gray-400 whitespace-nowrap">
+                        {lastMessage.waktu?.toDate
+                          ? new Date(
+                              lastMessage.waktu.toDate(),
+                            ).toLocaleTimeString([], {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })
+                          : lastMessage.waktu?.toLocaleTimeString([], {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            }) || ""}
+                      </p>
+                    )}
+
+                    {/* Badge pesan belum dibaca */}
+                    {unreadCount > 0 && (
+                      <span className="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full min-w-[20px] text-center">
+                        {unreadCount > 99 ? "99+" : unreadCount}
+                      </span>
+                    )}
+
+                    {/* Status untuk pesan terakhir yang dikirim admin */}
+                    {lastMessage?.idPengirim === currentUserId &&
+                      (lastMessage.sudahDibaca ? (
+                        <BsCheck2All className="w-4 h-4 text-blue-500" />
+                      ) : (
+                        <BsCheck2 className="w-4 h-4 text-gray-400" />
+                      ))}
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+      </div>
+
+      {/* Mobile Sidebar - hanya muncul saat tidak ada selectedRoom */}
+      {!selectedRoom && (
+        <div className="block md:hidden w-full border-r flex-col">
           <div className="p-4 border-b">
-            <div className="flex items-center gap-2 mb-2">
+            <div className="flex items-center justify-between mb-2">
               <button
-                variant="text"
-                className="lg:hidden p-2 flex items-center justify-center"
+                className="p-2 flex items-center justify-center"
                 onClick={() => setSidebarOpen(true)}
               >
                 <Bars3Icon className="h-6 w-6 text-black" />
               </button>
-
               <h2 className="text-lg font-bold text-black">Pesan</h2>
+              {totalUnreadCount > 0 && (
+                <span className="bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">
+                  {totalUnreadCount}
+                </span>
+              )}
             </div>
             <div className="relative mt-2">
               <input
@@ -275,7 +465,11 @@ const LiveChat = ({ setSidebarOpen }) => {
           </div>
 
           <div className="flex-1 overflow-y-auto">
-            {filteredChatRooms.length === 0 ? (
+            {sedangMemuat ? (
+              <div className="flex justify-center p-4">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+              </div>
+            ) : filteredChatRooms.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full text-gray-500">
                 <AiOutlineMessage className="w-12 h-12 mb-2" />
                 <p>Tidak ada percakapan</p>
@@ -287,15 +481,15 @@ const LiveChat = ({ setSidebarOpen }) => {
                   room.pesan?.length > 0
                     ? room.pesan[room.pesan.length - 1]
                     : null;
+                const unreadCount = getUnreadCount(room);
 
                 return (
                   <div
                     key={room.id}
-                    className={`flex items-center gap-3 p-3 hover:bg-gray-100 cursor-pointer ${
+                    className={`flex items-center gap-3 p-3 hover:bg-gray-100 cursor-pointer relative ${
                       selectedRoom?.id === room.id ? "bg-gray-200" : ""
                     }`}
                     onClick={() => setSelectedRoom(room)}
-                    onContextMenu={(e) => klikKananPesan(e, room.id)}
                   >
                     <Image
                       src={participant.Foto || gambarBawaan}
@@ -318,17 +512,17 @@ const LiveChat = ({ setSidebarOpen }) => {
                             ? `${lastMessage.isi.substring(0, 30)}...`
                             : lastMessage.isi
                           : lastMessage?.namaFile
-                          ? `[File] ${lastMessage.namaFile}`
-                          : "No messages"}
+                            ? `[File] ${lastMessage.namaFile}`
+                            : "No messages"}
                       </p>
                     </div>
 
-                    {lastMessage && (
-                      <div className="flex flex-col items-end">
+                    <div className="flex flex-col items-end gap-1">
+                      {lastMessage && (
                         <p className="text-xs text-gray-400 whitespace-nowrap">
                           {lastMessage.waktu?.toDate
                             ? new Date(
-                                lastMessage.waktu.toDate()
+                                lastMessage.waktu.toDate(),
                               ).toLocaleTimeString([], {
                                 hour: "2-digit",
                                 minute: "2-digit",
@@ -338,17 +532,13 @@ const LiveChat = ({ setSidebarOpen }) => {
                                 minute: "2-digit",
                               }) || ""}
                         </p>
-                        {lastMessage.idPengirim === currentUserId && (
-                          <BsCheck2All
-                            className={`w-3 h-3 mt-1 ${
-                              lastMessage.sudahDibaca
-                                ? "text-blue-500"
-                                : "text-gray-400"
-                            }`}
-                          />
-                        )}
-                      </div>
-                    )}
+                      )}
+                      {unreadCount > 0 && (
+                        <span className="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full min-w-[20px] text-center">
+                          {unreadCount > 99 ? "99+" : unreadCount}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 );
               })
@@ -358,167 +548,158 @@ const LiveChat = ({ setSidebarOpen }) => {
       )}
 
       {/* Main Chat Area */}
-      {(isDesktop || (!isDesktop && selectedRoom)) && (
-        <div className={`${isDesktop ? "w-2/3" : "w-full"} flex flex-col`}>
-          {selectedRoom ? (
-            <>
-              <div className="p-4 border-b flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <FaChevronLeft
-                    className="w-5 h-5 text-gray-500 cursor-pointer"
-                    onClick={() => setSelectedRoom(null)}
-                  />
-                  <Image
-                    src={getParticipantInfo(selectedRoom)?.Foto || gambarBawaan}
-                    alt="Profil"
-                    width={40}
-                    height={40}
-                    className="rounded-full object-cover"
-                    onError={(e) => {
-                      e.target.src = gambarBawaan;
-                    }}
-                  />
-                  <div>
-                    <span className="font-bold text-black">
-                      {getParticipantInfo(selectedRoom)?.Nama_Lengkap ||
-                        "Unknown"}
-                    </span>
-                    <span className="block text-green-500 text-xs">online</span>
-                  </div>
+      <div
+        className={`${
+          selectedRoom ? "w-full md:w-2/3" : "hidden md:block md:w-2/3"
+        } flex flex-col`}
+        suppressHydrationWarning
+      >
+        {selectedRoom ? (
+          <>
+            <div className="p-4 border-b flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <FaChevronLeft
+                  className="w-5 h-5 text-gray-500 cursor-pointer md:hidden"
+                  onClick={() => setSelectedRoom(null)}
+                />
+                <Image
+                  src={getParticipantInfo(selectedRoom)?.Foto || gambarBawaan}
+                  alt="Profil"
+                  width={40}
+                  height={40}
+                  className="rounded-full object-cover"
+                  onError={(e) => {
+                    e.target.src = gambarBawaan;
+                  }}
+                />
+                <div>
+                  <span className="font-bold text-black">
+                    {getParticipantInfo(selectedRoom)?.Nama_Lengkap ||
+                      "Unknown"}
+                  </span>
                 </div>
-                <button
-                  className="text-gray-500 hover:text-gray-700"
-                  onClick={hapusPesan}
-                >
-                  <MdDelete className="w-5 h-5" />
-                </button>
               </div>
+              <button
+                className="text-gray-500 hover:text-gray-700"
+                onClick={bukaModalHapus}
+              >
+                <MdDelete className="w-5 h-5" />
+              </button>
+            </div>
 
-              <div className="flex-1 p-4 bg-gray-50 overflow-y-auto">
-                {displayMessages.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center h-full">
-                    <AiOutlineMessage className="w-24 h-24 text-gray-200 mb-4" />
-                    <p className="text-gray-500">Belum ada pesan</p>
-                  </div>
-                ) : (
-                  <>
-                    <div className="flex justify-center my-4">
-                      <span className="bg-gray-200 text-gray-800 px-4 py-1 rounded-full text-xs font-semibold">
-                        {displayMessages[0]?.waktu?.toDate
-                          ? new Date(
-                              displayMessages[0].waktu.toDate()
-                            ).toLocaleDateString("id-ID", {
-                              weekday: "long",
-                              day: "numeric",
-                              month: "long",
-                            })
-                          : new Date(
-                              displayMessages[0]?.waktu
-                            ).toLocaleDateString("id-ID", {
-                              weekday: "long",
-                              day: "numeric",
-                              month: "long",
-                            }) || ""}
-                      </span>
-                    </div>
-
-                    {displayMessages.map((msg, index) => {
-                      if (!msg || (!msg.isi && !msg.teks && !msg.urlFile))
-                        return null;
-
-                      const teks = msg.isi || msg.teks || "";
-                      const waktuPesan = msg.waktu?.toDate
-                        ? msg.waktu.toDate().toLocaleTimeString([], {
-                            hour: "2-digit",
-                            minute: "2-digit",
+            <div className="flex-1 p-4 bg-gray-50 overflow-y-auto">
+              {displayMessages.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-full">
+                  <AiOutlineMessage className="w-24 h-24 text-gray-200 mb-4" />
+                  <p className="text-gray-500">Belum ada pesan</p>
+                </div>
+              ) : (
+                <>
+                  <div className="flex justify-center my-4">
+                    <span className="bg-gray-200 text-gray-800 px-4 py-1 rounded-full text-xs font-semibold">
+                      {displayMessages[0]?.waktu?.toDate
+                        ? new Date(
+                            displayMessages[0].waktu.toDate(),
+                          ).toLocaleDateString("id-ID", {
+                            weekday: "long",
+                            day: "numeric",
+                            month: "long",
                           })
-                        : msg.waktu?.toLocaleTimeString([], {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          }) || "00:00";
+                        : new Date(
+                            displayMessages[0]?.waktu,
+                          ).toLocaleDateString("id-ID", {
+                            weekday: "long",
+                            day: "numeric",
+                            month: "long",
+                          }) || ""}
+                    </span>
+                  </div>
 
-                      return (
+                  {displayMessages.map((msg, index) => {
+                    if (!msg || (!msg.isi && !msg.teks && !msg.urlFile))
+                      return null;
+
+                    const teks = msg.isi || msg.teks || "";
+                    const waktuPesan = msg.waktu?.toDate
+                      ? msg.waktu.toDate().toLocaleTimeString([], {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })
+                      : msg.waktu?.toLocaleTimeString([], {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        }) || "00:00";
+
+                    const isMyMessage =
+                      msg.idPengirim === currentUserId ||
+                      msg.pengirim === currentUserId;
+
+                    return (
+                      <div
+                        key={`${
+                          msg.id ||
+                          `${msg.pengirim}_${msg.waktu?.seconds || index}`
+                        }_${index}`}
+                        className={`flex mb-4 ${
+                          isMyMessage ? "justify-end" : "justify-start"
+                        }`}
+                      >
                         <div
-                          key={`${
-                            msg.id ||
-                            `${msg.pengirim}_${msg.waktu?.seconds || index}`
-                          }_${index}`}
-                          className={`flex mb-4 ${
-                            msg.idPengirim === currentUserId ||
-                            msg.pengirim === currentUserId
-                              ? "justify-end"
-                              : "justify-start"
-                          }`}
+                          className={`${
+                            isMyMessage
+                              ? "bg-[#0f67b1] text-white"
+                              : "bg-white text-black"
+                          }  p-3 rounded-lg max-w-md shadow`}
                         >
-                          <div
-                            className={`${
-                              msg.idPengirim === currentUserId ||
-                              msg.pengirim === currentUserId
-                                ? "bg-[#72C02C]"
-                                : "bg-[#3182B7]"
-                            } text-white p-3 rounded-lg max-w-md shadow`}
-                          >
-                            {msg.urlFile && renderFileMessage(msg)}
+                          {msg.urlFile && renderFileMessage(msg)}
 
-                            {teks && (
-                              <>
-                                <p className="whitespace-pre-wrap">
-                                  {selengkapnya2.includes(index) ||
-                                  teks.length <= 50
-                                    ? teks
-                                    : `${teks.substring(0, 250)}...`}
-                                </p>
+                          {teks && (
+                            <>
+                              <p className="whitespace-pre-wrap">
+                                {selengkapnya2.includes(index) ||
+                                teks.length <= 50
+                                  ? teks
+                                  : `${teks.substring(0, 250)}...`}
+                              </p>
 
-                                {teks.length > 50 && (
-                                  <motion.button
-                                    initial={{ opacity: 0.5, y: 5 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    exit={{ opacity: 0.5, y: 5 }}
-                                    transition={{ duration: 0.2 }}
-                                    className="text-white text-sm underline mt-1"
-                                    onClick={() => toggleSelengkapnya2(index)}
-                                  >
-                                    {selengkapnya2.includes(index)
-                                      ? "Tampilkan Lebih Sedikit"
-                                      : "Lihat Selengkapnya"}
-                                  </motion.button>
-                                )}
-                              </>
-                            )}
-
-                            <div className="flex items-center justify-end mt-1 space-x-1">
-                              <span className="text-xs opacity-80">
-                                {waktuPesan}
-                              </span>
-                              {(msg.idPengirim === currentUserId ||
-                                msg.pengirim === currentUserId) && (
-                                <BsCheck2All
-                                  className={`w-3 h-3 ${
-                                    msg.sudahDibaca || msg.status === "terbaca"
-                                      ? "text-blue-200"
-                                      : "text-gray-300"
-                                  }`}
-                                />
+                              {teks.length > 50 && (
+                                <motion.button
+                                  initial={{ opacity: 0.5, y: 5 }}
+                                  animate={{ opacity: 1, y: 0 }}
+                                  exit={{ opacity: 0.5, y: 5 }}
+                                  transition={{ duration: 0.2 }}
+                                  className="text-white text-sm underline mt-1"
+                                  onClick={() => toggleSelengkapnya2(index)}
+                                >
+                                  {selengkapnya2.includes(index)
+                                    ? "Tampilkan Lebih Sedikit"
+                                    : "Lihat Selengkapnya"}
+                                </motion.button>
                               )}
-                            </div>
+                            </>
+                          )}
+
+                          <div className="flex items-center justify-end mt-1 space-x-1">
+                            <span className="text-xs opacity-80">
+                              {waktuPesan}
+                            </span>
+                            {isMyMessage &&
+                              (msg.sudahDibaca || msg.status === "terbaca" ? (
+                                <BsCheck2All className="w-4 h-4 text-white" />
+                              ) : (
+                                <BsCheck2 className="w-4 h-4 text-white" />
+                              ))}
                           </div>
                         </div>
-                      );
-                    })}
-                    <div ref={messagesEndRef} />
-                  </>
-                )}
-              </div>
-            </>
-          ) : (
-            <div className="flex-1 flex flex-col items-center justify-center bg-gray-50">
-              <AiOutlineMessage className="w-24 h-24 text-gray-200 mb-4" />
-              <p className="text-gray-500">Pilih percakapan untuk memulai</p>
+                      </div>
+                    );
+                  })}
+                  <div ref={messagesEndRef} />
+                </>
+              )}
             </div>
-          )}
 
-          {/* Message Input */}
-          {selectedRoom && (
+            {/* Message Input */}
             <div className="p-3 border-t bg-white">
               {selectedFile && (
                 <div className="flex items-center justify-between bg-blue-50 p-2 rounded-lg mb-2">
@@ -570,7 +751,7 @@ const LiveChat = ({ setSidebarOpen }) => {
                     ref={emojiPickerRef}
                     className="absolute bottom-16 right-16 z-50"
                   >
-                    <EmojiPicker
+                    <EmojiPickerWrapper
                       onEmojiClick={handleBukaEmoji}
                       width={300}
                       height={350}
@@ -600,9 +781,14 @@ const LiveChat = ({ setSidebarOpen }) => {
                 </button>
               </div>
             </div>
-          )}
-        </div>
-      )}
+          </>
+        ) : (
+          <div className="flex h-full flex-col items-center justify-center bg-gray-50">
+            <AiOutlineMessage className="w-24 h-24 text-gray-200 mb-4" />
+            <p className="text-gray-500">Pilih percakapan untuk memulai</p>
+          </div>
+        )}
+      </div>
 
       {/* Delete Confirmation Modal */}
       {tampilkanModalHapus && (
@@ -610,32 +796,9 @@ const LiveChat = ({ setSidebarOpen }) => {
           terbuka={tampilkanModalHapus}
           tertutup={() => setTampilkanModalHapus(false)}
           chatTerpilih={pesanTerpilih}
-          onSuccess={() => {
-            setSelectedRoom(null);
-            setPesanTerpilih(null);
-            fetchChatRooms();
-          }}
+          konfirmasiHapusChat={handleHapusPercakapan}
+          sedangMemuatHapus={sedangMemuatHapus}
         />
-      )}
-
-      {/* Context Menu */}
-      {showDeleteIcon && (
-        <div
-          ref={menuRef}
-          className="fixed bg-white shadow-lg rounded-md py-1 z-50"
-          style={{
-            top: `${iconPosition.y}px`,
-            left: `${iconPosition.x}px`,
-          }}
-        >
-          <button
-            className="flex items-center gap-2 w-full px-4 py-2 text-left hover:bg-gray-100 text-red-500"
-            onClick={hapusPesan}
-          >
-            <MdDelete className="w-4 h-4" />
-            <span>Hapus Percakapan</span>
-          </button>
-        </div>
       )}
     </div>
   );

@@ -1,3 +1,4 @@
+// components/modalKonfirmasiHapusChat.js
 import React from "react";
 import {
   Dialog,
@@ -8,7 +9,6 @@ import {
   IconButton,
 } from "@material-tailwind/react";
 import { XMarkIcon } from "@heroicons/react/24/outline";
-// KOMPONEN KAMI
 import Memuat from "@/components/memuat";
 
 const ModalKonfirmasiHapusChat = ({
@@ -37,23 +37,29 @@ const ModalKonfirmasiHapusChat = ({
 
       <DialogHeader className="text-black">Konfirmasi Hapus Chat</DialogHeader>
       <DialogBody className="text-black">
-        <p>Apakah Anda yakin ingin menghapus Pesan ini?</p>
-        <div className="mt-2 p-2 bg-gray-100 rounded text-gray-700 text-sm">
-          "{chatTerpilih}"
-        </div>
+        <p>Apakah Anda yakin ingin menghapus seluruh percakapan ini?</p>
+        <p className="text-sm text-red-500 mt-2 font-medium">
+          Peringatan: Semua pesan dan file yang terlampir akan dihapus secara
+          permanen!
+        </p>
       </DialogBody>
 
       <DialogFooter className="space-x-4">
+        <Button
+          variant="text"
+          color="gray"
+          onClick={tertutup}
+          disabled={sedangMemuatHapus}
+        >
+          Batal
+        </Button>
         <Button
           onClick={konfirmasiHapusChat}
           variant="gradient"
           color="red"
           disabled={sedangMemuatHapus}
-          className={`${
-            sedangMemuatHapus ? "opacity-50 cursor-not-allowed" : "opacity-100"
-          }`}
         >
-          {sedangMemuatHapus ? <Memuat /> : "Hapus Chat"}
+          {sedangMemuatHapus ? <Memuat /> : "Hapus Percakapan"}
         </Button>
       </DialogFooter>
     </Dialog>
