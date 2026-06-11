@@ -15,21 +15,24 @@ import Memuat from "@/components/memuat";
 import { XMarkIcon, PlusIcon, TrashIcon } from "@heroicons/react/24/outline";
 import { toast } from "react-toastify";
 import { database } from "@/lib/firebaseConfig";
-import { updateDoc, doc, serverTimestamp } from "firebase/firestore";
+import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 
-const ModalSuntingFAQ = ({ terbuka, tertutup, data, onSuccess }) => {
-  const [sedangMemuat, setSedangMemuat] = useState(false);
+const ModalTambahFAQ = ({
+  terbuka,
+  tertutup,
+  dataFAQ,
+  mode = "tambah",
+  onSuccess,
+}) => {
+  const [isLoading, setIsLoading] = useState(false);
   const [tipeFAQ, setTipeFAQ] = useState("biasa");
 
-  // State untuk tipe biasa
   const [question, setQuestion] = useState("");
   const [answer, setAnswer] = useState("");
 
-  // State untuk tipe point
   const [questionPoint, setQuestionPoint] = useState("");
   const [answerPoints, setAnswerPoints] = useState([""]);
 
-  // State untuk category
   const [category, setCategory] = useState("");
 
   const resetForm = () => {
@@ -41,94 +44,35 @@ const ModalSuntingFAQ = ({ terbuka, tertutup, data, onSuccess }) => {
     setCategory("");
   };
 
-  // Konversi string answer ke array point (bersih tanpa format)
-  const convertStringToPoints = (text) => {
-    if (!text) return [""];
-    let lines = [];
-    if (text.includes("\n")) {
-      lines = text.split("\n").filter((line) => line.trim());
-    } else if (text.includes("•")) {
-      lines = text.split("•").filter((line) => line.trim());
-    } else if (text.match(/\d+\./)) {
-      lines = text.split(/\d+\./).filter((line) => line.trim());
-    } else {
-      lines = [text];
-    }
-
-    if (lines.length === 0) return [""];
-
-    const cleanPoints = lines.map((line) => {
-      return line.replace(/^[•\d+\.\s]+/, "").trim();
-    });
-    return cleanPoints.length ? cleanPoints : [""];
-  };
-
-  // Load data ke form ketika modal terbuka dan ada data
   useEffect(() => {
-    if (terbuka && data) {
-      console.log("Data dari Firebase:", data);
-
-      if (data.category) {
-        setCategory(data.category);
+    if (mode === "sunting" && dataFAQ) {
+      if (dataFAQ.category) {
+        setCategory(dataFAQ.category);
       }
 
-      if (data.answer && Array.isArray(data.answer)) {
-        console.log("✅ Deteksi: TIPE POINT (array)");
+      if (dataFAQ.answer && Array.isArray(dataFAQ.answer)) {
         setTipeFAQ("point");
-        setQuestionPoint(data.question || "");
-        setAnswerPoints([...data.answer]);
+        setQuestionPoint(dataFAQ.question || "");
+        setAnswerPoints([...dataFAQ.answer]);
         setQuestion("");
         setAnswer("");
-      } else if (data.answer && typeof data.answer === "string") {
-        console.log("✅ Deteksi: TIPE BIASA (string)");
+      } else if (dataFAQ.answer && typeof dataFAQ.answer === "string") {
         setTipeFAQ("biasa");
-        setQuestion(data.question || "");
-        setAnswer(data.answer || "");
+        setQuestion(dataFAQ.question || "");
+        setAnswer(dataFAQ.answer || "");
         setQuestionPoint("");
         setAnswerPoints([""]);
       } else {
-        console.log("⚠️ Tidak ada data answer");
         setTipeFAQ("biasa");
-        setQuestion(data?.question || "");
-        setAnswer("");
+        setQuestion(dataFAQ?.question || "");
+        setAnswer(dataFAQ?.answer || "");
         setQuestionPoint("");
         setAnswerPoints([""]);
       }
-    } else if (!terbuka) {
+    } else if (mode === "tambah") {
       resetForm();
     }
-  }, [data, terbuka]);
-
-  // Handle perubahan tipe FAQ dari biasa ke point
-  const handleTipeChange = (newTipe) => {
-    if (newTipe === "point" && tipeFAQ === "biasa") {
-      if (answer && answer.trim()) {
-        const convertedPoints = convertStringToPoints(answer);
-        setQuestionPoint(question || "");
-        setAnswerPoints(convertedPoints);
-      } else {
-        setQuestionPoint(question || "");
-        setAnswerPoints([""]);
-      }
-      setTipeFAQ("point");
-    } else if (newTipe === "biasa" && tipeFAQ === "point") {
-      if (answerPoints.some((p) => p && p.trim())) {
-        const validPoints = answerPoints.filter((p) => p && p.trim());
-        // Konversi ke numbered format (tanpa bullet option)
-        const convertedText = validPoints
-          .map((p, i) => `${i + 1}. ${p}`)
-          .join("\n");
-        setQuestion(questionPoint || "");
-        setAnswer(convertedText);
-      } else {
-        setQuestion(questionPoint || "");
-        setAnswer("");
-      }
-      setTipeFAQ("biasa");
-    } else {
-      setTipeFAQ(newTipe);
-    }
-  };
+  }, [dataFAQ, mode, terbuka]);
 
   const tambahPoint = () => {
     setAnswerPoints([...answerPoints, ""]);
@@ -146,61 +90,58 @@ const ModalSuntingFAQ = ({ terbuka, tertutup, data, onSuccess }) => {
   };
 
   const handleSubmit = async () => {
-    if (!data?.id) {
-      toast.error("Data FAQ tidak ditemukan!");
-      return;
-    }
-
-    if (!category.trim()) {
-      toast.error("Category harus diisi!");
-      return;
-    }
-
-    setSedangMemuat(true);
+    setIsLoading(true);
 
     try {
-      const faqRef = doc(database, "faq", data.id);
-      let updateData = {
-        category: category.trim(),
-        updated_at: serverTimestamp(),
-      };
+      let dataFAQToSave = {};
+
+      if (!category.trim()) {
+        toast.error("Category harus diisi!");
+        setIsLoading(false);
+        return;
+      }
 
       if (tipeFAQ === "biasa") {
         if (!question.trim() || !answer.trim()) {
           toast.error("Pertanyaan dan Jawaban harus diisi!");
-          setSedangMemuat(false);
+          setIsLoading(false);
           return;
         }
-
-        updateData = {
-          ...updateData,
+        dataFAQToSave = {
+          category: category.trim(),
           question: question.trim(),
           answer: answer.trim(),
+          created_at: serverTimestamp(),
+          updated_at: serverTimestamp(),
         };
-
-        await updateDoc(faqRef, updateData);
-        toast.success("FAQ berhasil diperbarui!");
       } else {
-        if (
-          !questionPoint.trim() ||
-          answerPoints.some((p) => !p || !p.trim())
-        ) {
+        if (!questionPoint.trim() || answerPoints.some((p) => !p.trim())) {
           toast.error("Pertanyaan dan semua point harus diisi!");
-          setSedangMemuat(false);
+          setIsLoading(false);
           return;
         }
 
-        const cleanAnswers = answerPoints.filter((p) => p && p.trim() !== "");
-        console.log("Menyimpan array:", cleanAnswers);
-
-        // SIMPAN hanya answer array (tanpa displayType)
-        updateData = {
-          ...updateData,
+        // SIMPAN sebagai ARRAY (tanpa displayType)
+        const cleanAnswers = answerPoints.filter((p) => p.trim() !== "");
+        dataFAQToSave = {
+          category: category.trim(),
           question: questionPoint.trim(),
-          answer: cleanAnswers,
+          answer: cleanAnswers, // SIMPAN SEBAGAI ARRAY
+          created_at: serverTimestamp(),
+          updated_at: serverTimestamp(),
         };
+      }
 
-        await updateDoc(faqRef, updateData);
+      if (mode === "tambah") {
+        await addDoc(collection(database, "faq"), dataFAQToSave);
+        toast.success("FAQ berhasil ditambahkan!");
+      } else if (mode === "sunting" && dataFAQ?.id) {
+        const { updateDoc, doc } = await import("firebase/firestore");
+        const faqRef = doc(database, "faq", dataFAQ.id);
+        await updateDoc(faqRef, {
+          ...dataFAQToSave,
+          updated_at: serverTimestamp(),
+        });
         toast.success("FAQ berhasil diperbarui!");
       }
 
@@ -208,10 +149,12 @@ const ModalSuntingFAQ = ({ terbuka, tertutup, data, onSuccess }) => {
       if (onSuccess) onSuccess();
       tertutup(false);
     } catch (error) {
-      console.error("Error mengupdate FAQ:", error);
-      toast.error("Gagal memperbarui FAQ");
+      console.error("Error menyimpan FAQ:", error);
+      toast.error(
+        `Gagal ${mode === "tambah" ? "menambahkan" : "memperbarui"} FAQ`,
+      );
     } finally {
-      setSedangMemuat(false);
+      setIsLoading(false);
     }
   };
 
@@ -243,7 +186,9 @@ const ModalSuntingFAQ = ({ terbuka, tertutup, data, onSuccess }) => {
           </IconButton>
         </div>
 
-        <DialogHeader className="text-black">Sunting FAQ</DialogHeader>
+        <DialogHeader className="text-black">
+          {mode === "tambah" ? "Tambah FAQ" : "Sunting FAQ"}
+        </DialogHeader>
 
         <DialogBody className="flex flex-col gap-4 p-6 bg-white">
           <div className="w-full">
@@ -265,15 +210,12 @@ const ModalSuntingFAQ = ({ terbuka, tertutup, data, onSuccess }) => {
             </label>
             <Select
               value={tipeFAQ}
-              onChange={(val) => handleTipeChange(val)}
+              onChange={(val) => setTipeFAQ(val)}
               className="text-black"
             >
               <Option value="biasa">Biasa (Q&A)</Option>
               <Option value="point">Point (List Answer)</Option>
             </Select>
-            <p className="text-xs text-amber-600 mt-1">
-              *Mengubah tipe akan mengkonversi data yang sudah ada
-            </p>
           </div>
 
           {tipeFAQ === "biasa" && (
@@ -363,15 +305,15 @@ const ModalSuntingFAQ = ({ terbuka, tertutup, data, onSuccess }) => {
                 </Button>
               </div>
 
-              {/* Preview - selalu numbered */}
-              {answerPoints.some((p) => p && p.trim()) && (
+              {/* Preview */}
+              {answerPoints.some((p) => p.trim()) && (
                 <div className="w-full p-3 bg-gray-50 rounded-lg">
                   <p className="text-xs font-semibold text-gray-600 mb-2">
                     Preview (Numbered):
                   </p>
                   <div className="space-y-1">
                     {answerPoints.map((point, idx) => {
-                      if (!point || !point.trim()) return null;
+                      if (!point.trim()) return null;
                       return (
                         <p key={idx} className="text-sm text-gray-700">
                           {idx + 1}. {point}
@@ -393,10 +335,16 @@ const ModalSuntingFAQ = ({ terbuka, tertutup, data, onSuccess }) => {
             variant="gradient"
             color="black"
             onClick={handleSubmit}
-            disabled={sedangMemuat}
-            className={sedangMemuat ? "opacity-50 cursor-not-allowed" : ""}
+            disabled={isLoading}
+            className={isLoading ? "opacity-50 cursor-not-allowed" : ""}
           >
-            {sedangMemuat ? <Memuat /> : "Simpan Perubahan"}
+            {isLoading ? (
+              <Memuat />
+            ) : mode === "tambah" ? (
+              "Simpan FAQ"
+            ) : (
+              "Simpan Perubahan"
+            )}
           </Button>
         </DialogFooter>
       </div>
@@ -404,4 +352,4 @@ const ModalSuntingFAQ = ({ terbuka, tertutup, data, onSuccess }) => {
   );
 };
 
-export default ModalSuntingFAQ;
+export default ModalTambahFAQ;

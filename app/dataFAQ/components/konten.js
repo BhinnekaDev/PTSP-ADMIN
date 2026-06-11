@@ -1,5 +1,10 @@
 import React, { useState } from "react";
-import { EyeIcon, TrashIcon, PencilIcon } from "@heroicons/react/24/solid";
+import {
+  EyeIcon,
+  TrashIcon,
+  PencilIcon,
+  PlusIcon,
+} from "@heroicons/react/24/solid";
 import {
   Card,
   CardHeader,
@@ -10,97 +15,181 @@ import {
   IconButton,
   Tooltip,
 } from "@material-tailwind/react";
-import Image from "next/image";
-// PENGAIT KAMI
-import useTampilkanPengaduan from "@/hooks/backend/useTampilkanPengaduan";
-import useHapusPengaduan from "@/hooks/backend/useHapusPengaduan";
-import ModalKonfirmasiHapusPengaduan from "@/components/modalKonfirmasiHapusPengaduan";
 import useTampilkanDataPerTahun from "@/hooks/backend/useTampilkanDataPerTahun";
-// KOMPONEN KAMI
 import MemuatRangkaTampilkanTabel from "@/components/memuatRangkaTabel";
 import ModalLihatFAQ from "@/components/modalLihatFAQ";
 import ModalSuntingFAQ from "@/components/modalSuntingFAQ";
-// KONSTANTA KAMI
+import ModalKonfirmasiHapusFAQ from "@/components/modalKonfirmasiHapusFAQ";
+import ModalTambahFAQ from "@/components/modalTambahFAQ";
 import { bulan } from "@/constants/bulan";
+import useTampilkanFAQ from "@/hooks/backend/useTampilkanFAQ";
+import { toast } from "react-toastify";
+import { database } from "@/lib/firebaseConfig";
+import { deleteDoc, doc } from "firebase/firestore";
 
-const judulTabel = ["Judul FAQ", "Ringkasan Isi", ""];
+const judulTabel = ["Kategori", "Judul FAQ", "Ringkasan Isi", ""];
+const DATA_PER_HALAMAN = 5;
 
 function Konten({ tahunDipilih }) {
-  const [pengaduanTerpilih, setPengaduanTerpilih] = useState(null);
   const [bukaModalLihatFAQ, setBukaModalLihatFAQ] = useState(false);
+  const [bukaModalTambahFAQ, setBukaModalTambahFAQ] = useState(false);
   const [bukaModalSuntingFAQ, setBukaModalSuntingFAQ] = useState(false);
-  const { hapusPengaduan, sedangMemuatHapus } = useHapusPengaduan();
   const [bukaModalKonfirmasiHapus, setBukaModalKonfirmasiHapus] =
     useState(false);
-  const dataBulanTahun = useTampilkanDataPerTahun();
-  const {
-    halaman,
-    totalPengaduan,
-    daftarPengaduan,
-    ambilHalamanSebelumnya,
-    ambilHalamanSelanjutnya,
-    sedangMemuatPengaduan,
-  } = useTampilkanPengaduan();
+  const [faqTerpilih, setFaqTerpilih] = useState(null);
+  const [halamanSaatIni, setHalamanSaatIni] = useState(1);
+  const [sedangMemuatHapus, setSedangMemuatHapus] = useState(false);
 
-  const konfirmasiHapusPengaduan = () => {
-    if (pengaduanTerpilih) {
-      hapusPengaduan(pengaduanTerpilih);
+  const dataBulanTahun = useTampilkanDataPerTahun();
+  const { daftarFAQ, sedangMemuat: sedangMemuatFAQ } = useTampilkanFAQ();
+
+  const hapusFAQ = async (id) => {
+    setSedangMemuatHapus(true);
+    try {
+      await deleteDoc(doc(database, "faq", id));
+      toast.success("FAQ berhasil dihapus!");
       setBukaModalKonfirmasiHapus(false);
-    } else {
-      toast.error("Tidak ada pengajuan yang dipilih untuk dihapus.");
+      setFaqTerpilih(null);
+    } catch (error) {
+      console.error("Error menghapus FAQ:", error);
+      toast.error("Gagal menghapus FAQ");
+    } finally {
+      setSedangMemuatHapus(false);
     }
   };
 
-  const saringPengaduan = daftarPengaduan.filter((item) => {
-    const tanggal =
-      item.Tanggal_Pembuatan_Akun ||
-      item.Tanggal_Pembuatan ||
-      item.Tanggal_Pemesanan;
-    if (!tanggal) return false;
-    const dateObj =
-      tanggal instanceof Date ? tanggal : new Date(tanggal.seconds * 1000);
-    const tahun = dateObj.getFullYear();
-    const bulanIndex = dateObj.getMonth();
-    if (tahunDipilih === "Pilih Tahun") {
+  const konfirmasiHapusFAQ = async () => {
+    if (faqTerpilih && faqTerpilih.id) {
+      await hapusFAQ(faqTerpilih.id);
+    } else {
+      toast.error("Tidak ada FAQ yang dipilih untuk dihapus.");
+    }
+  };
+
+  const saringFAQ = daftarFAQ.filter((item) => {
+    if (tahunDipilih === "Pilih Tahun" || !tahunDipilih) {
       return true;
     }
+
+    if (!item.created_at) return false;
+
+    const dateObj =
+      item.created_at instanceof Date
+        ? item.created_at
+        : new Date(item.created_at);
+
+    const tahun = dateObj.getFullYear();
+    const bulanIndex = dateObj.getMonth();
+
     if (!dataBulanTahun || dataBulanTahun.length === 0) {
       return false;
     }
-    if (bulanIndex < 0 || bulanIndex >= 12) {
-      return false;
-    }
+
     const bulanNama = bulan[bulanIndex];
     const bulanTahunDipilih = `${bulanNama} ${tahun}`;
     return bulanTahunDipilih === tahunDipilih;
   });
 
-  const teks =
-    "Datang langsung ke Pelayanan Terpadu Satu Pintu (PTSP) BMKG di Jalan Angkasa I no. 2 Kemayoran Jakarta Pusat. Gedung E, Kirim email ke : ptsp[at]bmkg.go.id ...";
+  const totalData = saringFAQ.length;
+  const totalHalaman = Math.ceil(totalData / DATA_PER_HALAMAN);
+  const indexAwal = (halamanSaatIni - 1) * DATA_PER_HALAMAN;
+  const indexAkhir = indexAwal + DATA_PER_HALAMAN;
+  const dataDitampilkan = saringFAQ.slice(indexAwal, indexAkhir);
 
-  const potongParagraf = (teks, batas = 200) => {
-    const hasil = [];
-    for (let i = 0; i < teks.length; i += batas) {
-      hasil.push(teks.slice(i, i + batas));
+  const keHalamanSebelumnya = () => {
+    if (halamanSaatIni > 1) {
+      setHalamanSaatIni(halamanSaatIni - 1);
     }
-    return hasil;
+  };
+
+  const keHalamanSelanjutnya = () => {
+    if (halamanSaatIni < totalHalaman) {
+      setHalamanSaatIni(halamanSaatIni + 1);
+    }
+  };
+
+  React.useEffect(() => {
+    setHalamanSaatIni(1);
+  }, [tahunDipilih]);
+
+  const pastikanString = (nilai) => {
+    if (!nilai) return "";
+    if (typeof nilai === "string") return nilai;
+    if (typeof nilai === "number") return nilai.toString();
+    if (nilai instanceof Date) return nilai.toLocaleDateString();
+    if (typeof nilai === "object") {
+      try {
+        return JSON.stringify(nilai);
+      } catch {
+        return "";
+      }
+    }
+    return String(nilai);
+  };
+
+  const stripHtmlTags = (teks) => {
+    const teksString = pastikanString(teks);
+    if (!teksString) return "";
+    return teksString.replace(/<[^>]*>/g, "");
+  };
+
+  const potongTeks = (teks, batas = 80) => {
+    const teksString = pastikanString(teks);
+    if (!teksString) return "";
+    if (teksString.length <= batas) return teksString;
+    return teksString.slice(0, batas) + "...";
+  };
+
+  const buatRingkasan = (teks, batasKarakter = 100) => {
+    if (!teks) return "";
+
+    let teksBersih = pastikanString(teks);
+    teksBersih = stripHtmlTags(teksBersih);
+    teksBersih = teksBersih.replace(/\s+/g, " ").trim();
+
+    if (teksBersih.length <= batasKarakter) {
+      return teksBersih;
+    }
+
+    let ringkasan = teksBersih.slice(0, batasKarakter);
+    const lastSpace = ringkasan.lastIndexOf(" ");
+    if (lastSpace > batasKarakter * 0.7) {
+      ringkasan = ringkasan.slice(0, lastSpace);
+    }
+
+    return ringkasan + "...";
   };
 
   return (
     <Card className="h-full w-full">
       <CardHeader floated={false} shadow={false} className="rounded-none">
         <div className="mb-1 flex items-center justify-between">
-          <Typography variant="h5" color="blue-gray">
-            Daftar FAQ
-          </Typography>
+          <div>
+            <Typography variant="h5" color="blue-gray">
+              Daftar FAQ
+            </Typography>
+            <Typography variant="small" color="gray" className="mt-1">
+              Menampilkan {dataDitampilkan.length} dari {totalData} FAQ
+            </Typography>
+          </div>
+          <div className="flex shrink-0 flex-col items-center sm:flex-row">
+            <Button
+              onClick={() => setBukaModalTambahFAQ(true)}
+              className="flex items-center gap-2"
+              size="sm"
+            >
+              <PlusIcon strokeWidth={2} className="h-4 w-4" />
+              Tambah FAQ
+            </Button>
+          </div>
         </div>
       </CardHeader>
 
       <CardBody className="overflow-x-scroll lg:overflow-hidden px-0">
-        {sedangMemuatPengaduan ? (
+        {sedangMemuatFAQ ? (
           <MemuatRangkaTampilkanTabel />
         ) : (
-          <table className="mt-4 w-full min-w-max table-auto text-left">
+          <table className="w-full min-w-max table-auto text-left">
             <thead>
               <tr>
                 {judulTabel.map((konten) => (
@@ -121,117 +210,126 @@ function Konten({ tahunDipilih }) {
             </thead>
 
             <tbody>
-              {saringPengaduan.length === 0 ? (
+              {dataDitampilkan.length === 0 ? (
                 <tr>
                   <td
                     colSpan="4"
                     className="p-4 text-center text-blue-gray-500"
                   >
-                    Tidak Ada Data
+                    Tidak Ada Data FAQ
                   </td>
                 </tr>
               ) : (
-                daftarPengaduan.map(
-                  (
-                    { id, pengguna, Email, Nama, Pengaduan, Tanggal_Pembuatan },
-                    index,
-                  ) => {
-                    const apakahTerakhir = index === daftarPengaduan.length - 1;
-                    const kelas = apakahTerakhir
-                      ? "p-4"
-                      : "p-4 border-b border-blue-gray-50";
+                dataDitampilkan.map((faq, index) => {
+                  const apakahTerakhir = index === dataDitampilkan.length - 1;
+                  const kelas = apakahTerakhir
+                    ? "p-4"
+                    : "p-4 border-b border-blue-gray-50";
 
-                    return (
-                      <tr key={id}>
-                        {/* Judul FAQ */}
-                        <td className={kelas}>
-                          <Typography
-                            variant="small"
-                            color="blue-gray"
-                            className="font-normal"
+                  return (
+                    <tr key={faq.id}>
+                      <td className={kelas}>
+                        <Typography
+                          variant="small"
+                          color="blue-gray"
+                          className="font-normal"
+                        >
+                          <span className="bg-blue-50 text-blue-700 px-2 py-1 rounded-md text-xs font-medium">
+                            {potongTeks(faq.category || "Umum", 20)}
+                          </span>
+                        </Typography>
+                      </td>
+
+                      <td className={kelas}>
+                        <Typography
+                          variant="small"
+                          color="blue-gray"
+                          className="font-normal"
+                        >
+                          {potongTeks(faq.question, 30)}
+                        </Typography>
+                      </td>
+
+                      <td className={kelas}>
+                        <Typography
+                          variant="small"
+                          color="blue-gray"
+                          className="font-normal"
+                        >
+                          {buatRingkasan(
+                            faq.answer && Array.isArray(faq.answer)
+                              ? faq.answer?.join(". ")
+                              : faq.answer,
+                            50,
+                          )}
+                        </Typography>
+                      </td>
+
+                      <td className={kelas}>
+                        <Tooltip content="Lihat Selengkapnya">
+                          <IconButton
+                            onClick={() => {
+                              setFaqTerpilih(faq);
+                              setBukaModalLihatFAQ(true);
+                            }}
+                            variant="text"
                           >
-                            {teks.length > 40
-                              ? teks.slice(0, 40) + "..."
-                              : teks}
-                          </Typography>
-                        </td>
-
-                        <td className={kelas}>
-                          <Typography
-                            variant="small"
-                            color="blue-gray"
-                            className="font-normal"
+                            <EyeIcon className="h-4 w-4" />
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip content="Sunting">
+                          <IconButton
+                            onClick={() => {
+                              setFaqTerpilih(faq);
+                              setBukaModalSuntingFAQ(true);
+                            }}
+                            variant="text"
                           >
-                            {teks.length > 80
-                              ? teks.slice(0, 80) + "..."
-                              : teks}
-                          </Typography>
-                        </td>
-
-                        {/* Aksi */}
-                        <td className={kelas}>
-                          <Tooltip content="Lihat Selengkapnya">
-                            <IconButton
-                              onClick={() => {
-                                setBukaModalLihatFAQ(true);
-                              }}
-                              variant="text"
-                            >
-                              <EyeIcon className="h-4 w-4" />
-                            </IconButton>
-                          </Tooltip>
-                          <Tooltip content="Sunting">
-                            <IconButton
-                              onClick={() => {
-                                setBukaModalSuntingFAQ(true);
-                              }}
-                              variant="text"
-                            >
-                              <PencilIcon className="h-4 w-4" />
-                            </IconButton>
-                          </Tooltip>
-                          <Tooltip content="Hapus">
-                            <IconButton
-                              onClick={() => {
-                                setPengaduanTerpilih(id);
-                                setBukaModalKonfirmasiHapus(true);
-                              }}
-                              variant="text"
-                              disabled={sedangMemuatHapus}
-                            >
-                              <TrashIcon className="h-4 w-4" />
-                            </IconButton>
-                          </Tooltip>
-                        </td>
-                      </tr>
-                    );
-                  },
-                )
+                            <PencilIcon className="h-4 w-4" />
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip content="Hapus">
+                          <IconButton
+                            onClick={() => {
+                              setFaqTerpilih(faq);
+                              setBukaModalKonfirmasiHapus(true);
+                            }}
+                            variant="text"
+                          >
+                            <TrashIcon className="h-4 w-4" />
+                          </IconButton>
+                        </Tooltip>
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>
         )}
       </CardBody>
 
-      <CardFooter className="flex items-center justify-between border-t border-blue-gray-50 p-4">
+      <CardFooter className="flex items-center justify-between border-t border-blue-gray-50 p-3">
         <Typography variant="small" color="blue-gray" className="font-normal">
-          Halaman {halaman} dari {Math.ceil(totalPengaduan / 5)}
+          Halaman {halamanSaatIni} dari {totalHalaman || 1}
         </Typography>
         <div className="flex items-center gap-2">
           <Button
-            onClick={ambilHalamanSebelumnya}
+            onClick={keHalamanSebelumnya}
             variant="outlined"
             size="sm"
-            disabled={sedangMemuatPengaduan || halaman === 1}
+            disabled={halamanSaatIni === 1 || sedangMemuatFAQ}
           >
             Sebelumnya
           </Button>
           <Button
-            onClick={ambilHalamanSelanjutnya}
+            onClick={keHalamanSelanjutnya}
             variant="outlined"
             size="sm"
             disabled={
-              sedangMemuatPengaduan || halaman === Math.ceil(totalPengaduan / 5)
+              halamanSaatIni === totalHalaman ||
+              totalHalaman === 0 ||
+              sedangMemuatFAQ
             }
           >
             Selanjutnya
@@ -239,22 +337,30 @@ function Konten({ tahunDipilih }) {
         </div>
       </CardFooter>
 
-      <ModalKonfirmasiHapusPengaduan
-        terbuka={bukaModalKonfirmasiHapus}
-        tertutup={() => setBukaModalKonfirmasiHapus(false)}
-        pengaduanYangTerpilih={pengaduanTerpilih}
-        konfirmasiHapusPengaduan={konfirmasiHapusPengaduan}
-        sedangMemuatHapusPengaduan={sedangMemuatHapus}
+      <ModalTambahFAQ
+        terbuka={bukaModalTambahFAQ}
+        tertutup={() => setBukaModalTambahFAQ(false)}
+        mode="tambah"
       />
 
       <ModalLihatFAQ
         terbuka={bukaModalLihatFAQ}
-        tertutup={setBukaModalLihatFAQ}
+        tertutup={() => setBukaModalLihatFAQ(false)}
+        data={faqTerpilih}
+      />
+
+      <ModalKonfirmasiHapusFAQ
+        terbuka={bukaModalKonfirmasiHapus}
+        tertutup={() => setBukaModalKonfirmasiHapus(false)}
+        data={faqTerpilih}
+        sedangMemuat={sedangMemuatHapus}
+        onConfirm={konfirmasiHapusFAQ}
       />
 
       <ModalSuntingFAQ
         terbuka={bukaModalSuntingFAQ}
-        tertutup={setBukaModalSuntingFAQ}
+        tertutup={() => setBukaModalSuntingFAQ(false)}
+        data={faqTerpilih}
       />
     </Card>
   );

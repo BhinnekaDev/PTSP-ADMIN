@@ -45,6 +45,7 @@ const ModalTambahAPK = ({ terbuka, tertutup, pengaduanYangTerpilih }) => {
       if (docSnap.exists()) {
         const data = docSnap.data();
         setExistingData(data);
+        // Hanya set link manual dari data yang ada, tidak mengganggu link_storage
         if (data.link_manual) {
           setLinkManual(data.link_manual);
         }
@@ -118,8 +119,10 @@ const ModalTambahAPK = ({ terbuka, tertutup, pengaduanYangTerpilih }) => {
       const fileExtension = file.name.split(".").pop().toLowerCase();
 
       if (fileExtension === "apk") {
-        if (file.size > 200 * 1024 * 1024) {
-          toast.error("❌ Ukuran file terlalu besar! Maksimal 200MB.");
+        // UBAH DARI 200MB MENJADI 1GB (1 * 1024 * 1024 * 1024)
+        if (file.size > 1 * 1024 * 1024 * 1024) {
+          // 1GB
+          toast.error("❌ Ukuran file terlalu besar! Maksimal 1GB.");
           e.target.value = "";
           return;
         }
@@ -149,7 +152,7 @@ const ModalTambahAPK = ({ terbuka, tertutup, pengaduanYangTerpilih }) => {
       }
 
       // Upload file baru dengan nama yang konsisten
-      const fileName = `Ptsp_Production.apk`; // Nama file tetap
+      const fileName = `Ptsp_Production.apk`;
       const filePath = `Ptsp_Production/${fileName}`;
       const storageRef = ref(storage, filePath);
 
@@ -163,11 +166,8 @@ const ModalTambahAPK = ({ terbuka, tertutup, pengaduanYangTerpilih }) => {
       };
 
       // Update progress untuk upload
-      const uploadTask = uploadBytes(storageRef, file, metadata);
-
-      // Simulasi progress upload
       setUploadProgress(30);
-      await uploadTask;
+      await uploadBytes(storageRef, file, metadata);
       setUploadProgress(70);
 
       const downloadURL = await getDownloadURL(storageRef);
@@ -190,40 +190,65 @@ const ModalTambahAPK = ({ terbuka, tertutup, pengaduanYangTerpilih }) => {
     manualLinkValue,
     storageDownloadUrl,
     storagePath,
+    isUploadingFile, // Parameter baru untuk mengetahui apakah upload file atau tidak
   ) => {
     const docRef = doc(database, "ptsp_production", "fUcFABuv7Vm7xYTSh3oH");
     const docSnap = await getDoc(docRef);
 
-    const dataToSave = {
-      link_storage: storageDownloadUrl || null,
-      file_apk: storagePath || null,
-      link_manual: manualLinkValue || null,
-      file_name: fileApk ? fileApk.name : null,
-      file_size: fileApk ? fileApk.size : null,
+    // Data yang akan disimpan
+    let dataToSave = {
       updated_at: new Date().toISOString(),
       updated_by: "admin",
-      last_cleanup: new Date().toISOString(), // Catat waktu pembersihan terakhir
     };
+
+    // Jika upload file, update link_storage dan info file
+    if (isUploadingFile && storageDownloadUrl && storagePath) {
+      dataToSave = {
+        ...dataToSave,
+        link_storage: storageDownloadUrl,
+        file_apk: storagePath,
+        file_name: fileApk ? fileApk.name : null,
+        file_size: fileApk ? fileApk.size : null,
+        last_cleanup: new Date().toISOString(),
+      };
+    }
+
+    // Update link_manual hanya jika ada input manual (tidak akan null/terhapus)
+    if (manualLinkValue !== undefined) {
+      dataToSave.link_manual = manualLinkValue || null;
+    }
+
+    // Jika hanya update link manual (tanpa upload file)
+    if (!isUploadingFile && manualLinkValue !== undefined) {
+      dataToSave = {
+        ...dataToSave,
+        link_manual: manualLinkValue || null,
+      };
+    }
 
     if (docSnap.exists()) {
       await updateDoc(docRef, dataToSave);
-      console.log("✅ Firestore document updated");
+      console.log("✅ Firestore document updated", dataToSave);
     } else {
-      await setDoc(docRef, {
-        ...dataToSave,
+      // Data awal untuk dokumen baru
+      const initialData = {
         id: "fUcFABuv7Vm7xYTSh3oH",
         created_at: new Date().toISOString(),
-      });
-      console.log("✅ Firestore document created");
+        ...dataToSave,
+      };
+      await setDoc(docRef, initialData);
+      console.log("✅ Firestore document created", initialData);
     }
   };
 
   const handleSubmit = async () => {
+    // Validasi: harus ada link manual ATAU file APK
     if (!linkManual && !fileApk) {
       toast.warning("❌ Harap isi Link Manual atau upload file APK!");
       return;
     }
 
+    // Validasi file APK jika ada
     if (fileApk) {
       const fileExtension = fileApk.name.split(".").pop().toLowerCase();
       if (fileExtension !== "apk") {
@@ -239,34 +264,45 @@ const ModalTambahAPK = ({ terbuka, tertutup, pengaduanYangTerpilih }) => {
     try {
       let storageDownloadUrl = null;
       let storagePath = null;
+      let isUploadingFile = false;
 
+      // Proses upload file APK jika ada
       if (fileApk) {
-        // Upload file baru (akan otomatis membersihkan folder terlebih dahulu)
+        isUploadingFile = true;
         const result = await uploadFileToStorage(fileApk);
         storageDownloadUrl = result.downloadUrl;
         storagePath = result.storagePath;
       }
 
-      await saveToFirestore(linkManual, storageDownloadUrl, storagePath);
+      // Simpan ke Firestore
+      // Jika upload file, kirim storage info + link manual
+      // Jika hanya link manual, kirim hanya link manual
+      await saveToFirestore(
+        linkManual,
+        storageDownloadUrl,
+        storagePath,
+        isUploadingFile,
+      );
 
+      // Reset form setelah sukses
       setLinkManual("");
       setFileApk(null);
       setErrorFile("");
       setUploadProgress(0);
       tertutup(false);
 
+      // Tampilkan notifikasi sesuai aksi
       if (fileApk && linkManual) {
-        toast.success("APK berhasil diupdate! (Storage + Link Manual)");
+        toast.success("✅ APK berhasil diupdate! (Storage + Link Manual)");
       } else if (fileApk) {
         toast.success(
-          "APK berhasil diupload ke Storage! Folder storage telah dibersihkan.",
+          "✅ APK berhasil diupload ke Storage! Link storage telah diperbarui.",
         );
       } else if (linkManual) {
-        toast.success("Link Manual berhasil disimpan!");
-      } else {
-        toast.success("Data APK berhasil disimpan!");
+        toast.success("✅ Link Manual berhasil disimpan!");
       }
 
+      // Refresh halaman jika di admin panel
       if (window.location.pathname.includes("/admin")) {
         setTimeout(() => {
           window.location.reload();
@@ -348,6 +384,12 @@ const ModalTambahAPK = ({ terbuka, tertutup, pengaduanYangTerpilih }) => {
               <p className="text-xs text-gray-400 mt-1">
                 * Digunakan jika link dari Storage tidak tersedia
               </p>
+              {existingData?.link_manual && (
+                <p className="text-xs text-blue-600 mt-1">
+                  Link manual yang tersimpan:{" "}
+                  {existingData.link_manual.substring(0, 50)}...
+                </p>
+              )}
             </div>
 
             {/* Separator */}
@@ -375,6 +417,16 @@ const ModalTambahAPK = ({ terbuka, tertutup, pengaduanYangTerpilih }) => {
                   </p>
                   <p className="text-gray-500 text-xs">
                     {(fileApk.size / 1024 / 1024).toFixed(2)} MB
+                  </p>
+                </div>
+              )}
+              {existingData?.link_storage && !fileApk && (
+                <div className="mt-2 p-2 bg-blue-50 rounded border border-blue-200 w-full">
+                  <p className="text-blue-700 text-sm font-medium">
+                    APK saat ini tersimpan di storage
+                  </p>
+                  <p className="text-gray-500 text-xs">
+                    Upload file baru untuk menggantikannya
                   </p>
                 </div>
               )}
@@ -408,11 +460,12 @@ const ModalTambahAPK = ({ terbuka, tertutup, pengaduanYangTerpilih }) => {
             <div className="w-full text-xs text-gray-400 mt-3 p-2 bg-gray-50 rounded">
               <p className="font-bold mb-1">Informasi:</p>
               <p className="font-medium">
-                Format file: <strong>.apk</strong>
+                Format file: <strong>.apk</strong> | Maksimal:{" "}
+                <strong>1GB</strong>
               </p>
-
-              <p className="mt-1 font-medium text-orange-600">
-                Link Manual hanya sebagai cadangan jika Storage error
+              <p className="mt-2 font-medium text-orange-600">
+                Link Manual berfungsi sebagai cadangan independen jika Storage
+                bermasalah
               </p>
             </div>
           </DialogBody>
