@@ -27,10 +27,8 @@ import useKirimPesanPengguna from "@/hooks/backend/useKirimPesanPengguna";
 import useHapusChat from "@/hooks/backend/useHapusChat";
 import ModalKonfirmasiHapusChat from "@/components/modalKonfirmasiHapusChat";
 
-// Import gambar (lebih aman untuk SSR)
 import gambarBawaan from "@/assets/images/profil.jpg";
 
-// Dynamic import untuk EmojiPicker (skip SSR)
 const EmojiPickerWrapper = dynamic(() => import("emoji-picker-react"), {
   ssr: false,
 });
@@ -39,6 +37,7 @@ const LiveChat = ({ setSidebarOpen }) => {
   const [selectedRoom, setSelectedRoom] = useState(null);
   const [currentUserId, setCurrentUserId] = useState(null);
   const [isClient, setIsClient] = useState(false);
+  const [showDeleteIcon, setShowDeleteIcon] = useState(false);
 
   const {
     chatRooms,
@@ -57,7 +56,6 @@ const LiveChat = ({ setSidebarOpen }) => {
   const [selectedFile, setSelectedFile] = useState(null);
   const [message, setMessage] = useState("");
   const [selengkapnya2, setSelengkapnya2] = useState([]);
-  const [searchQuery, setSearchQuery] = useState("");
   const [realTimeMessages, setRealTimeMessages] = useState([]);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [totalUnreadCount, setTotalUnreadCount] = useState(0);
@@ -67,14 +65,16 @@ const LiveChat = ({ setSidebarOpen }) => {
   const menuRef = useRef(null);
   const messagesEndRef = useRef(null);
 
-  // Client-side only initialization
+  // PERBAIKAN: Tambahkan ref untuk mencegah multiple calls mark as read
+  const isMarkingAsReadRef = useRef(false);
+  const lastMarkedRoomRef = useRef(null);
+
   useEffect(() => {
     setIsClient(true);
     const id = localStorage.getItem("ID_Admin");
     setCurrentUserId(id);
   }, []);
 
-  // Subscribe ke chat room
   useEffect(() => {
     if (!selectedRoom || !isClient) return;
 
@@ -89,42 +89,75 @@ const LiveChat = ({ setSidebarOpen }) => {
     return () => unsubscribe();
   }, [selectedRoom, subscribeToChatRoom, isClient]);
 
-  // MARK AS READ: Tandai pesan sebagai dibaca saat room dipilih
+  // PERBAIKAN: MARK AS READ saat room dipilih - dengan debounce
   useEffect(() => {
     if (!selectedRoom || !currentUserId || !isClient) return;
 
+    if (isMarkingAsReadRef.current) return;
+    if (lastMarkedRoomRef.current === selectedRoom.id) return;
+
     const markAsRead = async () => {
-      console.log("🔵 Mark as read for room:", selectedRoom.id);
-      await tandaiPesanSebagaiDibaca(selectedRoom.id, currentUserId);
+      try {
+        isMarkingAsReadRef.current = true;
+        console.log("🔵 Mark as read for room:", selectedRoom.id);
+        await tandaiPesanSebagaiDibaca(selectedRoom.id, currentUserId);
+
+        lastMarkedRoomRef.current = selectedRoom.id;
+
+        setTimeout(() => {
+          if (lastMarkedRoomRef.current === selectedRoom.id) {
+            lastMarkedRoomRef.current = null;
+          }
+          isMarkingAsReadRef.current = false;
+        }, 2000);
+      } catch (error) {
+        console.error("Error marking as read:", error);
+        isMarkingAsReadRef.current = false;
+      }
     };
 
     markAsRead();
-  }, [selectedRoom, currentUserId, isClient, tandaiPesanSebagaiDibaca]);
+  }, [selectedRoom, currentUserId, isClient]);
 
-  // MARK AS READ: Tandai pesan baru yang masuk saat room aktif
+  // PERBAIKAN: MARK AS READ untuk pesan baru - dengan debounce
   useEffect(() => {
     if (!selectedRoom || !currentUserId || !isClient) return;
     if (realTimeMessages.length === 0) return;
 
+    if (isMarkingAsReadRef.current) return;
+
     const roomId = selectedRoom.id;
+
+    if (lastMarkedRoomRef.current === roomId) return;
 
     const hasUnreadFromOther = realTimeMessages.some(
       (msg) => msg.idPengirim !== currentUserId && msg.sudahDibaca === false,
     );
 
     if (hasUnreadFromOther) {
-      console.log("🔵 New unread message detected, marking as read...");
-      tandaiPesanSebagaiDibaca(roomId, currentUserId);
-    }
-  }, [
-    realTimeMessages,
-    selectedRoom,
-    currentUserId,
-    isClient,
-    tandaiPesanSebagaiDibaca,
-  ]);
+      const markNewMessages = async () => {
+        try {
+          isMarkingAsReadRef.current = true;
+          console.log("🔵 New unread message detected, marking as read...");
+          await tandaiPesanSebagaiDibaca(roomId, currentUserId);
 
-  // Hitung total pesan belum dibaca untuk semua room (badge notifikasi)
+          lastMarkedRoomRef.current = roomId;
+
+          setTimeout(() => {
+            if (lastMarkedRoomRef.current === roomId) {
+              lastMarkedRoomRef.current = null;
+            }
+            isMarkingAsReadRef.current = false;
+          }, 2000);
+        } catch (error) {
+          console.error("Error marking new messages as read:", error);
+          isMarkingAsReadRef.current = false;
+        }
+      };
+      markNewMessages();
+    }
+  }, [realTimeMessages, selectedRoom, currentUserId, isClient]);
+
   useEffect(() => {
     if (!chatRooms.length || !currentUserId) return;
 
@@ -140,17 +173,15 @@ const LiveChat = ({ setSidebarOpen }) => {
   }, [chatRooms, currentUserId]);
 
   const filteredChatRooms = chatRooms.filter((room) => {
+    if (!room.pesertaDetail || !Array.isArray(room.pesertaDetail)) {
+      return false;
+    }
+
     const participantName =
       room.pesertaDetail.find((p) => p.id !== currentUserId)?.Nama_Lengkap ||
       "";
     return participantName.toLowerCase().includes(searchQuery.toLowerCase());
   });
-
-  useEffect(() => {
-    if (isClient) {
-      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    }
-  }, [realTimeMessages, isClient]);
 
   const toggleSelengkapnya2 = (index) => {
     setSelengkapnya2((prev) =>
@@ -220,17 +251,9 @@ const LiveChat = ({ setSidebarOpen }) => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const klikKananPesan = (event, roomId) => {
-    event.preventDefault();
-    setPesanTerpilih(roomId);
-    setShowDeleteIcon(true);
-    setIconPosition({
-      x: event.clientX,
-      y: event.clientY,
-    });
-  };
-
   const bukaModalHapus = () => {
+    if (!selectedRoom) return;
+    setPesanTerpilih(selectedRoom.id);
     setTampilkanModalHapus(true);
     setShowDeleteIcon(false);
   };
@@ -251,7 +274,22 @@ const LiveChat = ({ setSidebarOpen }) => {
   };
 
   const getParticipantInfo = (room) => {
-    return room.pesertaDetail.find((p) => p.id !== currentUserId) || {};
+    if (!room || !room.pesertaDetail || !Array.isArray(room.pesertaDetail)) {
+      return {
+        Nama_Lengkap: "Unknown",
+        Foto: gambarBawaan,
+        id: null,
+      };
+    }
+
+    const participant = room.pesertaDetail.find((p) => p.id !== currentUserId);
+    return (
+      participant || {
+        Nama_Lengkap: "Unknown",
+        Foto: gambarBawaan,
+        id: null,
+      }
+    );
   };
 
   const getFileIconComponent = (fileName) => {
@@ -321,7 +359,6 @@ const LiveChat = ({ setSidebarOpen }) => {
       : selectedRoom.pesan
     : [];
 
-  // Hitung pesan belum dibaca untuk room tertentu
   const getUnreadCount = (room) => {
     if (!currentUserId) return 0;
     return (
@@ -334,14 +371,14 @@ const LiveChat = ({ setSidebarOpen }) => {
   return (
     <div className="flex w-full h-full border rounded-lg shadow-lg overflow-hidden bg-white">
       {/* Sidebar Desktop */}
-      <div className="hidden md:block md:w-1/3 border-r flex-col">
-        <div className="p-4 border-b">
+      <div className="hidden md:flex md:w-1/3 border-r flex-col h-full">
+        <div className="p-4 border-b flex-shrink-0">
           <div className="flex items-center justify-between mb-2">
             <h2 className="text-lg font-bold text-black">Pesan</h2>
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto min-h-0">
           {sedangMemuat ? (
             <div className="flex justify-center p-4">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
@@ -367,7 +404,6 @@ const LiveChat = ({ setSidebarOpen }) => {
                     selectedRoom?.id === room.id ? "bg-gray-200" : ""
                   }`}
                   onClick={() => setSelectedRoom(room)}
-                  onContextMenu={(e) => klikKananPesan(e, room.id)}
                 >
                   <Image
                     src={participant.Foto || gambarBawaan}
@@ -412,14 +448,12 @@ const LiveChat = ({ setSidebarOpen }) => {
                       </p>
                     )}
 
-                    {/* Badge pesan belum dibaca */}
                     {unreadCount > 0 && (
                       <span className="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full min-w-[20px] text-center">
                         {unreadCount > 99 ? "99+" : unreadCount}
                       </span>
                     )}
 
-                    {/* Status untuk pesan terakhir yang dikirim admin */}
                     {lastMessage?.idPengirim === currentUserId &&
                       (lastMessage.sudahDibaca ? (
                         <BsCheck2All className="w-4 h-4 text-blue-500" />
@@ -434,10 +468,10 @@ const LiveChat = ({ setSidebarOpen }) => {
         </div>
       </div>
 
-      {/* Mobile Sidebar - hanya muncul saat tidak ada selectedRoom */}
+      {/* Mobile Sidebar */}
       {!selectedRoom && (
-        <div className="block md:hidden w-full border-r flex-col">
-          <div className="p-4 border-b">
+        <div className="flex md:hidden w-full border-r flex-col h-full">
+          <div className="p-4 border-b flex-shrink-0">
             <div className="flex items-center justify-between mb-2">
               <button
                 className="p-2 flex items-center justify-center"
@@ -452,19 +486,9 @@ const LiveChat = ({ setSidebarOpen }) => {
                 </span>
               )}
             </div>
-            <div className="relative mt-2">
-              <input
-                type="text"
-                placeholder="Cari percakapan"
-                className="w-full p-2 border rounded-lg pl-10"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-              <MagnifyingGlassIcon className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
-            </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto">
+          <div className="flex-1 overflow-y-auto min-h-0">
             {sedangMemuat ? (
               <div className="flex justify-center p-4">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
@@ -547,16 +571,17 @@ const LiveChat = ({ setSidebarOpen }) => {
         </div>
       )}
 
-      {/* Main Chat Area */}
+      {/* Main Chat Area - TANPA AUTO SCROLL */}
       <div
-        className={`${
-          selectedRoom ? "w-full md:w-2/3" : "hidden md:block md:w-2/3"
-        } flex flex-col`}
+        className={`
+          flex flex-col h-full
+          ${selectedRoom ? "w-full md:w-2/3" : "hidden md:flex md:w-2/3"}
+        `}
         suppressHydrationWarning
       >
         {selectedRoom ? (
           <>
-            <div className="p-4 border-b flex items-center justify-between">
+            <div className="p-4 border-b flex items-center justify-between flex-shrink-0">
               <div className="flex items-center gap-3">
                 <FaChevronLeft
                   className="w-5 h-5 text-gray-500 cursor-pointer md:hidden"
@@ -587,7 +612,11 @@ const LiveChat = ({ setSidebarOpen }) => {
               </button>
             </div>
 
-            <div className="flex-1 p-4 bg-gray-50 overflow-y-auto">
+            {/* Area pesan - BISA DISCROLL BEBAS */}
+            <div
+              className="flex-1 overflow-y-auto p-4 bg-gray-50"
+              style={{ minHeight: 0 }}
+            >
               {displayMessages.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-full">
                   <AiOutlineMessage className="w-24 h-24 text-gray-200 mb-4" />
@@ -649,7 +678,7 @@ const LiveChat = ({ setSidebarOpen }) => {
                             isMyMessage
                               ? "bg-[#0f67b1] text-white"
                               : "bg-white text-black"
-                          }  p-3 rounded-lg max-w-md shadow`}
+                          } p-3 rounded-lg max-w-md shadow`}
                         >
                           {msg.urlFile && renderFileMessage(msg)}
 
@@ -700,7 +729,7 @@ const LiveChat = ({ setSidebarOpen }) => {
             </div>
 
             {/* Message Input */}
-            <div className="p-3 border-t bg-white">
+            <div className="p-3 border-t bg-white flex-shrink-0">
               {selectedFile && (
                 <div className="flex items-center justify-between bg-blue-50 p-2 rounded-lg mb-2">
                   <div className="flex items-center gap-2">
