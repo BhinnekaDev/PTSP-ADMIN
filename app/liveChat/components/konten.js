@@ -172,16 +172,8 @@ const LiveChat = ({ setSidebarOpen }) => {
     setTotalUnreadCount(total);
   }, [chatRooms, currentUserId]);
 
-  const filteredChatRooms = chatRooms.filter((room) => {
-    if (!room.pesertaDetail || !Array.isArray(room.pesertaDetail)) {
-      return false;
-    }
-
-    const participantName =
-      room.pesertaDetail.find((p) => p.id !== currentUserId)?.Nama_Lengkap ||
-      "";
-    return participantName.toLowerCase().includes(searchQuery.toLowerCase());
-  });
+  // HAPUS: filter chat rooms (langsung pakai chatRooms tanpa filter)
+  const filteredChatRooms = chatRooms;
 
   const toggleSelengkapnya2 = (index) => {
     setSelengkapnya2((prev) =>
@@ -571,7 +563,6 @@ const LiveChat = ({ setSidebarOpen }) => {
         </div>
       )}
 
-      {/* Main Chat Area - TANPA AUTO SCROLL */}
       <div
         className={`
           flex flex-col h-full
@@ -612,7 +603,6 @@ const LiveChat = ({ setSidebarOpen }) => {
               </button>
             </div>
 
-            {/* Area pesan - BISA DISCROLL BEBAS */}
             <div
               className="flex-1 overflow-y-auto p-4 bg-gray-50"
               style={{ minHeight: 0 }}
@@ -678,7 +668,7 @@ const LiveChat = ({ setSidebarOpen }) => {
                             isMyMessage
                               ? "bg-[#0f67b1] text-white"
                               : "bg-white text-black"
-                          } p-3 rounded-lg max-w-md shadow`}
+                          } p-3 rounded-lg max-w-[80%] sm:max-w-md shadow`}
                         >
                           {msg.urlFile && renderFileMessage(msg)}
 
@@ -697,7 +687,9 @@ const LiveChat = ({ setSidebarOpen }) => {
                                   animate={{ opacity: 1, y: 0 }}
                                   exit={{ opacity: 0.5, y: 5 }}
                                   transition={{ duration: 0.2 }}
-                                  className="text-white text-sm underline mt-1"
+                                  className={`text-sm underline mt-1 ${
+                                    isMyMessage ? "text-white" : "text-blue-600"
+                                  }`}
                                   onClick={() => toggleSelengkapnya2(index)}
                                 >
                                   {selengkapnya2.includes(index)
@@ -707,7 +699,6 @@ const LiveChat = ({ setSidebarOpen }) => {
                               )}
                             </>
                           )}
-
                           <div className="flex items-center justify-end mt-1 space-x-1">
                             <span className="text-xs opacity-80">
                               {waktuPesan}

@@ -20,7 +20,6 @@ import ModalTambahAPK from "@/components/modalTambahAPK";
 import useTampilkanDataPerTahun from "@/hooks/backend/useTampilkanDataPerTahun";
 
 function Napbar({ tahunDipilih, setTahunDipilih, setSidebarOpen }) {
-  const [masukan, setMasukan] = useState("");
   const [bukaData, setBukaData] = useState(false);
   const [bukaTahun, setBukaTahun] = useState(false);
   const [bukaModalTambahAdmin, setBukaModalTambahAdmin] = useState(false);
@@ -54,26 +53,6 @@ function Napbar({ tahunDipilih, setTahunDipilih, setSidebarOpen }) {
         </button>
 
         <div className="items-center gap-x-2 lg:flex w-full">
-          <div className="relative flex gap-2 md:w-max">
-            <input
-              type="search"
-              placeholder="Silahkan Cari..."
-              value={masukan}
-              onChange={(e) => setMasukan(e.target.value)}
-              className={`min-w-[288px] border border-gray-400 p-2 px-4 text-black placeholder-gray-500 rounded-full ${
-                masukan ? "text-black" : "text-gray-500"
-              }`}
-            />
-            {masukan === "" && (
-              <div className="absolute right-3 top-[10px]">
-                <MagnifyingGlassIcon
-                  className="h-5 w-5 text-black"
-                  strokeWidth={3}
-                />
-              </div>
-            )}
-          </div>
-
           <div className="w-full flex justify-between">
             <Menu open={bukaTahun} handler={setBukaTahun}>
               <MenuHandler>
