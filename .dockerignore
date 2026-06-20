@@ -1,0 +1,22 @@
+# Node modules dan cache
+node_modules
+npm-debug.log
+yarn.lock
+
+# Next.js build cache
+.next/cache
+
+# Environment & OS files
+.DS_Store
+.env
+.env.local
+.env.development
+.env.test
+.env.production.local
+
+# Git
+.git
+.gitignore
+
+# Misc
+.vscode
