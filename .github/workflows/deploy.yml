@@ -46,7 +46,7 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       # -----------------------------
-      # Build Docker image (tanpa build-arg)
+      # Build Docker image
       # -----------------------------
       - name: Build Docker image
         run: |
@@ -72,14 +72,16 @@ jobs:
           eval "$(ssh-agent -s)"
           ssh-add ~/.ssh/id_ed25519
 
-          ssh-keyscan -p 22 -H ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts || true
+          # ✅ FIX: pake SERVER_PORT
+          ssh-keyscan -p ${{ secrets.SERVER_PORT }} -H ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts || true
 
       # -----------------------------
       # Deploy ke server
       # -----------------------------
       - name: Deploy to Server
         run: |
-          ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=60 -p 22 ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'EOF'
+          # ✅ FIX: pake SERVER_PORT
+          ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=60 -p ${{ secrets.SERVER_PORT }} ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'EOF'
             cd ${{ secrets.PROJECT_PATH }}
 
             echo "Stopping old containers..."
