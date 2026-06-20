@@ -31,10 +31,19 @@ jobs:
         run: npm ci
 
       # -----------------------------
-      # Build aplikasi (testing)
+      # Build aplikasi
       # -----------------------------
       - name: Build aplikasi
         run: npm run build
+        env:
+          NEXT_PUBLIC_FIREBASE_API_KEY: ${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY }}
+          NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: ${{ secrets.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN }}
+          NEXT_PUBLIC_FIREBASE_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_PROJECT_ID }}
+          NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: ${{ secrets.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET }}
+          NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID }}
+          NEXT_PUBLIC_FIREBASE_APP_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_APP_ID }}
+          NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID }}
+          FIREBASE_ADMIN_BASE64: ${{ secrets.FIREBASE_ADMIN_BASE64 }}
 
       # -----------------------------
       # Login ke Docker Hub
@@ -68,11 +77,8 @@ jobs:
           mkdir -p ~/.ssh
           echo "${{ secrets.SSH_PRIVATE_KEY }}" | tr -d '\r' > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
-
           eval "$(ssh-agent -s)"
           ssh-add ~/.ssh/id_ed25519
-
-          # ✅ FIX: pake SERVER_PORT
           ssh-keyscan -p ${{ secrets.SERVER_PORT }} -H ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts || true
 
       # -----------------------------
@@ -80,12 +86,12 @@ jobs:
       # -----------------------------
       - name: Deploy to Server
         run: |
-          # ✅ FIX: pake SERVER_PORT
           ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=60 -p ${{ secrets.SERVER_PORT }} ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'EOF'
             cd ${{ secrets.PROJECT_PATH }}
 
-            echo "Stopping old containers..."
-            docker compose down || true
+            echo "Stopping ptsp-admin container..."
+            docker compose stop ptsp-admin-fe || true
+            docker compose rm -f ptsp-admin-fe || true
 
             echo "Removing old image..."
             docker rmi -f ${{ secrets.DOCKER_USERNAME }}/ptsp-admin-fe:dev || true
@@ -93,8 +99,8 @@ jobs:
             echo "Pulling latest image..."
             docker pull ${{ secrets.DOCKER_USERNAME }}/ptsp-admin-fe:dev
 
-            echo "Starting new containers..."
-            docker compose up -d --force-recreate
+            echo "Starting ptsp-admin container..."
+            docker compose up -d ptsp-admin-fe
 
             echo "Deploy finished! Containers are running:"
             docker ps
