@@ -9,30 +9,30 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # -----------------------------
+      # ============================================
       # Checkout repository
-      # -----------------------------
+      # ============================================
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      # -----------------------------
+      # ============================================
       # Setup Node.js
-      # -----------------------------
+      # ============================================
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "18"
+          node-version: "22"
           cache: "npm"
 
-      # -----------------------------
+      # ============================================
       # Install dependencies
-      # -----------------------------
+      # ============================================
       - name: Install dependencies
         run: npm ci
 
-      # -----------------------------
-      # Build aplikasi
-      # -----------------------------
+      # ============================================
+      # Build aplikasi (testing)
+      # ============================================
       - name: Build aplikasi
         run: npm run build
         env:
@@ -45,33 +45,46 @@ jobs:
           NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID }}
           FIREBASE_ADMIN_BASE64: ${{ secrets.FIREBASE_ADMIN_BASE64 }}
 
-      # -----------------------------
+      # ============================================
       # Login ke Docker Hub
-      # -----------------------------
+      # ============================================
       - name: Log in to Docker Hub
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      # -----------------------------
-      # Build Docker image
-      # -----------------------------
-      - name: Build Docker image
-        run: |
-          docker build \
-            -t ${{ secrets.DOCKER_USERNAME }}/ptsp-admin-fe:dev .
+      # ============================================
+      # Setup Docker Buildx
+      # ============================================
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-      # -----------------------------
-      # Push Docker image
-      # -----------------------------
-      - name: Push Docker image
-        run: |
-          docker push ${{ secrets.DOCKER_USERNAME }}/ptsp-admin-fe:dev
+      # ============================================
+      # Build and push Docker image
+      # ============================================
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ secrets.DOCKER_USERNAME }}/ptsp-admin-fe:dev
+          build-args: |
+            NEXT_PUBLIC_FIREBASE_API_KEY=${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY }}
+            NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=${{ secrets.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN }}
+            NEXT_PUBLIC_FIREBASE_PROJECT_ID=${{ secrets.NEXT_PUBLIC_FIREBASE_PROJECT_ID }}
+            NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=${{ secrets.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET }}
+            NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=${{ secrets.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID }}
+            NEXT_PUBLIC_FIREBASE_APP_ID=${{ secrets.NEXT_PUBLIC_FIREBASE_APP_ID }}
+            NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=${{ secrets.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID }}
+            FIREBASE_ADMIN_BASE64=${{ secrets.FIREBASE_ADMIN_BASE64 }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          platforms: linux/amd64
 
-      # -----------------------------
+      # ============================================
       # Setup SSH ke server
-      # -----------------------------
+      # ============================================
       - name: Setup SSH
         run: |
           mkdir -p ~/.ssh
@@ -81,13 +94,17 @@ jobs:
           ssh-add ~/.ssh/id_ed25519
           ssh-keyscan -p ${{ secrets.SERVER_PORT }} -H ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts || true
 
-      # -----------------------------
+      # ============================================
       # Deploy ke server
-      # -----------------------------
+      # ============================================
       - name: Deploy to Server
         run: |
           ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=60 -p ${{ secrets.SERVER_PORT }} ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'EOF'
             cd ${{ secrets.PROJECT_PATH }}
+
+            echo "========================================="
+            echo "Starting deployment PTSP Admin..."
+            echo "========================================="
 
             echo "Stopping ptsp-admin container..."
             docker compose stop ptsp-admin-fe || true
@@ -102,6 +119,9 @@ jobs:
             echo "Starting ptsp-admin container..."
             docker compose up -d ptsp-admin-fe
 
-            echo "Deploy finished! Containers are running:"
+            echo "Deployment finished!"
+            echo "========================================="
+            echo "Running containers:"
             docker ps
+            echo "========================================="
           EOF
