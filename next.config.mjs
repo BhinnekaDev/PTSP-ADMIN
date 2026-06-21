@@ -1,10 +1,14 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
-    domains: ["firebasestorage.googleapis.com"],
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "firebasestorage.googleapis.com",
+      },
+    ],
   },
   webpack: (config, { isServer }) => {
-    // Handle Firebase Admin untuk server
     if (isServer) {
       config.externals.push({
         "firebase-admin": "commonjs firebase-admin",
