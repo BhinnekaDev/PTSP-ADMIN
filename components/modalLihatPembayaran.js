@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   Dialog,
   DialogHeader,
@@ -17,10 +17,40 @@ const ModalLihatPembayaran = ({
 }) => {
   const { daftarPemesanan } = useTampilkanPembayaran();
   const gambarBawaan = require("@/assets/images/profil.jpg");
+  const [errorGambar, setErrorGambar] = useState({});
 
   const pembayaranTerpilih = daftarPemesanan.find(
-    (pembayaran) => pembayaran.id === pembayaranYangTerpilih
+    (pembayaran) => pembayaran.id === pembayaranYangTerpilih,
   );
+
+  // Fungsi untuk menangani error gambar
+  const handleErrorGambar = (id) => {
+    setErrorGambar((prev) => ({ ...prev, [id]: true }));
+  };
+
+  // Fungsi untuk mendapatkan sumber gambar yang benar
+  const getSumberGambar = (pengguna) => {
+    if (!pengguna) return gambarBawaan;
+
+    // PRIORITAS 1: fotoProfil dari hasil penggabungan di hook
+    if (pengguna.fotoProfil && !errorGambar[pengguna.id]) {
+      return pengguna.fotoProfil;
+    }
+    // PRIORITAS 2: Foto_URL dari Firestore
+    if (pengguna.Foto_URL && !errorGambar[pengguna.id]) {
+      return pengguna.Foto_URL;
+    }
+    // PRIORITAS 3: Field Foto
+    if (pengguna.Foto && !errorGambar[pengguna.id]) {
+      return pengguna.Foto;
+    }
+    // PRIORITAS 4: Field photoURL
+    if (pengguna.photoURL && !errorGambar[pengguna.id]) {
+      return pengguna.photoURL;
+    }
+    // Default: gambar bawaan
+    return gambarBawaan;
+  };
 
   return (
     <Dialog
@@ -79,7 +109,7 @@ const ModalLihatPembayaran = ({
                         src={file}
                         type="application/pdf"
                       />
-                    )
+                    ),
                   )
                 ) : (
                   <p className="flex items-center gap-2 bg-red-100 border-l-4 border-red-500 text-red-800 text-sm font-medium px-4 py-3 rounded-lg shadow-md">
@@ -90,14 +120,36 @@ const ModalLihatPembayaran = ({
 
               {pembayaranTerpilih.transaksi?.Bukti_Pembayaran?.length > 0 && (
                 <div className="flex flex-col items-center">
-                  <Image
-                    alt="Gambar Profil"
-                    className="w-24 h-24 border-4 border-blue-500 rounded-full shadow-lg transition-transform duration-300 hover:scale-105"
-                    src={pembayaranTerpilih.pengguna?.Foto || gambarBawaan}
-                  />
+                  <div className="relative w-24 h-24 rounded-full overflow-hidden border-4 border-blue-500 shadow-lg transition-transform duration-300 hover:scale-105 bg-gray-100">
+                    <img
+                      src={getSumberGambar(pembayaranTerpilih.pengguna)}
+                      alt={
+                        pembayaranTerpilih.pengguna?.Nama_Lengkap || "Pengguna"
+                      }
+                      width={96}
+                      height={96}
+                      className="object-cover w-full h-full"
+                      onError={() =>
+                        handleErrorGambar(
+                          pembayaranTerpilih.pengguna?.id ||
+                            pembayaranTerpilih.id,
+                        )
+                      }
+                    />
+                    {pembayaranTerpilih.tipePengguna === "perusahaan" && (
+                      <div className="absolute bottom-0 right-0 bg-blue-500 text-white text-xs px-2 py-1 rounded-full">
+                        Perusahaan
+                      </div>
+                    )}
+                  </div>
                   <div className="text-center mt-3">
                     <h2 className="text-2xl font-bold text-blue-900">
                       {pembayaranTerpilih.pengguna?.Nama_Lengkap || "N/A"}
+                      {pembayaranTerpilih.tipePengguna === "perusahaan" && (
+                        <span className="text-sm text-blue-500 ml-2">
+                          (Perusahaan)
+                        </span>
+                      )}
                     </h2>
                     <p className="text-blue-700">
                       {pembayaranTerpilih.pengguna?.Email ||
@@ -105,7 +157,9 @@ const ModalLihatPembayaran = ({
                     </p>
                     <p className="text-blue-700">
                       {pembayaranTerpilih.pengguna?.Jenis_Kelamin ||
-                        "Tidak diketahui"}
+                        (pembayaranTerpilih.tipePengguna === "perusahaan"
+                          ? "Perusahaan"
+                          : "Tidak diketahui")}
                     </p>
                   </div>
                 </div>

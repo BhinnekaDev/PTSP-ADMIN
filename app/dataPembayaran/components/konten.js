@@ -43,7 +43,9 @@ function Konten({ tahunDipilih }) {
     useState(false);
   const [pembuatanTerpilih, setPembuatanTerpilih] = useState(null);
   const [keteranganTerpilih, setKeteranganTerpilih] = useState("");
+  const [errorGambar, setErrorGambar] = useState({});
   const dataBulanTahun = useTampilkanDataPerTahun();
+
   const {
     sedangMemuatPemesanan,
     daftarPemesanan,
@@ -52,6 +54,35 @@ function Konten({ tahunDipilih }) {
     ambilHalamanSebelumnya,
     ambilHalamanSelanjutnya,
   } = useTampilkanPembayaran();
+
+  // Fungsi untuk menangani error gambar
+  const handleErrorGambar = (id) => {
+    setErrorGambar((prev) => ({ ...prev, [id]: true }));
+  };
+
+  // Fungsi untuk mendapatkan sumber gambar yang benar
+  const getSumberGambar = (pengguna) => {
+    if (!pengguna) return gambarBawaan;
+
+    // PRIORITAS 1: fotoProfil dari hasil penggabungan di hook
+    if (pengguna.fotoProfil && !errorGambar[pengguna.id]) {
+      return pengguna.fotoProfil;
+    }
+    // PRIORITAS 2: Foto_URL dari Firestore
+    if (pengguna.Foto_URL && !errorGambar[pengguna.id]) {
+      return pengguna.Foto_URL;
+    }
+    // PRIORITAS 3: Field Foto
+    if (pengguna.Foto && !errorGambar[pengguna.id]) {
+      return pengguna.Foto;
+    }
+    // PRIORITAS 4: Field photoURL
+    if (pengguna.photoURL && !errorGambar[pengguna.id]) {
+      return pengguna.photoURL;
+    }
+    // Default: gambar bawaan
+    return gambarBawaan;
+  };
 
   const saringPemesanan = daftarPemesanan.filter((item) => {
     const tanggal =
@@ -77,6 +108,16 @@ function Konten({ tahunDipilih }) {
     return bulanTahunDipilih === tahunDipilih;
   });
 
+  // Filter data yang sudah disaring
+  const dataYangDitampilkan = saringPemesanan.filter((pemesanan) =>
+    [
+      "Sedang Ditinjau",
+      "Ditolak",
+      "Menunggu Pembayaran",
+      "Menunggu Admin",
+    ].includes(pemesanan.Status_Pembayaran),
+  );
+
   return (
     <Card className="h-full w-full">
       <CardHeader floated={false} shadow={false} className="rounded-none">
@@ -90,6 +131,12 @@ function Konten({ tahunDipilih }) {
       <CardBody className="overflow-x-scroll lg:overflow-hidden px-0">
         {sedangMemuatPemesanan ? (
           <MemuatRangkaTampilkanTabel />
+        ) : dataYangDitampilkan.length === 0 ? (
+          <div className="flex justify-center p-6">
+            <Typography variant="h6" className="text-red-500 font-bold">
+              Data Pembayaran Tidak Ada!
+            </Typography>
+          </div>
         ) : (
           <table className="mt-4 w-full min-w-max table-auto text-left">
             <thead>
@@ -111,205 +158,207 @@ function Konten({ tahunDipilih }) {
               </tr>
             </thead>
             <tbody>
-              {saringPemesanan.filter((pemesanan) =>
-                [
-                  "Sedang Ditinjau",
-                  "Ditolak",
-                  "Menunggu Pembayaran",
-                  "Menunggu Admin",
-                ].includes(pemesanan.Status_Pembayaran)
-              ).length > 0 ? (
-                saringPemesanan
-                  .filter((pemesanan) =>
-                    [
-                      "Sedang Ditinjau",
-                      "Ditolak",
-                      "Menunggu Pembayaran",
-                      "Menunggu Admin",
-                    ].includes(pemesanan.Status_Pembayaran)
-                  )
-                  .map(
-                    (
-                      {
-                        id,
-                        pengguna,
-                        Data_Keranjang,
-                        Tanggal_Pemesanan,
-                        Keterangan,
-                        Status_Pembayaran,
-                        ajukan,
-                      },
-                      index
-                    ) => {
-                      const apakahTerakhir =
-                        index === saringPemesanan.length - 1;
-                      const kelas = apakahTerakhir
-                        ? "p-4"
-                        : "p-4 border-b border-blue-gray-50";
+              {dataYangDitampilkan.map(
+                (
+                  {
+                    id,
+                    pengguna,
+                    Data_Keranjang,
+                    Tanggal_Pemesanan,
+                    Keterangan,
+                    Status_Pembayaran,
+                    ajukan,
+                  },
+                  index,
+                ) => {
+                  const apakahTerakhir =
+                    index === dataYangDitampilkan.length - 1;
+                  const kelas = apakahTerakhir
+                    ? "p-4"
+                    : "p-4 border-b border-blue-gray-50";
 
-                      return (
-                        <tr key={id}>
-                          <td className={kelas}>
-                            <div className="flex items-center gap-3">
-                              <Image
-                                src={pengguna.Foto || gambarBawaan}
-                                alt={pengguna.Nama_Lengkap}
-                                width={40}
-                                height={40}
-                                className="rounded-full"
-                              />
-                              <div className="flex flex-col">
-                                <Typography
-                                  variant="small"
-                                  color="blue-gray"
-                                  className="font-normal"
-                                >
-                                  {pengguna.Nama_Lengkap}
-                                </Typography>
-                                <Typography
-                                  variant="small"
-                                  color="blue-gray"
-                                  className="font-normal opacity-70"
-                                >
-                                  {pengguna.Email}
-                                </Typography>
-                              </div>
-                            </div>
-                          </td>
-                          <td className={kelas}>
-                            {Data_Keranjang.map((Data_Keranjang, indeks) => (
-                              <Typography
-                                key={indeks}
-                                variant="small"
-                                color="blue-gray"
-                                className="font-normal"
-                              >
-                                {Data_Keranjang.Nama.length > 10
-                                  ? Data_Keranjang.Nama.slice(0, 10) + "..."
-                                  : Data_Keranjang.Nama}
-                              </Typography>
-                            ))}
-                          </td>
-
-                          <td>
-                            <Chip
-                              variant="ghost"
-                              className="text-center"
-                              size="md"
-                              value={
-                                Status_Pembayaran === "Menunggu Admin"
-                                  ? "Request VA Baru"
-                                  : ["Sedang Ditinjau", "Ditolak"].includes(
-                                      Status_Pembayaran
-                                    )
-                                  ? Status_Pembayaran
-                                  : new Date(ajukan.Tanggal_Kadaluwarsa) <
-                                    new Date()
-                                  ? "Kedaluwarsa"
-                                  : Status_Pembayaran || "Belum ada status"
-                              }
-                              color={
-                                Status_Pembayaran === "Menunggu Admin"
-                                  ? "blue"
-                                  : Status_Pembayaran === "Ditolak"
-                                  ? "deep-orange"
-                                  : Status_Pembayaran === "Sedang Ditinjau"
-                                  ? "yellow"
-                                  : new Date(ajukan.Tanggal_Kadaluwarsa) <
-                                    new Date()
-                                  ? "blue-gray"
-                                  : Status_Pembayaran === "Menunggu Pembayaran"
-                                  ? "red"
-                                  : "default"
+                  return (
+                    <tr key={id}>
+                      <td className={kelas}>
+                        <div className="flex items-center gap-3">
+                          <div className="relative w-10 h-10 rounded-full overflow-hidden bg-gray-100">
+                            <img
+                              src={getSumberGambar(pengguna)}
+                              alt={pengguna?.Nama_Lengkap || "Pengguna"}
+                              width={40}
+                              height={40}
+                              className="object-cover w-full h-full"
+                              onError={() =>
+                                handleErrorGambar(pengguna?.id || id)
                               }
                             />
-                          </td>
-
-                          <td className={kelas}>
+                          </div>
+                          <div className="flex flex-col">
                             <Typography
                               variant="small"
                               color="blue-gray"
                               className="font-normal"
                             >
-                              {formatTanggal(Tanggal_Pemesanan)}
+                              {pengguna?.Nama_Lengkap || "Nama Tidak Diketahui"}
+                              {pengguna?.tipePengguna === "perusahaan" && (
+                                <span className="text-xs text-blue-500 ml-1">
+                                  (Perusahaan)
+                                </span>
+                              )}
                             </Typography>
-                          </td>
-                          <td className={kelas}>
                             <Typography
+                              variant="small"
+                              color="blue-gray"
+                              className="font-normal opacity-70"
+                            >
+                              {pengguna?.Email || "Email Tidak Diketahui"}
+                            </Typography>
+                          </div>
+                        </div>
+                      </td>
+                      <td className={kelas}>
+                        {Data_Keranjang && Data_Keranjang.length > 0 ? (
+                          Data_Keranjang.map((item, indeks) => (
+                            <Typography
+                              key={indeks}
                               variant="small"
                               color="blue-gray"
                               className="font-normal"
                             >
-                              {formatTanggal(ajukan.Tanggal_Kadaluwarsa)}
+                              {item.Nama && item.Nama.length > 10
+                                ? item.Nama.slice(0, 10) + "..."
+                                : item.Nama || "Produk tidak tersedia"}
                             </Typography>
-                          </td>
+                          ))
+                        ) : (
+                          <Typography
+                            variant="small"
+                            color="blue-gray"
+                            className="font-normal"
+                          >
+                            Tidak ada produk
+                          </Typography>
+                        )}
+                      </td>
 
-                          <td className={kelas}>
-                            {Status_Pembayaran === "Ditolak" ? (
-                              <Chip
-                                variant="ghost"
-                                size="sm"
-                                value="X"
-                                className="text-center"
-                              />
-                            ) : (
-                              <>
-                                <Tooltip content="Lihat Selengkapnya">
-                                  <IconButton
-                                    onClick={() => {
-                                      setPembuatanTerpilih(id);
-                                      setKeteranganTerpilih(Keterangan || "");
-                                      setBukaModalLihatPembayaran(true);
-                                    }}
-                                    variant="text"
-                                  >
-                                    <AiFillEye className="h-4 w-4" />
-                                  </IconButton>
-                                </Tooltip>
-                                {![
-                                  "Menunggu Pembayaran",
-                                  "Menunggu Admin",
-                                ].includes(Status_Pembayaran) && (
-                                  <Tooltip content="Sunting">
-                                    <IconButton
-                                      onClick={() => {
-                                        setPembuatanTerpilih(id);
-                                        setKeteranganTerpilih(Keterangan || "");
-                                        setBukaModalSuntingPembayaran(true);
-                                      }}
-                                      variant="text"
-                                    >
-                                      <AiOutlineUpload className="h-4 w-4" />
-                                    </IconButton>
-                                  </Tooltip>
-                                )}
+                      <td className={kelas}>
+                        <Chip
+                          variant="ghost"
+                          className="text-center"
+                          size="md"
+                          value={
+                            Status_Pembayaran === "Menunggu Admin"
+                              ? "Request VA Baru"
+                              : ["Sedang Ditinjau", "Ditolak"].includes(
+                                    Status_Pembayaran,
+                                  )
+                                ? Status_Pembayaran
+                                : ajukan?.Tanggal_Kadaluwarsa &&
+                                    new Date(ajukan.Tanggal_Kadaluwarsa) <
+                                      new Date()
+                                  ? "Kedaluwarsa"
+                                  : Status_Pembayaran || "Belum ada status"
+                          }
+                          color={
+                            Status_Pembayaran === "Menunggu Admin"
+                              ? "blue"
+                              : Status_Pembayaran === "Ditolak"
+                                ? "deep-orange"
+                                : Status_Pembayaran === "Sedang Ditinjau"
+                                  ? "yellow"
+                                  : ajukan?.Tanggal_Kadaluwarsa &&
+                                      new Date(ajukan.Tanggal_Kadaluwarsa) <
+                                        new Date()
+                                    ? "blue-gray"
+                                    : Status_Pembayaran ===
+                                        "Menunggu Pembayaran"
+                                      ? "red"
+                                      : "default"
+                          }
+                        />
+                      </td>
 
-                                {Status_Pembayaran === "Menunggu Admin" && (
-                                  <Tooltip content="Upload VA Baru">
-                                    <IconButton
-                                      onClick={() => {
-                                        setPembuatanTerpilih(id);
-                                        setBukaModalSuntingVaKadaluwarsa(true);
-                                      }}
-                                      variant="text"
-                                    >
-                                      <AiOutlineUpload className="h-4 w-4" />
-                                    </IconButton>
-                                  </Tooltip>
-                                )}
-                              </>
+                      <td className={kelas}>
+                        <Typography
+                          variant="small"
+                          color="blue-gray"
+                          className="font-normal"
+                        >
+                          {formatTanggal(Tanggal_Pemesanan) ||
+                            "Tidak ada tanggal"}
+                        </Typography>
+                      </td>
+                      <td className={kelas}>
+                        <Typography
+                          variant="small"
+                          color="blue-gray"
+                          className="font-normal"
+                        >
+                          {ajukan?.Tanggal_Kadaluwarsa
+                            ? formatTanggal(ajukan.Tanggal_Kadaluwarsa)
+                            : "Tidak ada tanggal"}
+                        </Typography>
+                      </td>
+
+                      <td className={kelas}>
+                        {Status_Pembayaran === "Ditolak" ? (
+                          <Chip
+                            variant="ghost"
+                            size="sm"
+                            value="X"
+                            className="text-center"
+                          />
+                        ) : (
+                          <>
+                            <Tooltip content="Lihat Selengkapnya">
+                              <IconButton
+                                onClick={() => {
+                                  setPembuatanTerpilih(id);
+                                  setKeteranganTerpilih(Keterangan || "");
+                                  setBukaModalLihatPembayaran(true);
+                                }}
+                                variant="text"
+                              >
+                                <AiFillEye className="h-4 w-4" />
+                              </IconButton>
+                            </Tooltip>
+                            {![
+                              "Menunggu Pembayaran",
+                              "Menunggu Admin",
+                            ].includes(Status_Pembayaran) && (
+                              <Tooltip content="Sunting">
+                                <IconButton
+                                  onClick={() => {
+                                    setPembuatanTerpilih(id);
+                                    setKeteranganTerpilih(Keterangan || "");
+                                    setBukaModalSuntingPembayaran(true);
+                                  }}
+                                  variant="text"
+                                >
+                                  <AiOutlineUpload className="h-4 w-4" />
+                                </IconButton>
+                              </Tooltip>
                             )}
-                          </td>
-                        </tr>
-                      );
-                    }
-                  )
-              ) : (
-                <tr>
-                  <td colSpan="4" className="p-4 text-center text-gray-500">
-                    Tidak Ada Data
-                  </td>
-                </tr>
+
+                            {Status_Pembayaran === "Menunggu Admin" && (
+                              <Tooltip content="Upload VA Baru">
+                                <IconButton
+                                  onClick={() => {
+                                    setPembuatanTerpilih(id);
+                                    setBukaModalSuntingVaKadaluwarsa(true);
+                                  }}
+                                  variant="text"
+                                >
+                                  <AiOutlineUpload className="h-4 w-4" />
+                                </IconButton>
+                              </Tooltip>
+                            )}
+                          </>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                },
               )}
             </tbody>
           </table>
