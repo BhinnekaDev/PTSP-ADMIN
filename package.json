@@ -27,7 +27,6 @@
     "jspdf-autotable": "^5.0.2",
     "jszip": "^3.10.1",
     "next": "^15.5.18",
-    "node-schedule": "^2.1.1",
     "nodemailer": "^7.0.10",
     "pdf-lib": "^1.17.1",
     "pdfkit": "^0.17.1",
