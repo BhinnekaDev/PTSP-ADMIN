@@ -18,7 +18,7 @@ export default function useSuntingNomorVABaru(idPemesanan) {
   const [fileURL, setFileURL] = useState("");
   const [sedangMengunggah, setSedangMengunggah] = useState(false);
 
-  // ✅ FUNGSI FORMAT TANGGAL - DIPINDAHKAN KE ATAS
+  // Fungsi format tanggal
   const formatTanggal = (dateString) => {
     if (!dateString) return "-";
     const options = {
@@ -84,9 +84,7 @@ export default function useSuntingNomorVABaru(idPemesanan) {
     }
   };
 
-  // ============================================================
-  // ✅ FUNGSI KIRIM EMAIL KADALUWARSA - LANGSUNG DIKIRIM
-  // ============================================================
+  // Fungsi kirim email kadaluwarsa
   const kirimEmailKadaluwarsa = async (
     idPengguna,
     idPemesanan,
@@ -115,7 +113,7 @@ export default function useSuntingNomorVABaru(idPemesanan) {
       }
 
       if (!emailPengguna) {
-        console.warn("⚠️ Email pengguna tidak ditemukan untuk ID:", idPengguna);
+        console.warn("Email pengguna tidak ditemukan");
         return;
       }
 
@@ -129,17 +127,13 @@ export default function useSuntingNomorVABaru(idPemesanan) {
         `<p>Jika belum melakukan pembayaran, pengajuan Anda mungkin akan dibatalkan secara otomatis.</p>` +
         `<p>Terima kasih atas perhatiannya.</p>`;
 
-      console.log(`📧 Mengirim notifikasi kadaluwarsa ke: ${emailPengguna}`);
       await kirimEmail(emailPengguna, subjekEmail, isiEmail, namaPengguna);
-      console.log("✅ Notifikasi kadaluwarsa berhasil dikirim!");
     } catch (error) {
-      console.error("❌ Gagal mengirim notifikasi kadaluwarsa:", error);
+      console.error("Gagal mengirim notifikasi kadaluwarsa:", error);
     }
   };
 
-  // ============================================================
-  // ✅ FUNGSI KIRIM PENGINGAT PEMBAYARAN - LANGSUNG DIKIRIM
-  // ============================================================
+  // Fungsi kirim pengingat pembayaran
   const kirimPengingatPembayaran = async (
     idPengguna,
     idPemesanan,
@@ -168,7 +162,7 @@ export default function useSuntingNomorVABaru(idPemesanan) {
       }
 
       if (!emailPengguna) {
-        console.warn("⚠️ Email pengguna tidak ditemukan untuk ID:", idPengguna);
+        console.warn("Email pengguna tidak ditemukan");
         return;
       }
 
@@ -182,11 +176,9 @@ export default function useSuntingNomorVABaru(idPemesanan) {
         `<p>Mohon segera lakukan pembayaran sebelum batas waktu yang telah ditentukan.</p>` +
         `<p>Terima kasih atas perhatian Anda.</p>`;
 
-      console.log(`📧 Mengirim pengingat pembayaran ke: ${emailPengguna}`);
       await kirimEmail(emailPengguna, subjekEmail, isiEmail, namaPengguna);
-      console.log("✅ Pengingat pembayaran berhasil dikirim!");
     } catch (error) {
-      console.error("❌ Gagal mengirim pengingat pembayaran:", error);
+      console.error("Gagal mengirim pengingat pembayaran:", error);
     }
   };
 
@@ -194,10 +186,6 @@ export default function useSuntingNomorVABaru(idPemesanan) {
     setSedangMemuatSuntingVaBaru(true);
 
     try {
-      console.log("📝 ===== MENYUNTING VA BARU =====");
-      console.log("📝 ID Pemesanan:", idPemesanan);
-
-      // Upload file jika ada
       let fileUrl = fileURL;
       if (file) {
         fileUrl = await uploadFile();
@@ -241,22 +229,13 @@ export default function useSuntingNomorVABaru(idPemesanan) {
         }
       }
 
-      // ============================================================
-      // 🔥 KIRIM EMAIL KADALUWARSA - LANGSUNG!
-      // ============================================================
+      // Kirim email kadaluwarsa dan pengingat
       if (idPengguna && tanggalKadaluwarsa) {
-        console.log("📧 ===== MENGIRIM EMAIL KADALUWARSA =====");
-        console.log("📧 Tanggal Kadaluwarsa:", tanggalKadaluwarsa);
-        console.log("📧 ID Pengguna:", idPengguna);
-
-        // ✅ KIRIM EMAIL KADALUWARSA LANGSUNG
         await kirimEmailKadaluwarsa(
           idPengguna,
           idPemesanan,
           tanggalKadaluwarsa,
         );
-
-        // ✅ KIRIM PENGINGAT PEMBAYARAN LANGSUNG
         await kirimPengingatPembayaran(
           idPengguna,
           idPemesanan,
@@ -264,7 +243,6 @@ export default function useSuntingNomorVABaru(idPemesanan) {
         );
       }
 
-      // Kirim notifikasi email VA baru
       if (idPengguna) {
         await kirimNotifikasiEmail(idPengguna, fileUrl);
       }
@@ -283,7 +261,6 @@ export default function useSuntingNomorVABaru(idPemesanan) {
 
   const kirimNotifikasiEmail = async (idPengguna, fileUrl) => {
     try {
-      console.log("📧 Mencari email pengguna untuk ID:", idPengguna);
       let emailPengguna = "";
       let namaPengguna = "";
 
@@ -294,7 +271,6 @@ export default function useSuntingNomorVABaru(idPemesanan) {
         const peroranganData = peroranganSnap.data();
         emailPengguna = peroranganData.Email;
         namaPengguna = peroranganData.Nama_Lengkap;
-        console.log("✅ Email ditemukan di perorangan:", emailPengguna);
       } else {
         const perusahaanRef = doc(database, "perusahaan", idPengguna);
         const perusahaanSnap = await getDoc(perusahaanRef);
@@ -303,13 +279,11 @@ export default function useSuntingNomorVABaru(idPemesanan) {
           const perusahaanData = perusahaanSnap.data();
           emailPengguna = perusahaanData.Email;
           namaPengguna = perusahaanData.Nama_Lengkap;
-          console.log("✅ Email ditemukan di perusahaan:", emailPengguna);
         }
       }
 
       if (!emailPengguna) {
-        console.warn("❌ Email pengguna tidak ditemukan untuk ID:", idPengguna);
-        toast.error("Email pengguna tidak ditemukan!");
+        console.warn("Email pengguna tidak ditemukan");
         return;
       }
 
@@ -350,13 +324,9 @@ export default function useSuntingNomorVABaru(idPemesanan) {
         `<p>Segera lakukan pembayaran sebelum batas waktu berakhir.</p>` +
         `<p>Terima kasih atas perhatian dan kerja sama Anda.</p>`;
 
-      console.log(`📧 Mengirim notifikasi VA baru ke: ${emailPengguna}`);
-      console.log("📧 Subject:", subjekEmail);
-
       await kirimEmail(emailPengguna, subjekEmail, isiEmail, namaPengguna);
-      console.log("✅ Notifikasi VA baru berhasil dikirim!");
     } catch (error) {
-      console.error("❌ Gagal mengirim notifikasi email:", error);
+      console.error("Gagal mengirim notifikasi email:", error);
       toast.error("Gagal mengirim email notifikasi");
     }
   };
