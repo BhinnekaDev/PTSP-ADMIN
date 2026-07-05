@@ -12,15 +12,21 @@ const usePDFPengajuan = (
   idPemesanan,
 ) => {
   try {
+    console.log("📄 === MEMBUAT PDF PENGAJUAN ===");
+    console.log("📄 Nama:", namaPengguna);
+    console.log("📄 Email:", emailPengguna);
+    console.log("📄 ID Pemesanan:", idPemesanan);
+
     const doc = new jsPDF();
 
-    // Logo dengan fallback base64 jika gambar tidak ditemukan
+    // 🔥 HEADER - dengan try-catch terpisah
     try {
       const imgPath = "/Faktur-Header.png";
-      // Coba tambahkan gambar, jika gagal akan lanjut ke catch
       doc.addImage(imgPath, "PNG", 0, 0, 210, 40);
+      console.log("✅ Gambar header berhasil ditambahkan");
     } catch (imgError) {
-      // Fallback: buat header sederhana tanpa gambar
+      console.warn("⚠️ Gambar header tidak ditemukan, menggunakan fallback");
+      // Fallback: header sederhana
       doc.setFillColor(22, 160, 133);
       doc.rect(0, 0, 210, 40, "F");
       doc.setFontSize(18);
@@ -29,15 +35,16 @@ const usePDFPengajuan = (
       doc.text("PTSP BMKG Bengkulu", 105, 25, { align: "center" });
     }
 
+    // Title
     doc.setFontSize(16);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(0, 0, 0);
     const titleText = "Rincian Pengajuan Layanan";
-    const titleWidth = doc.getTextWidth(titleText);
     const pageWidth = doc.internal.pageSize.width;
-    const titleX = (pageWidth - titleWidth) / 2;
+    const titleX = (pageWidth - doc.getTextWidth(titleText)) / 2;
     doc.text(titleText, titleX, 50);
 
+    // Status
     const jenisAjukan = pengajuanDocData?.Jenis_Ajukan || "-";
     let statusText = "";
     let statusColor = [0, 0, 0];
@@ -62,6 +69,7 @@ const usePDFPengajuan = (
       doc.text(statusText, statusX, 60);
     }
 
+    // Informasi
     doc.setFontSize(12);
     doc.setFont("helvetica", "normal");
     doc.setTextColor(0, 0, 0);
@@ -78,6 +86,7 @@ const usePDFPengajuan = (
     doc.text(`Detail Penerima: ${namaPengguna || "-"}`, 10, 118);
     doc.text(`Email: ${emailPengguna || "-"}`, 10, 126);
 
+    // Tabel
     const tableData = (dataKeranjang || []).map((item) => [
       item.Nama || "-",
       item.Pemilik || "-",
@@ -86,7 +95,6 @@ const usePDFPengajuan = (
       formatRupiah(item.Total_Harga || "-"),
     ]);
 
-    // Jika tidak ada data, tambahkan baris kosong
     if (tableData.length === 0) {
       tableData.push(["-", "-", "-", "-", "-"]);
     }
@@ -112,7 +120,6 @@ const usePDFPengajuan = (
     });
 
     const finalY = doc.lastAutoTable.finalY + 10;
-
     const totalHarga = pemesananData?.Total_Harga_Pesanan || 0;
 
     const totalText = "Total Pesanan:";
@@ -142,10 +149,12 @@ const usePDFPengajuan = (
       finalY + 12,
     );
 
+    console.log("✅ PDF berhasil dibuat!");
     return doc.output("datauristring");
   } catch (error) {
-    console.error("❌ Error membuat PDF:", error);
-    // Return PDF kosong dengan pesan error
+    console.error("❌ Gagal membuat PDF:", error.message);
+
+    // 🔥 RETURN PDF KOSONG - JANGAN LEMPAR ERROR!
     try {
       const doc = new jsPDF();
       doc.setFontSize(16);
