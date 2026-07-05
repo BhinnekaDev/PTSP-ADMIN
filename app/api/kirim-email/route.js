@@ -1,87 +1,29 @@
-// app/api/send-email/route.js
 import { NextResponse } from "next/server";
 import nodemailer from "nodemailer";
 
 export async function POST(req) {
   try {
-    // Validasi environment variables
-    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-      console.error("❌ EMAIL_USER atau EMAIL_PASS tidak ditemukan");
-      return NextResponse.json(
-        {
-          success: false,
-          message: "Konfigurasi email tidak lengkap!",
-        },
-        { status: 500 },
-      );
-    }
-
     const { email, subject, message, namaPengguna, pdfBase64 } =
       await req.json();
 
-    // Validasi input
-    if (!email || !subject || !message || !namaPengguna) {
-      return NextResponse.json(
-        { success: false, message: "Semua field wajib diisi!" },
-        { status: 400 },
-      );
-    }
-
-    console.log("📧 Mencoba kirim email ke:", email);
-    console.log("📧 Menggunakan EMAIL_USER:", process.env.EMAIL_USER);
-
-    // Buat transporter dengan konfigurasi yang lebih baik
     const transporter = nodemailer.createTransport({
-      host: "smtp.gmail.com",
-      port: 587,
-      secure: false, // true untuk port 465, false untuk port 587
+      service: "gmail",
       auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS,
       },
-      // Tambahkan ini untuk mengatasi masalah koneksi di Vercel
-      tls: {
-        rejectUnauthorized: false,
-      },
-      connectionTimeout: 30000,
-      greetingTimeout: 30000,
-      socketTimeout: 30000,
     });
 
-    // Verifikasi koneksi
-    try {
-      await transporter.verify();
-      console.log("✅ Transporter berhasil diverifikasi");
-    } catch (verifyError) {
-      console.error("❌ Verifikasi gagal:", verifyError.message);
-      return NextResponse.json(
-        {
-          success: false,
-          message:
-            "Gagal autentikasi email. Periksa EMAIL_USER dan EMAIL_PASS di Vercel.",
-          error: verifyError.message,
-        },
-        { status: 401 },
-      );
-    }
-
-    // Proses attachments
     const attachments = [];
+
     if (pdfBase64) {
-      try {
-        const base64Data = pdfBase64.split("base64,")[1] || pdfBase64;
-        attachments.push({
-          filename: "Pengajuan.pdf",
-          content: Buffer.from(base64Data, "base64"),
-          contentType: "application/pdf",
-        });
-        console.log("📎 PDF attachment berhasil diproses");
-      } catch (attachmentError) {
-        console.error("❌ Gagal memproses attachment:", attachmentError);
-      }
+      attachments.push({
+        filename: "Pengajuan.pdf",
+        content: Buffer.from(pdfBase64.split("base64,")[1], "base64"),
+        contentType: "application/pdf",
+      });
     }
 
-    // Kirim email
     const info = await transporter.sendMail({
       from: `"PTSP BMKG Bengkulu" <${process.env.EMAIL_USER}>`,
       to: email,
@@ -123,71 +65,25 @@ export async function POST(req) {
               </p>
             </div>
             <p style="font-size: 12px; color: #aaa; text-align: center; margin-top: 30px;">
-              Copyrights © ${new Date().getFullYear()} - PTSP BMKG Provinsi Bengkulu. All Rights Reserved.
+              Copyrights © 2025 - PTSP BMKG Provinsi Bengkulu. All Rights Reserved.
             </p>
           </div>
         </body>
       </html>`,
+
       attachments: attachments,
     });
 
-    console.log("✅ Email berhasil dikirim ke:", email);
-    console.log("📧 Message ID:", info.messageId);
+    console.log("Email berhasil dikirim:", info.response);
 
     return NextResponse.json({
       success: true,
       message: "Email berhasil dikirim!",
-      messageId: info.messageId,
     });
   } catch (error) {
-    console.error("❌ ===== EMAIL ERROR DETAILS =====");
-    console.error("Error code:", error.code);
-    console.error("Error response:", error.response);
-    console.error("Error message:", error.message);
-    console.error("❌ ==============================");
-
-    // Error spesifik
-    if (error.code === "EAUTH") {
-      return NextResponse.json(
-        {
-          success: false,
-          message:
-            "Autentikasi email gagal. Pastikan EMAIL_PASS adalah App Password dari Gmail (bukan password biasa).",
-          error: "EAUTH",
-        },
-        { status: 401 },
-      );
-    }
-
-    if (error.code === "ESOCKET" || error.code === "ECONNECTION") {
-      return NextResponse.json(
-        {
-          success: false,
-          message: "Gagal terhubung ke server email. Coba lagi nanti.",
-          error: error.code,
-        },
-        { status: 500 },
-      );
-    }
-
-    if (error.response?.includes("Invalid login")) {
-      return NextResponse.json(
-        {
-          success: false,
-          message:
-            "Email atau password salah. Periksa EMAIL_USER dan EMAIL_PASS di Vercel.",
-          error: "INVALID_LOGIN",
-        },
-        { status: 401 },
-      );
-    }
-
+    console.error("Gagal mengirim email:", error);
     return NextResponse.json(
-      {
-        success: false,
-        message: "Gagal mengirim email: " + error.message,
-        error: error.code || "UNKNOWN",
-      },
+      { success: false, message: "Gagal mengirim email!" },
       { status: 500 },
     );
   }

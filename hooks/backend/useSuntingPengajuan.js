@@ -22,7 +22,7 @@ export default function useSuntingPengajuan(idPemesanan) {
   const [fileURL, setFileURL] = useState("");
   const [sedangMengunggah, setSedangMengunggah] = useState(false);
 
-  // ✅ PINDAHKAN FUNGSI FORMAT TANGGAL KE ATAS
+  // ✅ FUNGSI FORMAT TANGGAL
   const formatTanggal = (dateString) => {
     if (!dateString) return "-";
     const options = {
@@ -121,7 +121,9 @@ export default function useSuntingPengajuan(idPemesanan) {
     return true;
   };
 
-  // Fungsi untuk mengirim email pengingat
+  // ============================================================
+  // ✅ FUNGSI KIRIM EMAIL PENGINGAT - LANGSUNG DIKIRIM
+  // ============================================================
   const kirimEmailPengingat = async (
     idPengguna,
     idPemesanan,
@@ -151,7 +153,7 @@ export default function useSuntingPengajuan(idPemesanan) {
       }
 
       if (!emailPengguna) {
-        console.warn("Email pengguna tidak ditemukan");
+        console.warn("⚠️ Email pengguna tidak ditemukan untuk ID:", idPengguna);
         return;
       }
 
@@ -165,13 +167,19 @@ export default function useSuntingPengajuan(idPemesanan) {
         `<p>Mohon segera lakukan pembayaran sebelum batas waktu yang telah ditentukan.</p>` +
         `<p>Terima kasih atas perhatian Anda.</p>`;
 
+      console.log(
+        `📧 Mengirim email pengingat ke: ${emailPengguna} (${hariSebelum})`,
+      );
       await kirimEmail(emailPengguna, subjekEmail, isiEmail, namaPengguna);
+      console.log("✅ Email pengingat berhasil dikirim!");
     } catch (error) {
-      console.error("Gagal mengirim email pengingat:", error);
+      console.error("❌ Gagal mengirim email pengingat:", error);
     }
   };
 
-  // Fungsi untuk mengirim notifikasi kadaluwarsa
+  // ============================================================
+  // ✅ FUNGSI KIRIM NOTIFIKASI KADALUWARSA - LANGSUNG DIKIRIM
+  // ============================================================
   const kirimNotifikasiKadaluwarsa = async (
     idPengguna,
     idPemesanan,
@@ -200,7 +208,7 @@ export default function useSuntingPengajuan(idPemesanan) {
       }
 
       if (!emailPengguna) {
-        console.warn("Email pengguna tidak ditemukan");
+        console.warn("⚠️ Email pengguna tidak ditemukan untuk ID:", idPengguna);
         return;
       }
 
@@ -214,66 +222,77 @@ export default function useSuntingPengajuan(idPemesanan) {
         `<p>Jika belum melakukan pembayaran, pengajuan Anda mungkin akan dibatalkan secara otomatis.</p>` +
         `<p>Terima kasih atas perhatiannya.</p>`;
 
+      console.log(`📧 Mengirim notifikasi kadaluwarsa ke: ${emailPengguna}`);
       await kirimEmail(emailPengguna, subjekEmail, isiEmail, namaPengguna);
+      console.log("✅ Notifikasi kadaluwarsa berhasil dikirim!");
     } catch (error) {
-      console.error("Gagal mengirim notifikasi kadaluwarsa:", error);
+      console.error("❌ Gagal mengirim notifikasi kadaluwarsa:", error);
     }
   };
 
-  // ⚠️ FUNGSI INI DINONAKTIFKAN - node-schedule tidak work di Vercel
-  // Kirim email langsung sebagai gantinya
-  const jadwalkanNotifikasiKadaluwarsa = async (
+  // ============================================================
+  // ✅ FUNGSI KIRIM EMAIL KADALUWARSA - DIPANGGIL LANGSUNG
+  // ============================================================
+  const kirimEmailKadaluwarsa = async (
     idPengguna,
     idPemesanan,
     tanggalKadaluwarsa,
   ) => {
+    console.log("📧 ===== KIRIM EMAIL KADALUWARSA =====");
+    console.log("📧 ID Pengguna:", idPengguna);
+    console.log("📧 ID Pemesanan:", idPemesanan);
+    console.log("📧 Tanggal Kadaluwarsa:", tanggalKadaluwarsa);
+
     try {
-      console.log("📧 Mengirim notifikasi kadaluwarsa langsung...");
+      // Kirim notifikasi kadaluwarsa
       await kirimNotifikasiKadaluwarsa(
         idPengguna,
         idPemesanan,
         tanggalKadaluwarsa,
       );
+      console.log("✅ Email kadaluwarsa berhasil dikirim!");
     } catch (error) {
-      console.error("Gagal mengirim notifikasi kadaluwarsa:", error);
+      console.error("❌ Gagal mengirim email kadaluwarsa:", error);
     }
   };
 
-  // ⚠️ FUNGSI INI DINONAKTIFKAN - node-schedule tidak work di Vercel
-  // Kirim email langsung sebagai gantinya
-  const jadwalkanPengingatPembayaran = async (
+  // ============================================================
+  // ✅ FUNGSI KIRIM PENGINGAT PEMBAYARAN - DIPANGGIL LANGSUNG
+  // ============================================================
+  const kirimPengingatPembayaran = async (
     idPengguna,
     idPemesanan,
     tanggalKadaluwarsa,
   ) => {
+    console.log("📧 ===== KIRIM PENGINGAT PEMBAYARAN =====");
+    console.log("📧 ID Pengguna:", idPengguna);
+    console.log("📧 ID Pemesanan:", idPemesanan);
+    console.log("📧 Tanggal Kadaluwarsa:", tanggalKadaluwarsa);
+
     try {
-      console.log("📧 Mengirim pengingat pembayaran langsung...");
+      // Kirim pengingat langsung
       await kirimEmailPengingat(
         idPengguna,
         idPemesanan,
         tanggalKadaluwarsa,
         "segera",
       );
-
-      // Kirim notifikasi kadaluwarsa juga
-      await jadwalkanNotifikasiKadaluwarsa(
-        idPengguna,
-        idPemesanan,
-        tanggalKadaluwarsa,
-      );
+      console.log("✅ Pengingat pembayaran berhasil dikirim!");
     } catch (error) {
-      console.error("Gagal menjadwalkan pengingat:", error);
+      console.error("❌ Gagal mengirim pengingat pembayaran:", error);
     }
   };
 
-  // Fungsi untuk mengirim notifikasi email
+  // ============================================================
+  // ✅ FUNGSI KIRIM NOTIFIKASI EMAIL (Status Diterima/Ditolak)
+  // ============================================================
   const kirimNotifikasiEmail = async (
     idPengguna,
     pengajuanData,
     pemesananData,
   ) => {
     try {
-      console.log("📧 Mencari email pengguna...");
+      console.log("📧 Mencari email pengguna untuk ID:", idPengguna);
       let emailPengguna = "";
       let namaPengguna = "";
 
@@ -321,7 +340,6 @@ export default function useSuntingPengajuan(idPemesanan) {
           console.log("✅ PDF berhasil dibuat");
         } catch (pdfError) {
           console.error("❌ Gagal membuat PDF:", pdfError);
-          // Lanjutkan tanpa PDF
         }
       }
 
@@ -405,7 +423,9 @@ export default function useSuntingPengajuan(idPemesanan) {
     }
   };
 
-  // Fungsi untuk menyunting pengajuan
+  // ============================================================
+  // ✅ FUNGSI UTAMA: SUNTING PENGAJUAN
+  // ============================================================
   const suntingPengajuan = async () => {
     setSedangMemuatSuntingPengajuan(true);
 
@@ -415,6 +435,11 @@ export default function useSuntingPengajuan(idPemesanan) {
     }
 
     try {
+      console.log("📝 ===== MENYUNTING PENGAJUAN =====");
+      console.log("📝 ID Pemesanan:", idPemesanan);
+      console.log("📝 Status:", statusPengajuan);
+      console.log("📝 Jenis:", jenisAjukan);
+
       let fileUrl = fileURL;
       if (file) {
         fileUrl = await uploadFile();
@@ -433,6 +458,7 @@ export default function useSuntingPengajuan(idPemesanan) {
         throw new Error("Data pemesanan tidak ditemukan!");
       }
 
+      // Update Data Keranjang
       const updatedKeranjang = dataKeranjang.map((item, index) => ({
         ...item,
         Nomor_VA:
@@ -453,6 +479,7 @@ export default function useSuntingPengajuan(idPemesanan) {
             : pemesananData.Total_Harga_Pesanan,
       });
 
+      // Update Pengajuan
       const pengajuanRef = doc(database, "ajukan", idAjukan);
       const pengajuanUpdateData = {
         Status_Ajukan: statusPengajuan,
@@ -469,6 +496,9 @@ export default function useSuntingPengajuan(idPemesanan) {
 
       await updateDoc(pengajuanRef, pengajuanUpdateData);
 
+      // ============================================================
+      // 🔥 KIRIM EMAIL KADALUWARSA - LANGSUNG!
+      // ============================================================
       if (jenisAjukan === "Berbayar" && statusPengajuan === "Diterima") {
         if (
           !tanggalKadaluwarsa ||
@@ -477,16 +507,27 @@ export default function useSuntingPengajuan(idPemesanan) {
           throw new Error("Tanggal kadaluwarsa tidak valid");
         }
 
-        console.log("📅 Menjadwalkan pengingat untuk:", tanggalKadaluwarsa);
-        await jadwalkanPengingatPembayaran(
+        console.log("📧 ===== MENGIRIM EMAIL KADALUWARSA =====");
+        console.log("📧 Tanggal Kadaluwarsa:", tanggalKadaluwarsa);
+        console.log("📧 ID Pengguna:", pemesananData.ID_Pengguna);
+
+        // ✅ KIRIM EMAIL KADALUWARSA LANGSUNG
+        await kirimEmailKadaluwarsa(
+          pemesananData.ID_Pengguna,
+          idPemesanan,
+          tanggalKadaluwarsa,
+        );
+
+        // ✅ KIRIM PENGINGAT PEMBAYARAN LANGSUNG
+        await kirimPengingatPembayaran(
           pemesananData.ID_Pengguna,
           idPemesanan,
           tanggalKadaluwarsa,
         );
       }
 
-      // 🔥 KIRIM EMAIL NOTIFIKASI
-      console.log("📧 Mengirim notifikasi email...");
+      // Kirim email notifikasi status
+      console.log("📧 Mengirim notifikasi email status...");
       await kirimNotifikasiEmail(
         pemesananData.ID_Pengguna,
         (await getDoc(pengajuanRef)).data(),
