@@ -133,7 +133,6 @@ export default function useSuntingNomorVABaru(idPemesanan) {
     }
   };
 
-  // Fungsi kirim pengingat pembayaran
   const kirimPengingatPembayaran = async (
     idPengguna,
     idPemesanan,
