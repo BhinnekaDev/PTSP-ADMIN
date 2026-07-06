@@ -41,6 +41,7 @@ function Konten({ tahunDipilih }) {
     setBukaModalLihatPengajuanKunjungan,
   ] = useState(false);
   const [kunjunganTerpilih, setKunjunganTerpilih] = useState(null);
+  const [errorGambar, setErrorGambar] = useState({});
   const dataBulanTahun = useTampilkanDataPerTahun();
   const {
     halaman,
@@ -50,6 +51,35 @@ function Konten({ tahunDipilih }) {
     ambilHalamanSelanjutnya,
     sedangMemuatKunjungan,
   } = useTampilkanKunjungan();
+
+  // Fungsi untuk menangani error gambar
+  const handleErrorGambar = (id) => {
+    setErrorGambar((prev) => ({ ...prev, [id]: true }));
+  };
+
+  // Fungsi untuk mendapatkan sumber gambar yang benar
+  const getSumberGambar = (pengguna) => {
+    if (!pengguna) return gambarBawaan;
+
+    // PRIORITAS 1: fotoProfil dari hasil penggabungan di hook
+    if (pengguna.fotoProfil && !errorGambar[pengguna.id]) {
+      return pengguna.fotoProfil;
+    }
+    // PRIORITAS 2: Foto_URL dari Firestore
+    if (pengguna.Foto_URL && !errorGambar[pengguna.id]) {
+      return pengguna.Foto_URL;
+    }
+    // PRIORITAS 3: Field Foto
+    if (pengguna.Foto && !errorGambar[pengguna.id]) {
+      return pengguna.Foto;
+    }
+    // PRIORITAS 4: Field photoURL
+    if (pengguna.photoURL && !errorGambar[pengguna.id]) {
+      return pengguna.photoURL;
+    }
+    // Default: gambar bawaan
+    return gambarBawaan;
+  };
 
   const saringKunjungan = daftarKunjungan.filter((item) => {
     const tanggal =
@@ -89,6 +119,12 @@ function Konten({ tahunDipilih }) {
       <CardBody className="overflow-x-scroll lg:overflow-hidden px-0">
         {sedangMemuatKunjungan ? (
           <MemuatRangkaTampilkanTabel />
+        ) : saringKunjungan.length === 0 ? (
+          <div className="flex justify-center p-6">
+            <Typography variant="h6" className="text-red-500 font-bold">
+              Data Kunjungan Tidak Ada!
+            </Typography>
+          </div>
         ) : (
           <table className="mt-4 w-full min-w-max table-auto text-left">
             <thead>
@@ -111,137 +147,140 @@ function Konten({ tahunDipilih }) {
             </thead>
 
             <tbody>
-              {saringKunjungan.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan="6"
-                    className="p-4 text-center text-blue-gray-500"
-                  >
-                    Tidak Ada Data
-                  </td>
-                </tr>
-              ) : (
-                saringKunjungan.map(
-                  (
-                    {
-                      id,
-                      Data_Pengguna,
-                      Stasiun,
-                      Status_Kunjungan,
-                      Tanggal_Kunjungan,
-                    },
-                    index
-                  ) => {
-                    const apakahTerakhir = index === daftarKunjungan.length - 1;
-                    const kelas = apakahTerakhir
-                      ? "p-4"
-                      : "p-4 border-b border-blue-gray-50";
+              {saringKunjungan.map(
+                (
+                  {
+                    id,
+                    pengguna,
+                    Stasiun,
+                    Status_Kunjungan,
+                    Tanggal_Kunjungan,
+                  },
+                  index,
+                ) => {
+                  const apakahTerakhir = index === saringKunjungan.length - 1;
+                  const kelas = apakahTerakhir
+                    ? "p-4"
+                    : "p-4 border-b border-blue-gray-50";
 
-                    return (
-                      <tr key={id}>
-                        <td className={kelas}>
-                          <div className="flex items-center gap-3">
-                            <Image
-                              src={Data_Pengguna.Foto || gambarBawaan}
-                              alt={Data_Pengguna.Nama_Lengkap}
+                  // Gunakan pengguna dari hook atau fallback ke Data_Pengguna
+                  const dataPengguna = pengguna || Data_Pengguna || {};
+
+                  return (
+                    <tr key={id}>
+                      <td className={kelas}>
+                        <div className="flex items-center gap-3">
+                          <div className="relative w-10 h-10 rounded-full overflow-hidden bg-gray-100">
+                            <img
+                              src={getSumberGambar(dataPengguna)}
+                              alt={dataPengguna.Nama_Lengkap || "Pengguna"}
                               width={40}
                               height={40}
-                              className="rounded-full"
-                            />
-                            <div className="flex flex-col">
-                              <Typography
-                                variant="small"
-                                color="blue-gray"
-                                className="font-medium"
-                              >
-                                {Data_Pengguna.Nama_Lengkap}
-                              </Typography>
-                              <Typography
-                                variant="small"
-                                color="blue-gray"
-                                className="text-xs opacity-70"
-                              >
-                                {Data_Pengguna.Email}
-                              </Typography>
-                            </div>
-                          </div>
-                        </td>
-
-                        <td className={kelas}>
-                          <Typography
-                            variant="small"
-                            color="blue-gray"
-                            className="font-normal"
-                          >
-                            {Stasiun}
-                          </Typography>
-                        </td>
-                        <td className={kelas}>
-                          <Typography
-                            variant="small"
-                            color="blue-gray"
-                            className="font-normal"
-                          >
-                            {Data_Pengguna.No_Hp}
-                          </Typography>
-                        </td>
-                        <td className={kelas}>
-                          <div className="w-max">
-                            <Chip
-                              variant="ghost"
-                              size="sm"
-                              value={Status_Kunjungan || "Belum ada status"}
-                              color={
-                                Status_Kunjungan === "Diterima"
-                                  ? "green"
-                                  : Status_Kunjungan === "Ditolak"
-                                  ? "red"
-                                  : Status_Kunjungan === "Sedang Ditinjau"
-                                  ? "yellow"
-                                  : "default"
+                              className="object-cover w-full h-full"
+                              onError={() =>
+                                handleErrorGambar(dataPengguna.id || id)
                               }
                             />
                           </div>
-                        </td>
-                        <td className={kelas}>
-                          <Typography
-                            variant="small"
-                            color="blue-gray"
-                            className="font-normal"
-                          >
-                            {formatTanggal(Tanggal_Kunjungan)}
-                          </Typography>
-                        </td>
+                          <div className="flex flex-col">
+                            <Typography
+                              variant="small"
+                              color="blue-gray"
+                              className="font-medium"
+                            >
+                              {dataPengguna.Nama_Lengkap ||
+                                "Nama tidak tersedia"}
+                              {dataPengguna.tipePengguna === "perusahaan" && (
+                                <span className="text-xs text-blue-500 ml-1">
+                                  (Perusahaan)
+                                </span>
+                              )}
+                            </Typography>
+                            <Typography
+                              variant="small"
+                              color="blue-gray"
+                              className="text-xs opacity-70"
+                            >
+                              {dataPengguna.Email || "Email tidak tersedia"}
+                            </Typography>
+                          </div>
+                        </div>
+                      </td>
 
-                        {/* Aksi */}
-                        <td className={kelas}>
-                          <Tooltip content="Lihat Selengkapnya">
-                            <IconButton
-                              onClick={() => {
-                                setKunjunganTerpilih(id);
-                                setBukaModalLihatPengajuanKunjungan(true);
-                              }}
-                              variant="text"
-                            >
-                              <EyeIcon className="h-4 w-4" />
-                            </IconButton>
-                          </Tooltip>
-                          <Tooltip content="Sunting">
-                            <IconButton
-                              onClick={() => {
-                                setKunjunganTerpilih(id);
-                                setBukaModalSuntingKunjungan(true);
-                              }}
-                              variant="text"
-                            >
-                              <PencilIcon className="h-4 w-4" />
-                            </IconButton>
-                          </Tooltip>
-                        </td>
-                      </tr>
-                    );
-                  }
-                )
+                      <td className={kelas}>
+                        <Typography
+                          variant="small"
+                          color="blue-gray"
+                          className="font-normal"
+                        >
+                          {Stasiun || "-"}
+                        </Typography>
+                      </td>
+                      <td className={kelas}>
+                        <Typography
+                          variant="small"
+                          color="blue-gray"
+                          className="font-normal"
+                        >
+                          {dataPengguna.No_Hp || dataPengguna.No_Telepon || "-"}
+                        </Typography>
+                      </td>
+                      <td className={kelas}>
+                        <div className="w-max">
+                          <Chip
+                            variant="ghost"
+                            size="sm"
+                            value={Status_Kunjungan || "Belum ada status"}
+                            color={
+                              Status_Kunjungan === "Diterima"
+                                ? "green"
+                                : Status_Kunjungan === "Ditolak"
+                                  ? "red"
+                                  : Status_Kunjungan === "Sedang Ditinjau"
+                                    ? "yellow"
+                                    : "blue-gray"
+                            }
+                          />
+                        </div>
+                      </td>
+                      <td className={kelas}>
+                        <Typography
+                          variant="small"
+                          color="blue-gray"
+                          className="font-normal"
+                        >
+                          {formatTanggal(Tanggal_Kunjungan)}
+                        </Typography>
+                      </td>
+
+                      {/* Aksi */}
+                      <td className={kelas}>
+                        <Tooltip content="Lihat Selengkapnya">
+                          <IconButton
+                            onClick={() => {
+                              setKunjunganTerpilih(id);
+                              setBukaModalLihatPengajuanKunjungan(true);
+                            }}
+                            variant="text"
+                          >
+                            <EyeIcon className="h-4 w-4" />
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip content="Sunting">
+                          <IconButton
+                            onClick={() => {
+                              setKunjunganTerpilih(id);
+                              setBukaModalSuntingKunjungan(true);
+                            }}
+                            variant="text"
+                          >
+                            <PencilIcon className="h-4 w-4" />
+                          </IconButton>
+                        </Tooltip>
+                      </td>
+                    </tr>
+                  );
+                },
               )}
             </tbody>
           </table>
