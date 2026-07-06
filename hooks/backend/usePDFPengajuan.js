@@ -19,7 +19,6 @@ const usePDFPengajuan = (
 
     const doc = new jsPDF();
 
-    // 🔥 HEADER - dengan try-catch terpisah
     try {
       const imgPath = "/Faktur-Header.png";
       doc.addImage(imgPath, "PNG", 0, 0, 210, 40);
