@@ -1,8 +1,5 @@
 import React, { useState } from "react";
-import {
-  ArrowDownTrayIcon,
-  EyeIcon,
-} from "@heroicons/react/24/solid";
+import { ArrowDownTrayIcon, EyeIcon } from "@heroicons/react/24/solid";
 import Image from "next/image";
 import {
   Card,
@@ -22,6 +19,7 @@ import useTampilkanDataPerTahun from "@/hooks/backend/useTampilkanDataPerTahun";
 import { formatTanggal } from "@/constants/formatTanggal";
 // KOMPONEN KAMI
 import ModalLihatIKM from "@/components/modalLihatIKM";
+import MemuatRangkaTampilkanTabel from "@/components/memuatRangkaTabel";
 import { bulan } from "@/constants/bulan";
 
 const judulTabel = [
@@ -35,7 +33,9 @@ function Konten({ tahunDipilih }) {
   const gambarBawaan = require("@/assets/images/profil.jpg");
   const [bukaModalLihatIKM, setBukaModalLihatIKM] = useState(false);
   const [ikmYangTerpilih, setIkmYangTerpilih] = useState(null);
+  const [errorGambar, setErrorGambar] = useState({});
   const dataBulanTahun = useTampilkanDataPerTahun();
+
   const {
     halaman,
     totalIkm,
@@ -45,6 +45,35 @@ function Konten({ tahunDipilih }) {
     sedangMemuatIkm,
   } = useTampilkanDataIKM();
   const { unduhPdf } = useKonversiDataIKMKePdf();
+
+  // Fungsi untuk menangani error gambar
+  const handleErrorGambar = (id) => {
+    setErrorGambar((prev) => ({ ...prev, [id]: true }));
+  };
+
+  // Fungsi untuk mendapatkan sumber gambar yang benar
+  const getSumberGambar = (pengguna) => {
+    if (!pengguna) return gambarBawaan;
+
+    // PRIORITAS 1: fotoProfil dari hasil penggabungan di hook
+    if (pengguna.fotoProfil && !errorGambar[pengguna.id]) {
+      return pengguna.fotoProfil;
+    }
+    // PRIORITAS 2: Foto_URL dari Firestore
+    if (pengguna.Foto_URL && !errorGambar[pengguna.id]) {
+      return pengguna.Foto_URL;
+    }
+    // PRIORITAS 3: Field Foto
+    if (pengguna.Foto && !errorGambar[pengguna.id]) {
+      return pengguna.Foto;
+    }
+    // PRIORITAS 4: Field photoURL
+    if (pengguna.photoURL && !errorGambar[pengguna.id]) {
+      return pengguna.photoURL;
+    }
+    // Default: gambar bawaan
+    return gambarBawaan;
+  };
 
   const saringIkm = daftarIkm.filter((item) => {
     const tanggal =
@@ -70,6 +99,11 @@ function Konten({ tahunDipilih }) {
     return bulanTahunDipilih === tahunDipilih;
   });
 
+  // Filter data yang sudah disaring
+  const dataYangDitampilkan = saringIkm.filter(
+    (pemesanan) => pemesanan.Status_Pengisian_IKM === "Telah Diisi",
+  );
+
   return (
     <Card className="h-full w-full">
       <CardHeader floated={false} shadow={false} className="rounded-none">
@@ -81,37 +115,43 @@ function Konten({ tahunDipilih }) {
       </CardHeader>
 
       <CardBody className="overflow-x-scroll lg:overflow-hidden px-0">
-        <table className="mt-4 w-full min-w-max table-auto text-left">
-          <thead>
-            <tr>
-              {judulTabel.map((konten) => (
-                <th
-                  key={konten}
-                  className="border-y border-blue-gray-100 bg-blue-gray-50/50 p-4"
-                >
-                  <Typography
-                    variant="small"
-                    color="blue-gray"
-                    className="font-normal leading-none opacity-70"
+        {sedangMemuatIkm ? (
+          <MemuatRangkaTampilkanTabel />
+        ) : dataYangDitampilkan.length === 0 ? (
+          <div className="flex justify-center p-6">
+            <Typography variant="h6" className="text-red-500 font-bold">
+              Data IKM Tidak Ada!
+            </Typography>
+          </div>
+        ) : (
+          <table className="mt-4 w-full min-w-max table-auto text-left">
+            <thead>
+              <tr>
+                {judulTabel.map((konten) => (
+                  <th
+                    key={konten}
+                    className="border-y border-blue-gray-100 bg-blue-gray-50/50 p-4"
                   >
-                    {konten}
-                  </Typography>
-                </th>
-              ))}
-            </tr>
-          </thead>
+                    <Typography
+                      variant="small"
+                      color="blue-gray"
+                      className="font-normal leading-none opacity-70"
+                    >
+                      {konten}
+                    </Typography>
+                  </th>
+                ))}
+              </tr>
+            </thead>
 
-          <tbody>
-            {saringIkm
-              .filter(
-                (pemesanan) => pemesanan.Status_Pengisian_IKM === "Telah Diisi"
-              )
-              .map(
+            <tbody>
+              {dataYangDitampilkan.map(
                 (
                   { id, pengguna, Tanggal_Pemesanan, Data_Keranjang },
-                  index
+                  index,
                 ) => {
-                  const apakahTerakhir = index === daftarIkm.length - 1;
+                  const apakahTerakhir =
+                    index === dataYangDitampilkan.length - 1;
                   const kelas = apakahTerakhir
                     ? "p-4"
                     : "p-4 border-b border-blue-gray-50";
@@ -120,27 +160,37 @@ function Konten({ tahunDipilih }) {
                     <tr key={id}>
                       <td className={kelas}>
                         <div className="flex items-center gap-3">
-                          <Image
-                            src={pengguna.Foto || gambarBawaan}
-                            alt={pengguna.Nama_Lengkap}
-                            width={40}
-                            height={40}
-                            className="rounded-full"
-                          />
+                          <div className="relative w-10 h-10 rounded-full overflow-hidden bg-gray-100">
+                            <img
+                              src={getSumberGambar(pengguna)}
+                              alt={pengguna?.Nama_Lengkap || "Pengguna"}
+                              width={40}
+                              height={40}
+                              className="object-cover w-full h-full"
+                              onError={() =>
+                                handleErrorGambar(pengguna?.id || id)
+                              }
+                            />
+                          </div>
                           <div className="flex flex-col">
                             <Typography
                               variant="small"
                               color="blue-gray"
                               className="font-normal"
                             >
-                              {pengguna.Nama_Lengkap}
+                              {pengguna?.Nama_Lengkap || "Nama Tidak Diketahui"}
+                              {pengguna?.tipePengguna === "perusahaan" && (
+                                <span className="text-xs text-blue-500 ml-1">
+                                  (Perusahaan)
+                                </span>
+                              )}
                             </Typography>
                             <Typography
                               variant="small"
                               color="blue-gray"
                               className="font-normal opacity-70"
                             >
-                              {pengguna.Email}
+                              {pengguna?.Email || "Email Tidak Diketahui"}
                             </Typography>
                           </div>
                         </div>
@@ -155,14 +205,15 @@ function Konten({ tahunDipilih }) {
                                 color="blue-gray"
                                 className="font-normal"
                               >
-                                {dataKeranjang.Jenis_Produk}
+                                {dataKeranjang.Jenis_Produk ||
+                                  "Jenis tidak tersedia"}
                               </Typography>
                               <Typography
                                 variant="small"
                                 color="blue-gray"
                                 className="font-normal"
                               >
-                                {dataKeranjang.Nama}
+                                {dataKeranjang.Nama || "Nama tidak tersedia"}
                               </Typography>
                             </div>
                           ))
@@ -183,7 +234,8 @@ function Konten({ tahunDipilih }) {
                           color="blue-gray"
                           className="font-normal"
                         >
-                          {formatTanggal(Tanggal_Pemesanan)}
+                          {formatTanggal(Tanggal_Pemesanan) ||
+                            "Tidak ada tanggal"}
                         </Typography>
                       </td>
 
@@ -211,10 +263,11 @@ function Konten({ tahunDipilih }) {
                       </td>
                     </tr>
                   );
-                }
+                },
               )}
-          </tbody>
-        </table>
+            </tbody>
+          </table>
+        )}
       </CardBody>
 
       <CardFooter className="flex items-center justify-between border-t border-blue-gray-50 p-4">

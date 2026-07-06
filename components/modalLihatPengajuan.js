@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   Dialog,
   DialogHeader,
@@ -10,14 +10,60 @@ import Image from "next/image";
 import { XMarkIcon } from "@heroicons/react/24/outline";
 // PENGAIT KAMI
 import useTampilkanPengajuan from "@/hooks/backend/useTampilkanPengajuan";
+// KONSTANTA KAMI
+import { formatTanggal } from "@/constants/formatTanggal";
 
 const ModalLihatPengajuan = ({ terbuka, tertutup, pengajuanYangTerpilih }) => {
   const { daftarPengajuan } = useTampilkanPengajuan();
   const gambarBawaan = require("@/assets/images/profil.jpg");
+  const [errorGambar, setErrorGambar] = useState({});
 
   const pengajuanTerpilih = daftarPengajuan.find(
-    (pengajuan) => pengajuan.id === pengajuanYangTerpilih
+    (pengajuan) => pengajuan.id === pengajuanYangTerpilih,
   );
+
+  // Fungsi untuk menangani error gambar
+  const handleErrorGambar = (id) => {
+    setErrorGambar((prev) => ({ ...prev, [id]: true }));
+  };
+
+  // Fungsi untuk mendapatkan sumber gambar yang benar
+  const getSumberGambar = (pengguna) => {
+    if (!pengguna) return gambarBawaan;
+
+    // PRIORITAS 1: fotoProfil dari hasil penggabungan di hook
+    if (pengguna.fotoProfil && !errorGambar[pengguna.id]) {
+      return pengguna.fotoProfil;
+    }
+    // PRIORITAS 2: Foto_URL dari Firestore
+    if (pengguna.Foto_URL && !errorGambar[pengguna.id]) {
+      return pengguna.Foto_URL;
+    }
+    // PRIORITAS 3: Field Foto
+    if (pengguna.Foto && !errorGambar[pengguna.id]) {
+      return pengguna.Foto;
+    }
+    // PRIORITAS 4: Field photoURL
+    if (pengguna.photoURL && !errorGambar[pengguna.id]) {
+      return pengguna.photoURL;
+    }
+    // Default: gambar bawaan
+    return gambarBawaan;
+  };
+
+  // Fungsi untuk mendapatkan warna status
+  const getStatusColor = (status) => {
+    switch (status) {
+      case "Diterima":
+        return "text-green-600";
+      case "Ditolak":
+        return "text-red-600";
+      case "Sedang Ditinjau":
+        return "text-yellow-600";
+      default:
+        return "text-blue-gray-600";
+    }
+  };
 
   return (
     <Dialog
@@ -92,14 +138,36 @@ const ModalLihatPengajuan = ({ terbuka, tertutup, pengajuanYangTerpilih }) => {
                 </div>
 
                 <div className="flex flex-col items-center">
-                  <Image
-                    alt="Gambar Profil"
-                    className="w-24 h-24 border-4 border-blue-500 rounded-full shadow-lg transition-transform duration-300 hover:scale-105"
-                    src={pengajuanTerpilih.pengguna?.Foto || gambarBawaan}
-                  />
+                  <div className="relative w-24 h-24 rounded-full overflow-hidden border-4 border-blue-500 shadow-lg transition-transform duration-300 hover:scale-105 bg-gray-100">
+                    <img
+                      src={getSumberGambar(pengajuanTerpilih.pengguna)}
+                      alt={
+                        pengajuanTerpilih.pengguna?.Nama_Lengkap || "Pengguna"
+                      }
+                      width={96}
+                      height={96}
+                      className="object-cover w-full h-full"
+                      onError={() =>
+                        handleErrorGambar(
+                          pengajuanTerpilih.pengguna?.id ||
+                            pengajuanTerpilih.id,
+                        )
+                      }
+                    />
+                    {pengajuanTerpilih.tipePengguna === "perusahaan" && (
+                      <div className="absolute bottom-0 right-0 bg-blue-500 text-white text-xs px-2 py-1 rounded-full">
+                        Perusahaan
+                      </div>
+                    )}
+                  </div>
                   <div className="text-center mt-3">
                     <h2 className="text-2xl font-bold text-blue-900">
                       {pengajuanTerpilih.pengguna?.Nama_Lengkap || "N/A"}
+                      {pengajuanTerpilih.tipePengguna === "perusahaan" && (
+                        <span className="text-sm text-blue-500 ml-2">
+                          (Perusahaan)
+                        </span>
+                      )}
                     </h2>
                     <p className="text-blue-700">
                       {pengajuanTerpilih.pengguna?.Email ||
@@ -107,7 +175,9 @@ const ModalLihatPengajuan = ({ terbuka, tertutup, pengajuanYangTerpilih }) => {
                     </p>
                     <p className="text-blue-700">
                       {pengajuanTerpilih.pengguna?.Jenis_Kelamin ||
-                        "Tidak diketahui"}
+                        (pengajuanTerpilih.tipePengguna === "perusahaan"
+                          ? "Perusahaan"
+                          : "Tidak diketahui")}
                     </p>
                   </div>
                 </div>
@@ -116,10 +186,7 @@ const ModalLihatPengajuan = ({ terbuka, tertutup, pengajuanYangTerpilih }) => {
               <table className="mt-4 w-full min-w-max table-fixed text-left">
                 <thead>
                   <tr>
-                    <th
-                      // key={konten}
-                      className="border-y border-blue-gray-100 bg-blue-gray-50/50 p-4"
-                    >
+                    <th className="border-y border-blue-gray-100 bg-blue-gray-50/50 p-4">
                       <Typography
                         variant="small"
                         color="blue-gray"
@@ -128,22 +195,18 @@ const ModalLihatPengajuan = ({ terbuka, tertutup, pengajuanYangTerpilih }) => {
                         Pembeli
                       </Typography>
                     </th>
-                    <th
-                      // key={konten}
-                      className="border-y border-blue-gray-100 bg-blue-gray-50/50 p-4"
-                    >
+                    <th className="border-y border-blue-gray-100 bg-blue-gray-50/50 p-4">
                       <Typography
                         variant="small"
                         color="blue-gray"
                         className="font-normal leading-none opacity-70"
                       >
-                        Asal Pembeli
+                        {pengajuanTerpilih?.tipePengguna === "perusahaan"
+                          ? "Alamat Perusahaan"
+                          : "Status Pembeli"}
                       </Typography>
                     </th>
-                    <th
-                      // key={konten}
-                      className="border-y border-blue-gray-100 bg-blue-gray-50/50 p-4"
-                    >
+                    <th className="border-y border-blue-gray-100 bg-blue-gray-50/50 p-4">
                       <Typography
                         variant="small"
                         color="blue-gray"
@@ -156,79 +219,80 @@ const ModalLihatPengajuan = ({ terbuka, tertutup, pengajuanYangTerpilih }) => {
                 </thead>
 
                 <tbody>
-                  <>
-                    <tr>
-                      <td className="p-4">
-                        <div className="flex items-center gap-3">
-                          <Image
-                            // src={transaksiTerpilih.pengguna?.Foto || gambarBawaan}
-                            // alt={
-                            //   transaksiTerpilih.pengguna?.Nama_Lengkap ||
-                            //   "Tidak ada nama"
-                            // }
+                  <tr>
+                    <td className="p-4">
+                      <div className="flex items-center gap-3">
+                        <div className="relative w-10 h-10 rounded-full overflow-hidden bg-gray-100">
+                          <img
+                            src={getSumberGambar(pengajuanTerpilih.pengguna)}
+                            alt={
+                              pengajuanTerpilih.pengguna?.Nama_Lengkap ||
+                              "Pengguna"
+                            }
                             width={40}
                             height={40}
-                            className="rounded-full"
+                            className="object-cover w-full h-full"
+                            onError={() =>
+                              handleErrorGambar(
+                                pengajuanTerpilih.pengguna?.id ||
+                                  pengajuanTerpilih.id,
+                              )
+                            }
                           />
-                          <div className="flex flex-col">
-                            <Typography
-                              variant="small"
-                              color="blue-gray"
-                              className="font-normal"
-                            >
-                              {/* {transaksiTerpilih.pengguna?.Nama_Lengkap ||
-                                                    "Tidak ada nama"} */}
-                              Saya
-                            </Typography>
-                            <Typography
-                              variant="small"
-                              color="blue-gray"
-                              className="font-normal opacity-70"
-                            >
-                              {/* {transaksiTerpilih.pengguna?.Email ||
-                                                    "Tidak ada email"} */}{" "}
-                              Saya@gmail.com
-                            </Typography>
-                          </div>
                         </div>
-                      </td>
+                        <div className="flex flex-col">
+                          <Typography
+                            variant="small"
+                            color="blue-gray"
+                            className="font-normal"
+                          >
+                            {pengajuanTerpilih.pengguna?.Nama_Lengkap ||
+                              "Tidak ada nama"}
+                          </Typography>
+                          <Typography
+                            variant="small"
+                            color="blue-gray"
+                            className="font-normal opacity-70"
+                          >
+                            {pengajuanTerpilih.pengguna?.Email ||
+                              "Tidak ada email"}
+                          </Typography>
+                        </div>
+                      </div>
+                    </td>
 
-                      <td className="p-4">
-                        <Typography
-                          variant="small"
-                          color="blue-gray"
-                          className="font-normal opacity-70"
-                        >
-                          {/* {transaksiTerpilih.ajukan?.Nama_Ajukan ||
-                                                "Tidak ada nama ajukan"} */}{" "}
-                          Bandung
-                        </Typography>
-                      </td>
+                    <td className="p-4">
+                      <Typography
+                        variant="small"
+                        color="blue-gray"
+                        className="font-normal"
+                      >
+                        {pengajuanTerpilih.tipePengguna === "perusahaan"
+                          ? pengajuanTerpilih.pengguna?.Alamat_Perusahaan ||
+                            "Tidak ada alamat"
+                          : pengajuanTerpilih.pengguna?.Pekerjaan ||
+                            "Tidak ada pekerjaan"}
+                      </Typography>
+                    </td>
 
-                      <td className="p-4">
-                        <Typography
-                          variant="small"
-                          color="blue-gray"
-                          className="font-normal"
-                        >
-                          {/* {formatTanggal(
-                                                transaksiTerpilih.ajukan?.Tanggal_Pembuatan_Ajukan
-                                              ) || "Tidak ada tanggal ajukan"} */}{" "}
-                          Nomor Telepon
-                        </Typography>
-                      </td>
-                    </tr>
-                  </>
+                    <td className="p-4">
+                      <Typography
+                        variant="small"
+                        color="blue-gray"
+                        className="font-normal"
+                      >
+                        {pengajuanTerpilih.pengguna?.No_Hp ||
+                          "Tidak ada nomor telepon"}
+                      </Typography>
+                    </td>
+                  </tr>
                 </tbody>
               </table>
 
               <table className="mt-4 w-full min-w-max table-fixed text-left">
                 <thead>
                   <tr>
-                    <th
-                      // key={konten}
-                      className="border-y border-blue-gray-100 bg-blue-gray-50/50 p-4"
-                    >
+                    <th className="border-y border-blue-gray-100 bg-blue-gray-50/50 p-4">
                       <Typography
                         variant="small"
                         color="blue-gray"
@@ -237,10 +301,7 @@ const ModalLihatPengajuan = ({ terbuka, tertutup, pengajuanYangTerpilih }) => {
                         Nama Produk
                       </Typography>
                     </th>
-                    <th
-                      // key={konten}
-                      className="border-y border-blue-gray-100 bg-blue-gray-50/50 p-4"
-                    >
+                    <th className="border-y border-blue-gray-100 bg-blue-gray-50/50 p-4">
                       <Typography
                         variant="small"
                         color="blue-gray"
@@ -253,43 +314,50 @@ const ModalLihatPengajuan = ({ terbuka, tertutup, pengajuanYangTerpilih }) => {
                 </thead>
 
                 <tbody>
-                  <>
+                  {pengajuanTerpilih.Data_Keranjang &&
+                  pengajuanTerpilih.Data_Keranjang.length > 0 ? (
+                    pengajuanTerpilih.Data_Keranjang.map((item, index) => (
+                      <tr key={index}>
+                        <td className="p-4">
+                          <Typography
+                            variant="small"
+                            color="blue-gray"
+                            className="font-normal"
+                          >
+                            {item.Nama || "Nama produk tidak tersedia"}
+                          </Typography>
+                        </td>
+                        <td className="p-4">
+                          <Typography
+                            variant="small"
+                            color="blue-gray"
+                            className="font-normal"
+                          >
+                            {item.Pemilik || "Pemilik tidak tersedia"}
+                          </Typography>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
                     <tr>
-                      <td className="p-4">
+                      <td colSpan="2" className="p-4 text-center">
                         <Typography
                           variant="small"
                           color="blue-gray"
-                          className="font-normal opacity-70"
+                          className="font-normal"
                         >
-                          {/* {transaksiTerpilih.pengguna?.Email ||
-                                                    "Tidak ada email"} */}{" "}
-                          Nama Produk
-                        </Typography>
-                      </td>
-
-                      <td className="p-4">
-                        <Typography
-                          variant="small"
-                          color="blue-gray"
-                          className="font-normal opacity-70"
-                        >
-                          {/* {transaksiTerpilih.ajukan?.Nama_Ajukan ||
-                                                "Tidak ada nama ajukan"} */}{" "}
-                          Meteorologi
+                          Tidak ada produk
                         </Typography>
                       </td>
                     </tr>
-                  </>
+                  )}
                 </tbody>
               </table>
 
               <table className="mt-4 w-full min-w-max table-fixed text-left">
                 <thead>
                   <tr>
-                    <th
-                      // key={konten}
-                      className="border-y border-blue-gray-100 bg-blue-gray-50/50 p-4"
-                    >
+                    <th className="border-y border-blue-gray-100 bg-blue-gray-50/50 p-4">
                       <Typography
                         variant="small"
                         color="blue-gray"
@@ -298,22 +366,16 @@ const ModalLihatPengajuan = ({ terbuka, tertutup, pengajuanYangTerpilih }) => {
                         Status
                       </Typography>
                     </th>
-                    <th
-                      // key={konten}
-                      className="border-y border-blue-gray-100 bg-blue-gray-50/50 p-4"
-                    >
+                    <th className="border-y border-blue-gray-100 bg-blue-gray-50/50 p-4">
                       <Typography
                         variant="small"
                         color="blue-gray"
                         className="font-normal leading-none opacity-70"
                       >
-                        jenis Pengajuan
+                        Jenis Pengajuan
                       </Typography>
                     </th>
-                    <th
-                      // key={konten}
-                      className="border-y border-blue-gray-100 bg-blue-gray-50/50 p-4"
-                    >
+                    <th className="border-y border-blue-gray-100 bg-blue-gray-50/50 p-4">
                       <Typography
                         variant="small"
                         color="blue-gray"
@@ -326,46 +388,49 @@ const ModalLihatPengajuan = ({ terbuka, tertutup, pengajuanYangTerpilih }) => {
                 </thead>
 
                 <tbody>
-                  <>
-                    <tr>
-                      <td className="p-4">
-                        <Typography
-                          variant="small"
-                          color="blue-gray"
-                          className="font-normal opacity-70"
-                        >
-                          {/* {transaksiTerpilih.pengguna?.Email ||
-                                                    "Tidak ada email"} */}{" "}
-                          Sedang Ditinjau
-                        </Typography>
-                      </td>
+                  <tr>
+                    <td className="p-4">
+                      <div
+                        className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${
+                          pengajuanTerpilih.ajukan?.Status_Ajukan === "Diterima"
+                            ? "bg-green-100 text-green-700"
+                            : pengajuanTerpilih.ajukan?.Status_Ajukan ===
+                                "Ditolak"
+                              ? "bg-red-100 text-red-700"
+                              : pengajuanTerpilih.ajukan?.Status_Ajukan ===
+                                  "Sedang Ditinjau"
+                                ? "bg-yellow-100 text-yellow-800"
+                                : "bg-gray-100 text-gray-700"
+                        }`}
+                      >
+                        {pengajuanTerpilih.ajukan?.Status_Ajukan ||
+                          "Belum ada status"}
+                      </div>
+                    </td>
 
-                      <td className="p-4">
-                        <Typography
-                          variant="small"
-                          color="blue-gray"
-                          className="font-normal opacity-70"
-                        >
-                          {/* {transaksiTerpilih.ajukan?.Nama_Ajukan ||
-                                                "Tidak ada nama ajukan"} */}{" "}
-                          Gratis
-                        </Typography>
-                      </td>
+                    <td className="p-4">
+                      <Typography
+                        variant="small"
+                        color="blue-gray"
+                        className="font-normal"
+                      >
+                        {pengajuanTerpilih.ajukan?.Jenis_Ajukan ||
+                          "Belum ada jenis"}
+                      </Typography>
+                    </td>
 
-                      <td className="p-4">
-                        <Typography
-                          variant="small"
-                          color="blue-gray"
-                          className="font-normal"
-                        >
-                          {/* {formatTanggal(
-                                                transaksiTerpilih.ajukan?.Tanggal_Pembuatan_Ajukan
-                                              ) || "Tidak ada tanggal ajukan"} */}{" "}
-                          05 Februari 2023
-                        </Typography>
-                      </td>
-                    </tr>
-                  </>
+                    <td className="p-4">
+                      <Typography
+                        variant="small"
+                        color="blue-gray"
+                        className="font-normal"
+                      >
+                        {formatTanggal(
+                          pengajuanTerpilih.ajukan?.Tanggal_Pembuatan_Ajukan,
+                        ) || "Tidak ada tanggal"}
+                      </Typography>
+                    </td>
+                  </tr>
                 </tbody>
               </table>
             </>

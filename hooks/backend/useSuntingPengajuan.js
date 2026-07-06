@@ -5,7 +5,6 @@ import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { database, storage } from "@/lib/firebaseConfig";
 import { kirimEmail } from "@/hooks/backend/useNotifikasiEmail";
 import usePDFPengajuan from "@/hooks/backend/usePDFPengajuan";
-import { scheduleJob } from "node-schedule";
 
 export default function useSuntingPengajuan(idPemesanan) {
   // State Management
@@ -22,6 +21,21 @@ export default function useSuntingPengajuan(idPemesanan) {
   const [jenisAjukan, setJenisAjukan] = useState("");
   const [fileURL, setFileURL] = useState("");
   const [sedangMengunggah, setSedangMengunggah] = useState(false);
+
+  // ✅ FUNGSI FORMAT TANGGAL
+  const formatTanggal = (dateString) => {
+    if (!dateString) return "-";
+    const options = {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      timeZone: "Asia/Jakarta",
+    };
+    return new Date(dateString).toLocaleDateString("id-ID", options);
+  };
 
   // Fungsi untuk mengambil data pengajuan
   const ambilDataPengajuan = async () => {
@@ -89,7 +103,6 @@ export default function useSuntingPengajuan(idPemesanan) {
       return false;
     }
 
-    // Hanya validasi tanggal jika status Diterima dan jenis Berbayar
     if (statusPengajuan === "Diterima" && jenisAjukan === "Berbayar") {
       if (!tanggalMasuk) {
         toast.error("Masukkan tanggal masuk pembayaran");
@@ -108,12 +121,14 @@ export default function useSuntingPengajuan(idPemesanan) {
     return true;
   };
 
-  // Fungsi untuk mengirim email pengingat
+  // ============================================================
+  // ✅ FUNGSI KIRIM EMAIL PENGINGAT
+  // ============================================================
   const kirimEmailPengingat = async (
     idPengguna,
     idPemesanan,
     tanggalKadaluwarsa,
-    hariSebelum
+    hariSebelum,
   ) => {
     try {
       let emailPengguna = "";
@@ -138,7 +153,7 @@ export default function useSuntingPengajuan(idPemesanan) {
       }
 
       if (!emailPengguna) {
-        console.warn("Email pengguna tidak ditemukan");
+        console.warn("⚠️ Email pengguna tidak ditemukan untuk ID:", idPengguna);
         return;
       }
 
@@ -147,22 +162,28 @@ export default function useSuntingPengajuan(idPemesanan) {
         `<p>Dengan hormat,</p>` +
         `<p>Ini adalah pengingat bahwa pembayaran untuk pengajuan ID <strong>${idPemesanan}</strong> akan kadaluwarsa dalam <strong>${hariSebelum}</strong>.</p>` +
         `<p>Batas akhir pembayaran: <strong>${formatTanggal(
-          tanggalKadaluwarsa
+          tanggalKadaluwarsa,
         )}</strong></p>` +
         `<p>Mohon segera lakukan pembayaran sebelum batas waktu yang telah ditentukan.</p>` +
         `<p>Terima kasih atas perhatian Anda.</p>`;
 
+      console.log(
+        `📧 Mengirim email pengingat ke: ${emailPengguna} (${hariSebelum})`,
+      );
       await kirimEmail(emailPengguna, subjekEmail, isiEmail, namaPengguna);
+      console.log("✅ Email pengingat berhasil dikirim!");
     } catch (error) {
-      console.error("Gagal mengirim email pengingat:", error);
+      console.error("❌ Gagal mengirim email pengingat:", error);
     }
   };
 
-  // Fungsi untuk mengirim notifikasi kadaluwarsa
+  // ============================================================
+  // ✅ FUNGSI KIRIM NOTIFIKASI KADALUWARSA
+  // ============================================================
   const kirimNotifikasiKadaluwarsa = async (
     idPengguna,
     idPemesanan,
-    tanggalKadaluwarsa
+    tanggalKadaluwarsa,
   ) => {
     try {
       let emailPengguna = "";
@@ -187,7 +208,7 @@ export default function useSuntingPengajuan(idPemesanan) {
       }
 
       if (!emailPengguna) {
-        console.warn("Email pengguna tidak ditemukan");
+        console.warn("⚠️ Email pengguna tidak ditemukan untuk ID:", idPengguna);
         return;
       }
 
@@ -195,156 +216,88 @@ export default function useSuntingPengajuan(idPemesanan) {
       const isiEmail =
         `<p>Dengan hormat,</p>` +
         `<p>Kami ingin memberitahukan bahwa batas waktu pembayaran untuk pengajuan ID <strong>${idPemesanan}</strong> telah lewat pada <strong>${formatTanggal(
-          tanggalKadaluwarsa
+          tanggalKadaluwarsa,
         )}</strong>.</p>` +
         `<p>Jika Anda telah melakukan pembayaran setelah batas waktu, mohon segera menghubungi tim kami untuk konfirmasi.</p>` +
         `<p>Jika belum melakukan pembayaran, pengajuan Anda mungkin akan dibatalkan secara otomatis.</p>` +
         `<p>Terima kasih atas perhatiannya.</p>`;
 
+      console.log(`📧 Mengirim notifikasi kadaluwarsa ke: ${emailPengguna}`);
       await kirimEmail(emailPengguna, subjekEmail, isiEmail, namaPengguna);
+      console.log("✅ Notifikasi kadaluwarsa berhasil dikirim!");
     } catch (error) {
-      console.error("Gagal mengirim notifikasi kadaluwarsa:", error);
+      console.error("❌ Gagal mengirim notifikasi kadaluwarsa:", error);
     }
   };
 
-  const jadwalkanNotifikasiKadaluwarsa = async (
-    idPengguna,
-    idPemesanan,
-    tanggalKadaluwarsa
-  ) => {
-    try {
-      const tanggalKadaluwarsaObj = new Date(tanggalKadaluwarsa);
-
-      // Pastikan tanggal kadaluwarsa valid
-      if (isNaN(tanggalKadaluwarsaObj.getTime())) {
-        throw new Error("Tanggal kadaluwarsa tidak valid");
-      }
-
-      // Tambahkan logging untuk debugging
-      console.log(
-        "Menjadwalkan notifikasi kadaluwarsa untuk:",
-        tanggalKadaluwarsaObj
-      );
-
-      // Jadwalkan tepat pada waktu kadaluwarsa
-      scheduleJob(tanggalKadaluwarsaObj, async () => {
-        console.log("Mengirim notifikasi kadaluwarsa sekarang...");
-        try {
-          await kirimNotifikasiKadaluwarsa(
-            idPengguna,
-            idPemesanan,
-            tanggalKadaluwarsa
-          );
-          console.log("Notifikasi kadaluwarsa berhasil dikirim");
-        } catch (err) {
-          console.error("Gagal mengirim notifikasi kadaluwarsa:", err);
-        }
-      });
-
-      // Jika waktu kadaluwarsa sudah lewat, kirim segera
-      if (tanggalKadaluwarsaObj <= new Date()) {
-        console.log(
-          "Waktu kadaluwarsa sudah lewat, mengirim notifikasi segera"
-        );
-        await kirimNotifikasiKadaluwarsa(
-          idPengguna,
-          idPemesanan,
-          tanggalKadaluwarsa
-        );
-      }
-    } catch (error) {
-      console.error("Gagal menjadwalkan notifikasi kadaluwarsa:", error);
-      // Coba kirim langsung sebagai fallback
-      try {
-        await kirimNotifikasiKadaluwarsa(
-          idPengguna,
-          idPemesanan,
-          tanggalKadaluwarsa
-        );
-      } catch (fallbackError) {
-        console.error(
-          "Fallback pengiriman notifikasi juga gagal:",
-          fallbackError
-        );
-      }
-    }
-  };
-
-  // Fungsi untuk menjadwalkan pengingat pembayaran (updated)
+  // ============================================================
+  // ✅ FUNGSI JADWALKAN PENGINGAT - DENGAN PENGECEKAN TANGGAL
+  // ============================================================
   const jadwalkanPengingatPembayaran = async (
     idPengguna,
     idPemesanan,
-    tanggalKadaluwarsa
+    tanggalKadaluwarsa,
   ) => {
     try {
       const tanggalKadaluwarsaObj = new Date(tanggalKadaluwarsa);
+      const sekarang = new Date();
 
-      const pengingat3Hari = new Date(tanggalKadaluwarsaObj);
-      pengingat3Hari.setDate(pengingat3Hari.getDate() - 3);
-
-      const pengingat1Hari = new Date(tanggalKadaluwarsaObj);
-      pengingat1Hari.setDate(pengingat1Hari.getDate() - 1);
-
-      const pengingat5Menit = new Date(tanggalKadaluwarsaObj);
-      pengingat5Menit.setMinutes(pengingat5Menit.getMinutes() - 5);
-
-      // Pengingat H-3
-      if (pengingat3Hari > new Date()) {
-        scheduleJob(pengingat3Hari, async () => {
-          await kirimEmailPengingat(
-            idPengguna,
-            idPemesanan,
-            tanggalKadaluwarsa,
-            "3 hari"
-          );
-        });
-      }
-
-      // Pengingat H-1
-      if (pengingat1Hari > new Date()) {
-        scheduleJob(pengingat1Hari, async () => {
-          await kirimEmailPengingat(
-            idPengguna,
-            idPemesanan,
-            tanggalKadaluwarsa,
-            "1 hari"
-          );
-        });
-      }
-
-      // Pengingat 5 menit
-      if (pengingat5Menit > new Date()) {
-        scheduleJob(pengingat5Menit, async () => {
-          await kirimEmailPengingat(
-            idPengguna,
-            idPemesanan,
-            tanggalKadaluwarsa,
-            "5 menit"
-          );
-        });
-      }
-
-      // Jadwalkan notifikasi kadaluwarsa
-      await jadwalkanNotifikasiKadaluwarsa(
-        idPengguna,
-        idPemesanan,
-        tanggalKadaluwarsa
+      const selisihHari = Math.ceil(
+        (tanggalKadaluwarsaObj - sekarang) / (1000 * 60 * 60 * 24),
       );
+
+      console.log(`📅 Selisih hari: ${selisihHari} hari`);
+
+      if (selisihHari === 3) {
+        await kirimEmailPengingat(
+          idPengguna,
+          idPemesanan,
+          tanggalKadaluwarsa,
+          "3 hari",
+        );
+      } else if (selisihHari === 1) {
+        await kirimEmailPengingat(
+          idPengguna,
+          idPemesanan,
+          tanggalKadaluwarsa,
+          "1 hari",
+        );
+      } else if (selisihHari <= 0) {
+        await kirimNotifikasiKadaluwarsa(
+          idPengguna,
+          idPemesanan,
+          tanggalKadaluwarsa,
+        );
+      } else {
+        console.log(
+          `⏳ Masih ${selisihHari} hari lagi, belum waktunya kirim email.`,
+        );
+      }
+
+      console.log("✅ Proses penjadwalan selesai!");
     } catch (error) {
-      console.error("Gagal menjadwalkan pengingat:", error);
+      console.error("❌ Gagal menjadwalkan pengingat:", error);
     }
   };
 
-  // Fungsi untuk mengirim notifikasi email (existing)
+  // ============================================================
+  // ✅ FUNGSI KIRIM NOTIFIKASI EMAIL - DIPERBAIKI
+  // ============================================================
   const kirimNotifikasiEmail = async (
     idPengguna,
     pengajuanData,
-    pemesananData
+    pemesananData,
   ) => {
     try {
+      console.log("📧 ===== KIRIM NOTIFIKASI EMAIL =====");
+      console.log("📧 ID Pengguna:", idPengguna);
+      console.log("📧 Status Pengajuan:", statusPengajuan);
+      console.log("📧 Jenis Ajukan:", jenisAjukan);
+
       let emailPengguna = "";
       let namaPengguna = "";
 
+      // Cari email pengguna
       const peroranganRef = doc(database, "perorangan", idPengguna);
       const peroranganSnap = await getDoc(peroranganRef);
 
@@ -352,6 +305,7 @@ export default function useSuntingPengajuan(idPemesanan) {
         const peroranganData = peroranganSnap.data();
         emailPengguna = peroranganData.Email;
         namaPengguna = peroranganData.Nama_Lengkap;
+        console.log("✅ Email ditemukan di perorangan:", emailPengguna);
       } else {
         const perusahaanRef = doc(database, "perusahaan", idPengguna);
         const perusahaanSnap = await getDoc(perusahaanRef);
@@ -360,26 +314,42 @@ export default function useSuntingPengajuan(idPemesanan) {
           const perusahaanData = perusahaanSnap.data();
           emailPengguna = perusahaanData.Email;
           namaPengguna = perusahaanData.Nama_Lengkap;
+          console.log("✅ Email ditemukan di perusahaan:", emailPengguna);
         }
       }
 
       if (!emailPengguna) {
-        console.warn("Email pengguna tidak ditemukan");
+        console.warn("❌ Email pengguna tidak ditemukan untuk ID:", idPengguna);
+        toast.error("Email pengguna tidak ditemukan!");
         return;
       }
 
+      // ============================================================
+      // 🔥 BUAT PDF - TAPI JANGAN BLOKIR PENGIRIMAN EMAIL
+      // ============================================================
       let pdf = null;
       if (statusPengajuan === "Diterima") {
-        pdf = await usePDFPengajuan(
-          namaPengguna,
-          emailPengguna,
-          pengajuanData,
-          dataKeranjang,
-          pemesananData,
-          idPemesanan
-        );
+        console.log("📄 Mencoba membuat PDF...");
+        try {
+          pdf = await usePDFPengajuan(
+            namaPengguna,
+            emailPengguna,
+            pengajuanData,
+            dataKeranjang,
+            pemesananData,
+            idPemesanan,
+          );
+          console.log("✅ PDF berhasil dibuat");
+        } catch (pdfError) {
+          console.error("❌ Gagal membuat PDF:", pdfError.message);
+          // 🔥 TETAP LANJUTKAN - PDF tidak wajib
+          pdf = null;
+        }
       }
 
+      // ============================================================
+      // 🔥 BUILD EMAIL
+      // ============================================================
       let subjekEmail = "";
       let isiEmail = "";
 
@@ -403,16 +373,16 @@ export default function useSuntingPengajuan(idPemesanan) {
                             <strong>${nomorVAs[index]}</strong> - 
                             ${item.Pemilik || "Tidak ada informasi pemilik"} - 
                             ${item.Nama || "Tanpa nama"}
-                          </li>`
+                          </li>`,
                       )
                       .join("")}
                   </ul>
                 </li>
                 <li><strong>Tanggal Pembayaran Masuk:</strong> ${formatTanggal(
-                  tanggalMasuk
+                  tanggalMasuk,
                 )}</li>
                 <li><strong>Batas Akhir Pembayaran:</strong> ${formatTanggal(
-                  tanggalKadaluwarsa
+                  tanggalKadaluwarsa,
                 )}</li>
               </ul>` +
               `<p>Mohon untuk melakukan pembayaran sebelum batas waktu yang telah ditentukan.</p>` +
@@ -437,23 +407,40 @@ export default function useSuntingPengajuan(idPemesanan) {
           break;
 
         default:
+          console.warn("⚠️ Status tidak dikenal, skip email");
           return;
       }
 
+      // ============================================================
+      // 🔥 KIRIM EMAIL - PASTIKAN TERKIRIM
+      // ============================================================
+      console.log("📧 Mengirim email ke:", emailPengguna);
+      console.log("📧 Subject:", subjekEmail);
+      console.log("📧 PDF attached:", !!pdf);
+
+      // 🔥 Panggil kirimEmail dengan atau tanpa PDF
       await kirimEmail(
         emailPengguna,
         subjekEmail,
         isiEmail,
         namaPengguna,
-        statusPengajuan === "Diterima" ? pdf : null
+        pdf, // Bisa null
       );
+
+      console.log("✅ Email notifikasi berhasil dikirim!");
     } catch (error) {
-      console.error("Gagal mengirim notifikasi email:", error);
-      toast.error("Gagal mengirim email notifikasi");
+      console.error("❌ Gagal mengirim notifikasi email:", error);
+      console.error("❌ Error message:", error.message);
+      // 🔥 JANGAN LEMPAR ERROR - biarkan proses lanjut
+      toast.warning(
+        "Email notifikasi gagal dikirim, tetapi data sudah tersimpan.",
+      );
     }
   };
 
-  // Fungsi untuk menyunting pengajuan (existing)
+  // ============================================================
+  // ✅ FUNGSI UTAMA: SUNTING PENGAJUAN
+  // ============================================================
   const suntingPengajuan = async () => {
     setSedangMemuatSuntingPengajuan(true);
 
@@ -463,6 +450,11 @@ export default function useSuntingPengajuan(idPemesanan) {
     }
 
     try {
+      console.log("📝 ===== MENYUNTING PENGAJUAN =====");
+      console.log("📝 ID Pemesanan:", idPemesanan);
+      console.log("📝 Status:", statusPengajuan);
+      console.log("📝 Jenis:", jenisAjukan);
+
       let fileUrl = fileURL;
       if (file) {
         fileUrl = await uploadFile();
@@ -517,6 +509,9 @@ export default function useSuntingPengajuan(idPemesanan) {
 
       await updateDoc(pengajuanRef, pengajuanUpdateData);
 
+      // ============================================================
+      // 🔥 JADWALKAN PENGINGAT (HANYA JIKA BERBAYAR & DITERIMA)
+      // ============================================================
       if (jenisAjukan === "Berbayar" && statusPengajuan === "Diterima") {
         if (
           !tanggalKadaluwarsa ||
@@ -525,43 +520,49 @@ export default function useSuntingPengajuan(idPemesanan) {
           throw new Error("Tanggal kadaluwarsa tidak valid");
         }
 
-        console.log("Menjadwalkan pengingat untuk:", tanggalKadaluwarsa);
+        console.log("📅 Menjadwalkan pengingat untuk:", tanggalKadaluwarsa);
         await jadwalkanPengingatPembayaran(
           pemesananData.ID_Pengguna,
           idPemesanan,
-          tanggalKadaluwarsa
+          tanggalKadaluwarsa,
         );
       }
 
-      await kirimNotifikasiEmail(
-        pemesananData.ID_Pengguna,
-        (await getDoc(pengajuanRef)).data(),
-        pemesananData
-      );
+      // ============================================================
+      // 🔥 KIRIM EMAIL NOTIFIKASI - PASTIKAN TERKIRIM
+      // ============================================================
+      console.log("📧 Mengirim notifikasi email status...");
+
+      // 🔥 Ambil data pengajuan terbaru
+      const pengajuanTerbaru = await getDoc(pengajuanRef);
+      const pengajuanData = pengajuanTerbaru.exists()
+        ? pengajuanTerbaru.data()
+        : {};
+
+      // 🔥 Kirim email dengan try-catch terpisah
+      try {
+        await kirimNotifikasiEmail(
+          pemesananData.ID_Pengguna,
+          pengajuanData,
+          pemesananData,
+        );
+      } catch (emailError) {
+        console.error(
+          "❌ Email gagal, tapi data sudah tersimpan:",
+          emailError.message,
+        );
+        toast.warning("Data tersimpan, tetapi email gagal dikirim.");
+      }
 
       toast.success("Pengajuan berhasil disunting!");
       return true;
     } catch (error) {
+      console.error("❌ Gagal menyunting pengajuan:", error);
       toast.error("Gagal menyunting pengajuan: " + error.message);
       return false;
     } finally {
       setSedangMemuatSuntingPengajuan(false);
     }
-  };
-
-  // Fungsi untuk memformat tanggal (existing)
-  const formatTanggal = (dateString) => {
-    if (!dateString) return "-";
-    const options = {
-      weekday: "long",
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-      timeZone: "Asia/Jakarta",
-    };
-    return new Date(dateString).toLocaleDateString("id-ID", options);
   };
 
   useEffect(() => {

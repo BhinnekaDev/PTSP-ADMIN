@@ -18,6 +18,21 @@ export default function useSuntingNomorVABaru(idPemesanan) {
   const [fileURL, setFileURL] = useState("");
   const [sedangMengunggah, setSedangMengunggah] = useState(false);
 
+  // Fungsi format tanggal
+  const formatTanggal = (dateString) => {
+    if (!dateString) return "-";
+    const options = {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      timeZone: "Asia/Jakarta",
+    };
+    return new Date(dateString).toLocaleDateString("id-ID", options);
+  };
+
   const ambilDataPengajuan = async () => {
     try {
       const pemesananRef = doc(database, "pemesanan", idPemesanan);
@@ -40,7 +55,7 @@ export default function useSuntingNomorVABaru(idPemesanan) {
             const pengajuanData = pengajuanSnap.data();
             setTanggalMasuk(pengajuanData.Tanggal_Masuk || "");
             setTanggalKadaluwarsa(pengajuanData.Tanggal_Kadaluwarsa || "");
-            setFileURL(pengajuanData.File_URL || ""); // Ambil URL file yang sudah ada
+            setFileURL(pengajuanData.File_URL || "");
           }
         }
       } else {
@@ -51,7 +66,7 @@ export default function useSuntingNomorVABaru(idPemesanan) {
     }
   };
 
-  // Fungsi baru untuk upload file
+  // Fungsi untuk upload file
   const uploadFile = async () => {
     if (!file) return null;
 
@@ -69,11 +84,107 @@ export default function useSuntingNomorVABaru(idPemesanan) {
     }
   };
 
+  // Fungsi kirim email kadaluwarsa
+  const kirimEmailKadaluwarsa = async (
+    idPengguna,
+    idPemesanan,
+    tanggalKadaluwarsa,
+  ) => {
+    try {
+      let emailPengguna = "";
+      let namaPengguna = "";
+
+      const peroranganRef = doc(database, "perorangan", idPengguna);
+      const peroranganSnap = await getDoc(peroranganRef);
+
+      if (peroranganSnap.exists()) {
+        const peroranganData = peroranganSnap.data();
+        emailPengguna = peroranganData.Email;
+        namaPengguna = peroranganData.Nama_Lengkap;
+      } else {
+        const perusahaanRef = doc(database, "perusahaan", idPengguna);
+        const perusahaanSnap = await getDoc(perusahaanRef);
+
+        if (perusahaanSnap.exists()) {
+          const perusahaanData = perusahaanSnap.data();
+          emailPengguna = perusahaanData.Email;
+          namaPengguna = perusahaanData.Nama_Lengkap;
+        }
+      }
+
+      if (!emailPengguna) {
+        console.warn("Email pengguna tidak ditemukan");
+        return;
+      }
+
+      const subjekEmail = "Pemberitahuan: Batas Waktu Pembayaran Telah Lewat";
+      const isiEmail =
+        `<p>Dengan hormat,</p>` +
+        `<p>Kami ingin memberitahukan bahwa batas waktu pembayaran untuk pengajuan ID <strong>${idPemesanan}</strong> telah lewat pada <strong>${formatTanggal(
+          tanggalKadaluwarsa,
+        )}</strong>.</p>` +
+        `<p>Jika Anda telah melakukan pembayaran setelah batas waktu, mohon segera menghubungi tim kami untuk konfirmasi.</p>` +
+        `<p>Jika belum melakukan pembayaran, pengajuan Anda mungkin akan dibatalkan secara otomatis.</p>` +
+        `<p>Terima kasih atas perhatiannya.</p>`;
+
+      await kirimEmail(emailPengguna, subjekEmail, isiEmail, namaPengguna);
+    } catch (error) {
+      console.error("Gagal mengirim notifikasi kadaluwarsa:", error);
+    }
+  };
+
+  const kirimPengingatPembayaran = async (
+    idPengguna,
+    idPemesanan,
+    tanggalKadaluwarsa,
+  ) => {
+    try {
+      let emailPengguna = "";
+      let namaPengguna = "";
+
+      const peroranganRef = doc(database, "perorangan", idPengguna);
+      const peroranganSnap = await getDoc(peroranganRef);
+
+      if (peroranganSnap.exists()) {
+        const peroranganData = peroranganSnap.data();
+        emailPengguna = peroranganData.Email;
+        namaPengguna = peroranganData.Nama_Lengkap;
+      } else {
+        const perusahaanRef = doc(database, "perusahaan", idPengguna);
+        const perusahaanSnap = await getDoc(perusahaanRef);
+
+        if (perusahaanSnap.exists()) {
+          const perusahaanData = perusahaanSnap.data();
+          emailPengguna = perusahaanData.Email;
+          namaPengguna = perusahaanData.Nama_Lengkap;
+        }
+      }
+
+      if (!emailPengguna) {
+        console.warn("Email pengguna tidak ditemukan");
+        return;
+      }
+
+      const subjekEmail = "Pengingat Pembayaran - Segera Lakukan Pembayaran";
+      const isiEmail =
+        `<p>Dengan hormat,</p>` +
+        `<p>Ini adalah pengingat bahwa Anda memiliki pembayaran untuk pengajuan ID <strong>${idPemesanan}</strong>.</p>` +
+        `<p>Batas akhir pembayaran: <strong>${formatTanggal(
+          tanggalKadaluwarsa,
+        )}</strong></p>` +
+        `<p>Mohon segera lakukan pembayaran sebelum batas waktu yang telah ditentukan.</p>` +
+        `<p>Terima kasih atas perhatian Anda.</p>`;
+
+      await kirimEmail(emailPengguna, subjekEmail, isiEmail, namaPengguna);
+    } catch (error) {
+      console.error("Gagal mengirim pengingat pembayaran:", error);
+    }
+  };
+
   const suntingVaBaru = async () => {
     setSedangMemuatSuntingVaBaru(true);
 
     try {
-      // Upload file jika ada
       let fileUrl = fileURL;
       if (file) {
         fileUrl = await uploadFile();
@@ -112,9 +223,23 @@ export default function useSuntingNomorVABaru(idPemesanan) {
             Tanggal_Masuk: tanggalMasuk,
             Tanggal_Kadaluwarsa: tanggalKadaluwarsa,
             Status_Pembayaran: "Menunggu Pembayaran",
-            ...(fileUrl && { File_URL: fileUrl }), // Update file URL jika ada
+            ...(fileUrl && { File_URL: fileUrl }),
           });
         }
+      }
+
+      // Kirim email kadaluwarsa dan pengingat
+      if (idPengguna && tanggalKadaluwarsa) {
+        await kirimEmailKadaluwarsa(
+          idPengguna,
+          idPemesanan,
+          tanggalKadaluwarsa,
+        );
+        await kirimPengingatPembayaran(
+          idPengguna,
+          idPemesanan,
+          tanggalKadaluwarsa,
+        );
       }
 
       if (idPengguna) {
@@ -122,7 +247,7 @@ export default function useSuntingNomorVABaru(idPemesanan) {
       }
 
       toast.success(
-        "Data VA berhasil diperbarui! Status pembayaran direset ke 'Menunggu Pembayaran'"
+        "Data VA berhasil diperbarui! Status pembayaran direset ke 'Menunggu Pembayaran'",
       );
       return true;
     } catch (error) {
@@ -177,16 +302,16 @@ export default function useSuntingNomorVABaru(idPemesanan) {
                     <strong>${nomorVAs[index]}</strong> - 
                     ${item.Pemilik || "Tidak ada informasi pemilik"} - 
                     ${item.Nama || "Tanpa nama"}
-                  </li>`
+                  </li>`,
               )
               .join("")}
           </ul>
         </li>
         <li><strong>Tanggal Pembayaran Masuk:</strong> ${formatTanggal(
-          tanggalMasuk
+          tanggalMasuk,
         )}</li>
         <li><strong>Batas Akhir Pembayaran:</strong> ${formatTanggal(
-          tanggalKadaluwarsa
+          tanggalKadaluwarsa,
         )}</li>
         ${
           fileUrl
@@ -203,19 +328,6 @@ export default function useSuntingNomorVABaru(idPemesanan) {
       console.error("Gagal mengirim notifikasi email:", error);
       toast.error("Gagal mengirim email notifikasi");
     }
-  };
-
-  const formatTanggal = (dateString) => {
-    if (!dateString) return "-";
-    const options = {
-      weekday: "long",
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    };
-    return new Date(dateString).toLocaleDateString("id-ID", options);
   };
 
   useEffect(() => {

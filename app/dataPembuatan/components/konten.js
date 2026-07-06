@@ -28,7 +28,9 @@ function Konten({ tahunDipilih }) {
   const [bukaModalSuntingPengajuan, setBukaModalSuntingPengajuan] =
     useState(false);
   const [pembuatanTerpilih, setPembuatanTerpilih] = useState(null);
+  const [errorGambar, setErrorGambar] = useState({});
   const dataBulanTahun = useTampilkanDataPerTahun();
+
   const {
     sedangMemuatPemesanan,
     daftarPemesanan,
@@ -37,6 +39,35 @@ function Konten({ tahunDipilih }) {
     ambilHalamanSebelumnya,
     ambilHalamanSelanjutnya,
   } = useTampilkanPembuatan();
+
+  // Fungsi untuk menangani error gambar
+  const handleErrorGambar = (id) => {
+    setErrorGambar((prev) => ({ ...prev, [id]: true }));
+  };
+
+  // Fungsi untuk mendapatkan sumber gambar yang benar
+  const getSumberGambar = (pengguna) => {
+    if (!pengguna) return gambarBawaan;
+
+    // PRIORITAS 1: fotoProfil dari hasil penggabungan di hook
+    if (pengguna.fotoProfil && !errorGambar[pengguna.id]) {
+      return pengguna.fotoProfil;
+    }
+    // PRIORITAS 2: Foto_URL dari Firestore
+    if (pengguna.Foto_URL && !errorGambar[pengguna.id]) {
+      return pengguna.Foto_URL;
+    }
+    // PRIORITAS 3: Field Foto
+    if (pengguna.Foto && !errorGambar[pengguna.id]) {
+      return pengguna.Foto;
+    }
+    // PRIORITAS 4: Field photoURL
+    if (pengguna.photoURL && !errorGambar[pengguna.id]) {
+      return pengguna.photoURL;
+    }
+    // Default: gambar bawaan
+    return gambarBawaan;
+  };
 
   const saringPemesanan = daftarPemesanan.filter((item) => {
     const tanggal =
@@ -62,6 +93,12 @@ function Konten({ tahunDipilih }) {
     return bulanTahunDipilih === tahunDipilih;
   });
 
+  // Filter data yang sudah disaring
+  const dataYangDitampilkan = saringPemesanan
+    .filter((pemesanan) => pemesanan.Status_Pembayaran === "Lunas")
+    .filter((pemesanan) => pemesanan.Status_Pesanan !== "Selesai")
+    .filter((pemesanan) => pemesanan.Status_Pembuatan !== "Selesai Pembuatan");
+
   return (
     <Card className="h-full w-full">
       <CardHeader floated={false} shadow={false} className="rounded-none">
@@ -75,6 +112,12 @@ function Konten({ tahunDipilih }) {
       <CardBody className="overflow-x-scroll lg:overflow-hidden px-0">
         {sedangMemuatPemesanan ? (
           <MemuatRangkaTampilkanTabel />
+        ) : dataYangDitampilkan.length === 0 ? (
+          <div className="flex justify-center p-6">
+            <Typography variant="h6" className="text-red-500 font-bold">
+              Data Pembuatan Tidak Ada!
+            </Typography>
+          </div>
         ) : (
           <table className="mt-4 w-full min-w-max table-auto text-left">
             <thead>
@@ -97,116 +140,104 @@ function Konten({ tahunDipilih }) {
             </thead>
 
             <tbody>
-              {saringPemesanan
-                .filter((pemesanan) => pemesanan.Status_Pembayaran === "Lunas")
-                .filter((pemesanan) => pemesanan.Status_Pesanan !== "Selesai")
-                .filter(
-                  (pemesanan) =>
-                    pemesanan.Status_Pembuatan !== "Selesai Pembuatan"
-                ).length > 0 ? (
-                saringPemesanan
-                  .filter(
-                    (pemesanan) =>
-                      pemesanan.Status_Pembayaran === "Lunas" &&
-                      pemesanan.Status_Pesanan !== "Selesai" &&
-                      pemesanan.Status_Pembuatan !== "Selesai Pembuatan"
-                  )
-                  .map(
-                    (
-                      { id, pengguna, Data_Keranjang, Tanggal_Pemesanan },
-                      index
-                    ) => {
-                      const apakahTerakhir =
-                        index === saringPemesanan.length - 1;
-                      const kelas = apakahTerakhir
-                        ? "p-4"
-                        : "p-4 border-b border-blue-gray-50";
+              {dataYangDitampilkan.map(
+                (
+                  { id, pengguna, Data_Keranjang, Tanggal_Pemesanan },
+                  index,
+                ) => {
+                  const apakahTerakhir =
+                    index === dataYangDitampilkan.length - 1;
+                  const kelas = apakahTerakhir
+                    ? "p-4"
+                    : "p-4 border-b border-blue-gray-50";
 
-                      return (
-                        <tr key={id}>
-                          <td className={kelas}>
-                            <div className="flex items-center gap-3">
-                              {pengguna ? (
-                                <Image
-                                  src={pengguna.Foto || gambarBawaan}
-                                  alt={pengguna.Nama_Lengkap}
-                                  width={40}
-                                  height={40}
-                                  className="rounded-full"
-                                />
-                              ) : (
-                                <Image
-                                  src={gambarBawaan}
-                                  alt="Pengguna Tidak Dikenal"
-                                  width={40}
-                                  height={40}
-                                  className="rounded-full"
-                                />
-                              )}
-
-                              <div className="flex flex-col">
-                                <Typography
-                                  variant="small"
-                                  color="blue-gray"
-                                  className="font-normal"
-                                >
-                                  {pengguna?.Nama_Lengkap ||
-                                    "Nama Tidak Diketahui"}
-                                </Typography>
-                                <Typography
-                                  variant="small"
-                                  color="blue-gray"
-                                  className="font-normal opacity-70"
-                                >
-                                  {pengguna?.Email || "Email Tidak Diketahui"}
-                                </Typography>
-                              </div>
-                            </div>
-                          </td>
-                          <td className={kelas}>
-                            {Data_Keranjang.map((keranjang, index) => (
-                              <Typography
-                                key={index}
-                                variant="small"
-                                color="blue-gray"
-                                className="font-normal"
-                              >
-                                {keranjang.Nama}
-                              </Typography>
-                            ))}
-                          </td>
-                          <td className={kelas}>
+                  return (
+                    <tr key={id}>
+                      <td className={kelas}>
+                        <div className="flex items-center gap-3">
+                          <div className="relative w-10 h-10 rounded-full overflow-hidden bg-gray-100">
+                            <img
+                              src={getSumberGambar(pengguna)}
+                              alt={pengguna?.Nama_Lengkap || "Pengguna"}
+                              width={40}
+                              height={40}
+                              className="object-cover w-full h-full"
+                              onError={() =>
+                                handleErrorGambar(pengguna?.id || id)
+                              }
+                            />
+                          </div>
+                          <div className="flex flex-col">
                             <Typography
                               variant="small"
                               color="blue-gray"
                               className="font-normal"
                             >
-                              {formatTanggal(Tanggal_Pemesanan)}
+                              {pengguna?.Nama_Lengkap || "Nama Tidak Diketahui"}
+                              {pengguna?.tipePengguna === "perusahaan" && (
+                                <span className="text-xs text-blue-500 ml-1">
+                                  (Perusahaan)
+                                </span>
+                              )}
                             </Typography>
-                          </td>
-                          <td className={kelas}>
-                            <Tooltip content="Sunting">
-                              <IconButton
-                                onClick={() => {
-                                  setPembuatanTerpilih(id);
-                                  setBukaModalSuntingPengajuan(true);
-                                }}
-                                variant="text"
-                              >
-                                <AiOutlineUpload className="h-4 w-4" />
-                              </IconButton>
-                            </Tooltip>
-                          </td>
-                        </tr>
-                      );
-                    }
-                  )
-              ) : (
-                <tr>
-                  <td colSpan="3" className="p-4 text-center text-gray-500">
-                    Tidak Ada Data
-                  </td>
-                </tr>
+                            <Typography
+                              variant="small"
+                              color="blue-gray"
+                              className="font-normal opacity-70"
+                            >
+                              {pengguna?.Email || "Email Tidak Diketahui"}
+                            </Typography>
+                          </div>
+                        </div>
+                      </td>
+                      <td className={kelas}>
+                        {Data_Keranjang && Data_Keranjang.length > 0 ? (
+                          Data_Keranjang.map((keranjang, index) => (
+                            <Typography
+                              key={index}
+                              variant="small"
+                              color="blue-gray"
+                              className="font-normal"
+                            >
+                              {keranjang.Nama || "Produk tidak tersedia"}
+                            </Typography>
+                          ))
+                        ) : (
+                          <Typography
+                            variant="small"
+                            color="blue-gray"
+                            className="font-normal"
+                          >
+                            Tidak ada produk
+                          </Typography>
+                        )}
+                      </td>
+                      <td className={kelas}>
+                        <Typography
+                          variant="small"
+                          color="blue-gray"
+                          className="font-normal"
+                        >
+                          {formatTanggal(Tanggal_Pemesanan) ||
+                            "Tidak ada tanggal"}
+                        </Typography>
+                      </td>
+                      <td className={kelas}>
+                        <Tooltip content="Upload Pembuatan">
+                          <IconButton
+                            onClick={() => {
+                              setPembuatanTerpilih(id);
+                              setBukaModalSuntingPengajuan(true);
+                            }}
+                            variant="text"
+                          >
+                            <AiOutlineUpload className="h-4 w-4" />
+                          </IconButton>
+                        </Tooltip>
+                      </td>
+                    </tr>
+                  );
+                },
               )}
             </tbody>
           </table>

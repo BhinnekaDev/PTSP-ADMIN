@@ -84,7 +84,7 @@ export async function POST(req) {
     console.error("Gagal mengirim email:", error);
     return NextResponse.json(
       { success: false, message: "Gagal mengirim email!" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
