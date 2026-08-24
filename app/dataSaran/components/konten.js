@@ -167,7 +167,6 @@ function Konten({ tahunDipilih }) {
                     ? "p-4"
                     : "p-4 border-b border-blue-gray-50";
 
-                  // Ambil data dari pengguna (dari hook) atau fallback ke field langsung
                   const dataPengguna = pengguna || {};
                   // Prioritas: dari hook > field langsung > default
                   const namaPengguna =

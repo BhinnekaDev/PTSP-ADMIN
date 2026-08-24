@@ -24,7 +24,6 @@ const ModalLihatSaran = ({ terbuka, tertutup, saranYangTerpilih }) => {
     setErrorGambar((prev) => ({ ...prev, [id]: true }));
   };
 
-  // Fungsi untuk mendapatkan sumber gambar yang benar
   const getSumberGambar = (pengguna) => {
     if (!pengguna) return gambarBawaan;
 

@@ -143,7 +143,6 @@ const useTampilkanPengaduan = (batasHalaman = 5) => {
             ...data,
           };
 
-          // Cari pengguna berdasarkan ID_Pengguna atau Email/Nama
           let penggunaCocok = null;
 
           if (pengaduanData.ID_Pengguna) {

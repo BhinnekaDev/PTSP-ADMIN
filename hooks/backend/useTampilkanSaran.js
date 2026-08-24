@@ -143,7 +143,6 @@ const useTampilkanSaran = (batasHalaman = 5) => {
             ...data,
           };
 
-          // Cari pengguna berdasarkan ID_Pengguna atau Email/Nama
           let penggunaCocok = null;
 
           if (saranData.ID_Pengguna) {
@@ -152,14 +151,12 @@ const useTampilkanSaran = (batasHalaman = 5) => {
             );
           }
 
-          // Jika tidak ditemukan berdasarkan ID, cari berdasarkan Email
           if (!penggunaCocok && data.Email) {
             penggunaCocok = semuaPengguna.find(
               (pengguna) => pengguna.Email === data.Email,
             );
           }
 
-          // Jika masih tidak ditemukan, cari berdasarkan Nama
           if (!penggunaCocok && data.Nama) {
             penggunaCocok = semuaPengguna.find(
               (pengguna) => pengguna.Nama_Lengkap === data.Nama,
@@ -201,7 +198,6 @@ const useTampilkanSaran = (batasHalaman = 5) => {
               }
             }
 
-            // Update data pengguna dengan foto profil
             saranData.pengguna = {
               id: penggunaCocok.id,
               ...penggunaCocok,

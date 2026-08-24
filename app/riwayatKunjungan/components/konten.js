@@ -55,7 +55,6 @@ function Konten({ tahunDipilih }) {
     sedangMemuatRiwayatKunjungan,
   } = useTampilkanRiwayatKunjungan();
 
-  // Fungsi untuk menangani error gambar
   const handleErrorGambar = (id) => {
     setErrorGambar((prev) => ({ ...prev, [id]: true }));
   };

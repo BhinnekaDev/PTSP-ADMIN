@@ -227,7 +227,6 @@ function Konten({ tahunDipilih }) {
                         </Typography>
                       </td>
 
-                      {/* Tanggal */}
                       <td className={kelas}>
                         <Typography
                           variant="small"

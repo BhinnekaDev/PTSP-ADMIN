@@ -163,7 +163,6 @@ function Konten({ tahunDipilih }) {
                     ? "p-4"
                     : "p-4 border-b border-blue-gray-50";
 
-                  // Gunakan pengguna dari hook atau fallback
                   const dataPengguna = pengguna || {};
 
                   return (

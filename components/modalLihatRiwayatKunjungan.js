@@ -374,7 +374,7 @@ const ModalLihatRiwayatKunjungan = ({
                       "Tidak ada tujuan"}
                   </Typography>
                 </td>
-
+                // gambar
                 <td className="p-4">
                   <Typography
                     variant="small"

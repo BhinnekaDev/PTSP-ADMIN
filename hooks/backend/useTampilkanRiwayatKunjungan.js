@@ -63,7 +63,6 @@ const useTampilkanPengajuanRiwayatKunjungan = (batasHalaman = 5) => {
           },
         };
 
-        // Cari pengguna yang cocok berdasarkan Email atau Nama_Lengkap
         const penggunaCocok = semuaPengguna.find(
           (pengguna) =>
             (pengguna.Email && pengguna.Email === dataPenggunaMap.Email) ||

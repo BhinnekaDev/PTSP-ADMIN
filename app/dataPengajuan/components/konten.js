@@ -70,7 +70,6 @@ function Konten({ tahunDipilih }) {
     setErrorGambar((prev) => ({ ...prev, [id]: true }));
   };
 
-  // Fungsi untuk mendapatkan sumber gambar yang benar
   const getSumberGambar = (pengguna) => {
     // PRIORITAS 1: fotoProfil dari hasil penggabungan di hook
     if (pengguna.fotoProfil && !errorGambar[pengguna.id]) {

@@ -55,7 +55,6 @@ function Konten({ tahunDipilih }) {
     ambilHalamanSelanjutnya,
   } = useTampilkanPembayaran();
 
-  // Fungsi untuk menangani error gambar
   const handleErrorGambar = (id) => {
     setErrorGambar((prev) => ({ ...prev, [id]: true }));
   };
