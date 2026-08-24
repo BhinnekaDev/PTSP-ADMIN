@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { AiFillEye, AiOutlineUpload } from "react-icons/ai";
 import {
   Card,
@@ -64,59 +64,83 @@ function Konten({ tahunDipilih }) {
   const getSumberGambar = (pengguna) => {
     if (!pengguna) return gambarBawaan;
 
-    // PRIORITAS 1: fotoProfil dari hasil penggabungan di hook
     if (pengguna.fotoProfil && !errorGambar[pengguna.id]) {
       return pengguna.fotoProfil;
     }
-    // PRIORITAS 2: Foto_URL dari Firestore
     if (pengguna.Foto_URL && !errorGambar[pengguna.id]) {
       return pengguna.Foto_URL;
     }
-    // PRIORITAS 3: Field Foto
     if (pengguna.Foto && !errorGambar[pengguna.id]) {
       return pengguna.Foto;
     }
-    // PRIORITAS 4: Field photoURL
     if (pengguna.photoURL && !errorGambar[pengguna.id]) {
       return pengguna.photoURL;
     }
-    // Default: gambar bawaan
     return gambarBawaan;
   };
 
-  const saringPemesanan = daftarPemesanan.filter((item) => {
-    const tanggal =
-      item.Tanggal_Pembuatan_Akun ||
-      item.Tanggal_Pembuatan ||
-      item.Tanggal_Pemesanan;
-    if (!tanggal) return false;
-    const dateObj =
-      tanggal instanceof Date ? tanggal : new Date(tanggal.seconds * 1000);
-    const tahun = dateObj.getFullYear();
-    const bulanIndex = dateObj.getMonth();
-    if (tahunDipilih === "Pilih Tahun") {
-      return true;
-    }
-    if (!dataBulanTahun || dataBulanTahun.length === 0) {
-      return false;
-    }
-    if (bulanIndex < 0 || bulanIndex >= 12) {
-      return false;
-    }
-    const bulanNama = bulan[bulanIndex];
-    const bulanTahunDipilih = `${bulanNama} ${tahun}`;
-    return bulanTahunDipilih === tahunDipilih;
-  });
+  // PERBAIKAN: Gunakan useMemo untuk filter
+  const saringPemesanan = useMemo(() => {
+    return daftarPemesanan.filter((item) => {
+      const tanggal =
+        item.Tanggal_Pembuatan_Akun ||
+        item.Tanggal_Pembuatan ||
+        item.Tanggal_Pemesanan;
+      if (!tanggal) return false;
+      const dateObj =
+        tanggal instanceof Date ? tanggal : new Date(tanggal.seconds * 1000);
+      const tahun = dateObj.getFullYear();
+      const bulanIndex = dateObj.getMonth();
+      if (tahunDipilih === "Pilih Tahun") {
+        return true;
+      }
+      if (!dataBulanTahun || dataBulanTahun.length === 0) {
+        return false;
+      }
+      if (bulanIndex < 0 || bulanIndex >= 12) {
+        return false;
+      }
+      const bulanNama = bulan[bulanIndex];
+      const bulanTahunDipilih = `${bulanNama} ${tahun}`;
+      return bulanTahunDipilih === tahunDipilih;
+    });
+  }, [daftarPemesanan, tahunDipilih, dataBulanTahun]);
 
-  // Filter data yang sudah disaring
-  const dataYangDitampilkan = saringPemesanan.filter((pemesanan) =>
-    [
-      "Sedang Ditinjau",
-      "Ditolak",
-      "Menunggu Pembayaran",
-      "Menunggu Admin",
-    ].includes(pemesanan.Status_Pembayaran),
-  );
+  // PERBAIKAN: Filter data yang sudah disaring + exclude gratis
+  const dataYangDitampilkan = useMemo(() => {
+    return saringPemesanan.filter((pemesanan) => {
+      // Filter status - hanya tampilkan status tertentu
+      const statusYangDitampilkan = [
+        "Sedang Ditinjau",
+        "Ditolak",
+        "Menunggu Pembayaran",
+        "Menunggu Admin",
+      ];
+
+      if (!statusYangDitampilkan.includes(pemesanan.Status_Pembayaran)) {
+        return false;
+      }
+
+      // PERBAIKAN: Cek apakah ini data gratis
+      // Cek dari berbagai kemungkinan field
+      const isGratis =
+        pemesanan.ajukan?.Jenis_Ajukan === "Gratis" ||
+        pemesanan.Jenis_Pembayaran === "Gratis" ||
+        pemesanan.tipePembayaran === "Gratis" ||
+        pemesanan.jenis_pembayaran === "Gratis" ||
+        pemesanan.tipe === "Gratis" ||
+        pemesanan.jenis === "Gratis" ||
+        pemesanan.isGratis === true ||
+        pemesanan.is_gratis === true;
+
+      // Jika gratis, jangan tampilkan
+      if (isGratis) {
+        return false;
+      }
+
+      return true;
+    });
+  }, [saringPemesanan]);
 
   return (
     <Card className="h-full w-full">
@@ -125,6 +149,12 @@ function Konten({ tahunDipilih }) {
           <Typography variant="h5" color="blue-gray">
             Daftar Pembayaran
           </Typography>
+          {/* Tambahan info untuk debugging */}
+          {!sedangMemuatPemesanan && (
+            <Typography variant="small" color="gray" className="font-normal">
+              Total: {dataYangDitampilkan.length} data
+            </Typography>
+          )}
         </div>
       </CardHeader>
 

@@ -163,8 +163,8 @@ function Konten({ tahunDipilih }) {
                     ? "p-4"
                     : "p-4 border-b border-blue-gray-50";
 
-                  // Gunakan pengguna dari hook atau fallback ke Data_Pengguna
-                  const dataPengguna = pengguna || Data_Pengguna || {};
+                  // Gunakan pengguna dari hook atau fallback
+                  const dataPengguna = pengguna || {};
 
                   return (
                     <tr key={id}>

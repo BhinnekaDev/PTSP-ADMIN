@@ -323,8 +323,7 @@ const ModalLihatKunjungan = ({ terbuka, tertutup, kunjunganYangTerpilih }) => {
                     color="blue-gray"
                     className="font-normal"
                   >
-                    {kunjunganTerpilih.Nomor_Surat_Permohonan ||
-                      "Tidak ada nomor surat"}
+                    {kunjunganTerpilih.No_Surat || "Tidak ada nomor surat"}
                   </Typography>
                 </td>
               </tr>
@@ -373,8 +372,7 @@ const ModalLihatKunjungan = ({ terbuka, tertutup, kunjunganYangTerpilih }) => {
                     color="blue-gray"
                     className="font-normal"
                   >
-                    {kunjunganTerpilih.Keterangan_Tambahan ||
-                      "Tidak ada keterangan"}
+                    {kunjunganTerpilih.Keterangan || "Tidak ada keterangan"}
                   </Typography>
                 </td>
               </tr>

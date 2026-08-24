@@ -37,7 +37,7 @@ const useTampilkanTransaksi = (batasHalaman = 5) => {
             const penggunaRef = doc(
               database,
               "perorangan",
-              pemesananData.ID_Pengguna
+              pemesananData.ID_Pengguna,
             );
             const penggunaDoc = await getDoc(penggunaRef);
 
@@ -50,7 +50,7 @@ const useTampilkanTransaksi = (batasHalaman = 5) => {
               const perusahaanRef = doc(
                 database,
                 "perusahaan",
-                pemesananData.ID_Pengguna
+                pemesananData.ID_Pengguna,
               );
               const perusahaanDoc = await getDoc(perusahaanRef);
 
@@ -62,7 +62,7 @@ const useTampilkanTransaksi = (batasHalaman = 5) => {
               } else {
                 pemesananData.pengguna = null;
                 console.error(
-                  `Pengguna dengan ID ${pemesananData.ID_Pengguna} tidak ditemukan.`
+                  `Pengguna dengan ID ${pemesananData.ID_Pengguna} tidak ditemukan.`,
                 );
               }
             }
@@ -80,7 +80,7 @@ const useTampilkanTransaksi = (batasHalaman = 5) => {
             } else {
               pemesananData.ajukan = null;
               console.error(
-                `Data ajukan dengan ID ${pemesananData.ID_Ajukan} tidak ditemukan.`
+                `Data ajukan dengan ID ${pemesananData.ID_Ajukan} tidak ditemukan.`,
               );
             }
           }
@@ -92,7 +92,7 @@ const useTampilkanTransaksi = (batasHalaman = 5) => {
       setDaftarTransaksi(pemesanan);
     } catch (error) {
       toast.error(
-        "Terjadi kesalahan saat mengambil data pemesanan: " + error.message
+        "Terjadi kesalahan saat mengambil data pemesanan: " + error.message,
       );
     } finally {
       setSedangMemuatTransaksi(false);

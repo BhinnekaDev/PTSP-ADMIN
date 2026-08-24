@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   Dialog,
   DialogHeader,
@@ -9,19 +9,51 @@ import {
 import Image from "next/image";
 import { XMarkIcon } from "@heroicons/react/24/outline";
 // PENGAIT KAMI
-import useTampilkanRiwayatKunjungan from "@/hooks/backend/useTampilkanRiwayatKunjungan";
+import useTampilkanPengajuanRiwayatKunjungan from "@/hooks/backend/useTampilkanRiwayatKunjungan";
+// KONSTANTA KAMI
+import { formatTanggal } from "@/constants/formatTanggal";
 
 const ModalLihatRiwayatKunjungan = ({
   terbuka,
   tertutup,
   riwayatKunjunganYangTerpilih,
 }) => {
-  const { daftarRiwayatKunjungan } = useTampilkanRiwayatKunjungan();
+  const { daftarRiwayatKunjungan } = useTampilkanPengajuanRiwayatKunjungan();
   const gambarBawaan = require("@/assets/images/profil.jpg");
+  const [errorGambar, setErrorGambar] = useState({});
 
   const riwayatKunjunganTerpilih = daftarRiwayatKunjungan.find(
-    (riwayatKunjungan) => riwayatKunjungan.id === riwayatKunjunganYangTerpilih
+    (riwayatKunjungan) => riwayatKunjungan.id === riwayatKunjunganYangTerpilih,
   );
+
+  // Fungsi untuk menangani error gambar
+  const handleErrorGambar = (id) => {
+    setErrorGambar((prev) => ({ ...prev, [id]: true }));
+  };
+
+  // Fungsi untuk mendapatkan sumber gambar yang benar
+  const getSumberGambar = (pengguna) => {
+    if (!pengguna) return gambarBawaan;
+
+    // PRIORITAS 1: fotoProfil dari hasil penggabungan di hook
+    if (pengguna.fotoProfil && !errorGambar[pengguna.id]) {
+      return pengguna.fotoProfil;
+    }
+    // PRIORITAS 2: Foto_URL dari Firestore
+    if (pengguna.Foto_URL && !errorGambar[pengguna.id]) {
+      return pengguna.Foto_URL;
+    }
+    // PRIORITAS 3: Field Foto
+    if (pengguna.Foto && !errorGambar[pengguna.id]) {
+      return pengguna.Foto;
+    }
+    // PRIORITAS 4: Field photoURL
+    if (pengguna.photoURL && !errorGambar[pengguna.id]) {
+      return pengguna.photoURL;
+    }
+    // Default: gambar bawaan
+    return gambarBawaan;
+  };
 
   if (!riwayatKunjunganTerpilih) {
     return (
@@ -43,6 +75,9 @@ const ModalLihatRiwayatKunjungan = ({
   const isPdf = ekstensi === "pdf";
   const isImage = ["jpg", "jpeg", "png", "webp"].includes(ekstensi);
 
+  // Ambil data pengguna dari hook atau fallback
+  const dataPengguna = riwayatKunjunganTerpilih.pengguna || {};
+
   return (
     <Dialog
       open={terbuka}
@@ -62,7 +97,7 @@ const ModalLihatRiwayatKunjungan = ({
             onClick={() => tertutup(false)}
             className="text-red-500 hover:bg-transparent"
           >
-            <XMarkIcon className="h-6 w-6 " />
+            <XMarkIcon className="h-6 w-6" />
           </IconButton>
         </div>
 
@@ -84,7 +119,7 @@ const ModalLihatRiwayatKunjungan = ({
                     className="w-80 h-64 border-4 border-gray-300 rounded-lg transition-transform duration-300 hover:scale-105 shadow-lg"
                   />
                 ) : isImage ? (
-                  <Image
+                  <img
                     src={file}
                     alt="Gambar Riwayat Kunjungan"
                     width={320}
@@ -104,19 +139,36 @@ const ModalLihatRiwayatKunjungan = ({
             </div>
 
             <div className="flex flex-col items-center">
-              <Image
-                alt="Gambar Profil"
-                className="w-24 h-24 border-4 border-blue-500 rounded-full shadow-lg transition-transform duration-300 hover:scale-105"
-                src={riwayatKunjunganTerpilih.pengguna?.Foto || gambarBawaan}
-                width={96}
-                height={96}
-              />
+              <div className="relative w-24 h-24 rounded-full overflow-hidden border-4 border-blue-500 shadow-lg transition-transform duration-300 hover:scale-105 bg-gray-100">
+                <img
+                  src={getSumberGambar(dataPengguna)}
+                  alt={dataPengguna.Nama_Lengkap || "Pengguna"}
+                  width={96}
+                  height={96}
+                  className="object-cover w-full h-full"
+                  onError={() =>
+                    handleErrorGambar(
+                      dataPengguna.id || riwayatKunjunganTerpilih.id,
+                    )
+                  }
+                />
+                {dataPengguna.tipePengguna === "perusahaan" && (
+                  <div className="absolute bottom-0 right-0 bg-blue-500 text-white text-xs px-2 py-1 rounded-full">
+                    Perusahaan
+                  </div>
+                )}
+              </div>
               <div className="text-center mt-3">
                 <h2 className="text-2xl font-bold text-blue-900">
-                  {riwayatKunjunganTerpilih.pengguna?.Nama_Lengkap}
+                  {dataPengguna.Nama_Lengkap || "N/A"}
+                  {dataPengguna.tipePengguna === "perusahaan" && (
+                    <span className="text-sm text-blue-500 ml-2">
+                      (Perusahaan)
+                    </span>
+                  )}
                 </h2>
                 <p className="text-blue-700">
-                  {riwayatKunjunganTerpilih.pengguna?.Email}
+                  {dataPengguna.Email || "Email tidak tersedia"}
                 </p>
               </div>
             </div>
@@ -125,10 +177,7 @@ const ModalLihatRiwayatKunjungan = ({
           <table className="mt-4 w-full min-w-max table-fixed text-left">
             <thead>
               <tr>
-                <th
-                  // key={konten}
-                  className="border-y border-blue-gray-100 bg-blue-gray-50/50 p-4"
-                >
+                <th className="border-y border-blue-gray-100 bg-blue-gray-50/50 p-4">
                   <Typography
                     variant="small"
                     color="blue-gray"
@@ -137,10 +186,7 @@ const ModalLihatRiwayatKunjungan = ({
                     Pengunjung
                   </Typography>
                 </th>
-                <th
-                  // key={konten}
-                  className="border-y border-blue-gray-100 bg-blue-gray-50/50 p-4"
-                >
+                <th className="border-y border-blue-gray-100 bg-blue-gray-50/50 p-4">
                   <Typography
                     variant="small"
                     color="blue-gray"
@@ -149,10 +195,7 @@ const ModalLihatRiwayatKunjungan = ({
                     Instansi
                   </Typography>
                 </th>
-                <th
-                  // key={konten}
-                  className="border-y border-blue-gray-100 bg-blue-gray-50/50 p-4"
-                >
+                <th className="border-y border-blue-gray-100 bg-blue-gray-50/50 p-4">
                   <Typography
                     variant="small"
                     color="blue-gray"
@@ -165,79 +208,69 @@ const ModalLihatRiwayatKunjungan = ({
             </thead>
 
             <tbody>
-              <>
-                <tr>
-                  <td className="p-4">
-                    <div className="flex items-center gap-3">
-                      <Image
-                        // src={transaksiTerpilih.pengguna?.Foto || gambarBawaan}
-                        // alt={
-                        //   transaksiTerpilih.pengguna?.Nama_Lengkap ||
-                        //   "Tidak ada nama"
-                        // }
+              <tr>
+                <td className="p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="relative w-10 h-10 rounded-full overflow-hidden bg-gray-100">
+                      <img
+                        src={getSumberGambar(dataPengguna)}
+                        alt={dataPengguna.Nama_Lengkap || "Pengguna"}
                         width={40}
                         height={40}
-                        className="rounded-full"
+                        className="object-cover w-full h-full"
+                        onError={() =>
+                          handleErrorGambar(
+                            dataPengguna.id || riwayatKunjunganTerpilih.id,
+                          )
+                        }
                       />
-                      <div className="flex flex-col">
-                        <Typography
-                          variant="small"
-                          color="blue-gray"
-                          className="font-normal"
-                        >
-                          {/* {transaksiTerpilih.pengguna?.Nama_Lengkap ||
-                            "Tidak ada nama"} */}
-                          Saya
-                        </Typography>
-                        <Typography
-                          variant="small"
-                          color="blue-gray"
-                          className="font-normal opacity-70"
-                        >
-                          {/* {transaksiTerpilih.pengguna?.Email ||
-                            "Tidak ada email"} */}{" "}
-                          Saya@gmail.com
-                        </Typography>
-                      </div>
                     </div>
-                  </td>
+                    <div className="flex flex-col">
+                      <Typography
+                        variant="small"
+                        color="blue-gray"
+                        className="font-normal"
+                      >
+                        {dataPengguna.Nama_Lengkap || "Nama tidak tersedia"}
+                      </Typography>
+                      <Typography
+                        variant="small"
+                        color="blue-gray"
+                        className="font-normal opacity-70"
+                      >
+                        {dataPengguna.Email || "Email tidak tersedia"}
+                      </Typography>
+                    </div>
+                  </div>
+                </td>
 
-                  <td className="p-4">
-                    <Typography
-                      variant="small"
-                      color="blue-gray"
-                      className="font-normal opacity-70"
-                    >
-                      {/* {transaksiTerpilih.ajukan?.Nama_Ajukan ||
-                        "Tidak ada nama ajukan"} */}{" "}
-                      Meteorologi
-                    </Typography>
-                  </td>
+                <td className="p-4">
+                  <Typography
+                    variant="small"
+                    color="blue-gray"
+                    className="font-normal"
+                  >
+                    {riwayatKunjunganTerpilih.Stasiun || "Tidak ada instansi"}
+                  </Typography>
+                </td>
 
-                  <td className="p-4">
-                    <Typography
-                      variant="small"
-                      color="blue-gray"
-                      className="font-normal"
-                    >
-                      {/* {formatTanggal(
-                        transaksiTerpilih.ajukan?.Tanggal_Pembuatan_Ajukan
-                      ) || "Tidak ada tanggal ajukan"} */}{" "}
-                      50
-                    </Typography>
-                  </td>
-                </tr>
-              </>
+                <td className="p-4">
+                  <Typography
+                    variant="small"
+                    color="blue-gray"
+                    className="font-normal"
+                  >
+                    {riwayatKunjunganTerpilih.Jumlah_Pengunjung || "0"}
+                  </Typography>
+                </td>
+              </tr>
             </tbody>
           </table>
 
           <table className="mt-4 w-full min-w-max text-left table-fixed">
             <thead>
               <tr>
-                <th
-                  // key={konten}
-                  className="border-y border-blue-gray-100 bg-blue-gray-50/50 p-4"
-                >
+                <th className="border-y border-blue-gray-100 bg-blue-gray-50/50 p-4">
                   <Typography
                     variant="small"
                     color="blue-gray"
@@ -246,10 +279,7 @@ const ModalLihatRiwayatKunjungan = ({
                     Jam Berkunjung
                   </Typography>
                 </th>
-                <th
-                  // key={konten}
-                  className="border-y border-blue-gray-100 bg-blue-gray-50/50 p-4"
-                >
+                <th className="border-y border-blue-gray-100 bg-blue-gray-50/50 p-4">
                   <Typography
                     variant="small"
                     color="blue-gray"
@@ -258,10 +288,7 @@ const ModalLihatRiwayatKunjungan = ({
                     Tanggal Kunjungan
                   </Typography>
                 </th>
-                <th
-                  // key={konten}
-                  className="border-y border-blue-gray-100 bg-blue-gray-50/50 p-4"
-                >
+                <th className="border-y border-blue-gray-100 bg-blue-gray-50/50 p-4">
                   <Typography
                     variant="small"
                     color="blue-gray"
@@ -274,56 +301,47 @@ const ModalLihatRiwayatKunjungan = ({
             </thead>
 
             <tbody>
-              <>
-                <tr>
-                  <td className="p-4">
-                    <Typography
-                      variant="small"
-                      color="blue-gray"
-                      className="font-normal"
-                    >
-                      {/* {transaksiTerpilih.pengguna?.Nama_Lengkap ||
-                            "Tidak ada nama"} */}
-                      14.30
-                    </Typography>
-                  </td>
+              <tr>
+                <td className="p-4">
+                  <Typography
+                    variant="small"
+                    color="blue-gray"
+                    className="font-normal"
+                  >
+                    {riwayatKunjunganTerpilih.Jam_Kunjungan || "Tidak ada jam"}
+                  </Typography>
+                </td>
 
-                  <td className="p-4">
-                    <Typography
-                      variant="small"
-                      color="blue-gray"
-                      className="font-normal opacity-70"
-                    >
-                      {/* {transaksiTerpilih.ajukan?.Nama_Ajukan ||
-                        "Tidak ada nama ajukan"} */}{" "}
-                      16/02/2026
-                    </Typography>
-                  </td>
+                <td className="p-4">
+                  <Typography
+                    variant="small"
+                    color="blue-gray"
+                    className="font-normal"
+                  >
+                    {formatTanggal(
+                      riwayatKunjunganTerpilih.Tanggal_Kunjungan,
+                    ) || "Tidak ada tanggal"}
+                  </Typography>
+                </td>
 
-                  <td className="p-4">
-                    <Typography
-                      variant="small"
-                      color="blue-gray"
-                      className="font-normal"
-                    >
-                      {/* {formatTanggal(
-                        transaksiTerpilih.ajukan?.Tanggal_Pembuatan_Ajukan
-                      ) || "Tidak ada tanggal ajukan"} */}{" "}
-                      3648683463
-                    </Typography>
-                  </td>
-                </tr>
-              </>
+                <td className="p-4">
+                  <Typography
+                    variant="small"
+                    color="blue-gray"
+                    className="font-normal"
+                  >
+                    {riwayatKunjunganTerpilih.No_Surat ||
+                      "Tidak ada nomor surat"}
+                  </Typography>
+                </td>
+              </tr>
             </tbody>
           </table>
 
           <table className="mt-4 w-full min-w-max text-left table-fixed">
             <thead>
               <tr>
-                <th
-                  // key={konten}
-                  className="border-y border-blue-gray-100 bg-blue-gray-50/50 p-4"
-                >
+                <th className="border-y border-blue-gray-100 bg-blue-gray-50/50 p-4">
                   <Typography
                     variant="small"
                     color="blue-gray"
@@ -332,10 +350,7 @@ const ModalLihatRiwayatKunjungan = ({
                     Tujuan Berkunjung
                   </Typography>
                 </th>
-                <th
-                  // key={konten}
-                  className="border-y border-blue-gray-100 bg-blue-gray-50/50 p-4"
-                >
+                <th className="border-y border-blue-gray-100 bg-blue-gray-50/50 p-4">
                   <Typography
                     variant="small"
                     color="blue-gray"
@@ -348,33 +363,29 @@ const ModalLihatRiwayatKunjungan = ({
             </thead>
 
             <tbody>
-              <>
-                <tr>
-                  <td className="p-4">
-                    <Typography
-                      variant="small"
-                      color="blue-gray"
-                      className="font-normal"
-                    >
-                      {/* {transaksiTerpilih.pengguna?.Nama_Lengkap ||
-                            "Tidak ada nama"} */}
-                      NGOPI
-                    </Typography>
-                  </td>
+              <tr>
+                <td className="p-4">
+                  <Typography
+                    variant="small"
+                    color="blue-gray"
+                    className="font-normal"
+                  >
+                    {riwayatKunjunganTerpilih.Tujuan_Berkunjung ||
+                      "Tidak ada tujuan"}
+                  </Typography>
+                </td>
 
-                  <td className="p-4">
-                    <Typography
-                      variant="small"
-                      color="blue-gray"
-                      className="font-normal opacity-70"
-                    >
-                      {/* {transaksiTerpilih.ajukan?.Nama_Ajukan ||
-                        "Tidak ada nama ajukan"} */}{" "}
-                      LESGOW
-                    </Typography>
-                  </td>
-                </tr>
-              </>
+                <td className="p-4">
+                  <Typography
+                    variant="small"
+                    color="blue-gray"
+                    className="font-normal"
+                  >
+                    {riwayatKunjunganTerpilih.Keterangan ||
+                      "Tidak ada keterangan"}
+                  </Typography>
+                </td>
+              </tr>
             </tbody>
           </table>
         </DialogBody>

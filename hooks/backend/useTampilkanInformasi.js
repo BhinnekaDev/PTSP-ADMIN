@@ -40,7 +40,7 @@ const useTampilkanInformasi = (batasHalaman = 5) => {
       setDaftarInformasi(informasi);
     } catch (error) {
       toast.error(
-        "Terjadi kesalahan saat mengambil daftar informasi: " + error.message
+        "Terjadi kesalahan saat mengambil daftar informasi: " + error.message,
       );
     } finally {
       setSedangMemuatTampilkanInformasi(false);

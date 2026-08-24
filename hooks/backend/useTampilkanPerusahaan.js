@@ -40,7 +40,7 @@ const useTampilkanPerusahaan = (batasHalaman = 5) => {
       setDaftarPerusahaan(perusahaanList);
     } catch (error) {
       toast.error(
-        "Terjadi kesalahan saat mengambil daftar perusahaan: " + error.message
+        "Terjadi kesalahan saat mengambil daftar perusahaan: " + error.message,
       );
     } finally {
       setSedangMemuatTampilkanPerusahaan(false);

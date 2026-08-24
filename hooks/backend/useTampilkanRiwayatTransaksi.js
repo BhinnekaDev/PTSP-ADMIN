@@ -36,7 +36,7 @@ const useTampilkanRiwayatTransaksi = (batasHalaman = 5) => {
           const penggunaRef = doc(
             database,
             "perorangan",
-            pemesananData.ID_Pengguna
+            pemesananData.ID_Pengguna,
           );
           const penggunaDoc = await getDoc(penggunaRef);
 
@@ -49,7 +49,7 @@ const useTampilkanRiwayatTransaksi = (batasHalaman = 5) => {
             const perusahaanRef = doc(
               database,
               "perusahaan",
-              pemesananData.ID_Pengguna
+              pemesananData.ID_Pengguna,
             );
             const perusahaanDoc = await getDoc(perusahaanRef);
 
@@ -77,7 +77,7 @@ const useTampilkanRiwayatTransaksi = (batasHalaman = 5) => {
             const penerimaanRef = doc(
               database,
               "penerimaan",
-              keranjangItem.ID_Penerimaan
+              keranjangItem.ID_Penerimaan,
             );
             const penerimaanDoc = await getDoc(penerimaanRef);
 
@@ -96,7 +96,7 @@ const useTampilkanRiwayatTransaksi = (batasHalaman = 5) => {
               const transaksiRef = doc(
                 database,
                 "transaksi",
-                pemesananData.ID_Transaksi
+                pemesananData.ID_Transaksi,
               );
               const transaksiDoc = await getDoc(transaksiRef);
 
@@ -110,13 +110,13 @@ const useTampilkanRiwayatTransaksi = (batasHalaman = 5) => {
               console.error(
                 "Error pada dokumen transaksi:",
                 pemesananData.ID_Transaksi,
-                error
+                error,
               );
             }
           } else {
             console.warn(
               "ID_Transaksi tidak ditemukan pada data:",
-              pemesananData
+              pemesananData,
             );
           }
 
@@ -127,7 +127,7 @@ const useTampilkanRiwayatTransaksi = (batasHalaman = 5) => {
       setDaftarTransaksi(pemesanans);
     } catch (error) {
       toast.error(
-        "Terjadi kesalahan saat mengambil data pemesanan: " + error.message
+        "Terjadi kesalahan saat mengambil data pemesanan: " + error.message,
       );
     } finally {
       setSedangMemuatPengajuan(false);
