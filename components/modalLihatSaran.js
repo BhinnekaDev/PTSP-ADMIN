@@ -4,8 +4,8 @@ import {
   DialogHeader,
   DialogBody,
   IconButton,
+  Typography,
 } from "@material-tailwind/react";
-import Image from "next/image";
 import { XMarkIcon } from "@heroicons/react/24/outline";
 // PENGAIT KAMI
 import useTampilkanSaran from "@/hooks/backend/useTampilkanSaran";
@@ -99,64 +99,127 @@ const ModalLihatSaran = ({ terbuka, tertutup, saranYangTerpilih }) => {
 
         <DialogBody
           divider
-          className="flex flex-col md:flex-row justify-evenly items-center p-6 bg-white rounded-b-lg"
+          className="flex flex-col justify-evenly items-center p-6 bg-white rounded-b-lg"
         >
-          <div className="flex flex-col items-center mb-4 md:mb-0">
-            {file ? (
-              isPdf ? (
-                <embed
-                  src={file}
-                  type="application/pdf"
-                  className="w-80 h-64 border-4 border-gray-300 rounded-lg transition-transform duration-300 hover:scale-105 shadow-lg"
-                />
-              ) : isImage ? (
-                <img
-                  src={file}
-                  alt="Gambar saran"
-                  width={320}
-                  height={240}
-                  className="border-4 border-gray-300 rounded-lg transition-transform duration-300 hover:scale-105 shadow-lg"
-                />
+          <div className="flex flex-row justify-evenly w-full items-center mb-8">
+            <div className="flex flex-col items-center mb-4 md:mb-0">
+              {file ? (
+                isPdf ? (
+                  <embed
+                    src={file}
+                    type="application/pdf"
+                    className="w-80 h-64 border-4 border-gray-300 rounded-lg transition-transform duration-300 hover:scale-105 shadow-lg"
+                  />
+                ) : isImage ? (
+                  <div className="w-80 h-64 overflow-auto border-4 border-gray-300 rounded-lg shadow-lg">
+                    <img
+                      src={file}
+                      alt="Gambar saran"
+                      width={320}
+                      height={240}
+                      className="transition-transform duration-300 hover:scale-105"
+                    />
+                  </div>
+                ) : (
+                  <p className="text-red-500">
+                    Format file tidak didukung: {file}
+                  </p>
+                )
               ) : (
-                <p className="text-red-500">
-                  Format file tidak didukung: {file}
-                </p>
-              )
-            ) : (
-              <p className="text-gray-500">Dokumen saran tidak tersedia</p>
-            )}
-          </div>
-
-          <div className="flex flex-col items-center">
-            <div className="relative w-24 h-24 rounded-full overflow-hidden border-4 border-blue-500 shadow-lg transition-transform duration-300 hover:scale-105 bg-gray-100">
-              <img
-                src={getSumberGambar(dataPengguna)}
-                alt={namaPengguna}
-                width={96}
-                height={96}
-                className="object-cover w-full h-full"
-                onError={() =>
-                  handleErrorGambar(dataPengguna.id || saranTerpilih.id)
-                }
-              />
-              {dataPengguna.tipePengguna === "perusahaan" && (
-                <div className="absolute bottom-0 right-0 bg-blue-500 text-white text-xs px-2 py-1 rounded-full">
-                  Perusahaan
-                </div>
+                <p className="text-gray-500">Dokumen saran tidak tersedia</p>
               )}
             </div>
-            <div className="text-center mt-3">
-              <h2 className="text-2xl font-bold text-blue-900">
-                {namaPengguna}
+
+            <div className="flex flex-col items-center">
+              <div className="relative w-24 h-24 rounded-full overflow-hidden border-4 border-blue-500 shadow-lg transition-transform duration-300 hover:scale-105 bg-gray-100">
+                <img
+                  src={getSumberGambar(dataPengguna)}
+                  alt={namaPengguna}
+                  width={96}
+                  height={96}
+                  className="object-cover w-full h-full"
+                  onError={() =>
+                    handleErrorGambar(dataPengguna.id || saranTerpilih.id)
+                  }
+                />
                 {dataPengguna.tipePengguna === "perusahaan" && (
-                  <span className="text-sm text-blue-500 ml-2">
-                    (Perusahaan)
-                  </span>
+                  <div className="absolute bottom-0 right-0 bg-blue-500 text-white text-xs px-2 py-1 rounded-full">
+                    Perusahaan
+                  </div>
                 )}
-              </h2>
-              <p className="text-blue-700">{emailPengguna}</p>
+              </div>
+              <div className="text-center mt-3">
+                <h2 className="text-2xl font-bold text-blue-900">
+                  {namaPengguna}
+                  {dataPengguna.tipePengguna === "perusahaan" && (
+                    <span className="text-sm text-blue-500 ml-2">
+                      (Perusahaan)
+                    </span>
+                  )}
+                </h2>
+                <p className="text-blue-700">{emailPengguna}</p>
+              </div>
             </div>
           </div>
+
+          {/* TABEL: Isi Saran dan Tanggal */}
+          <table className="mt-4 w-full min-w-max table-fixed text-left">
+            <thead>
+              <tr>
+                <th className="border-y border-blue-gray-100 bg-blue-gray-50/50 p-4 w-2/3">
+                  <Typography
+                    variant="small"
+                    color="blue-gray"
+                    className="font-normal leading-none opacity-70"
+                  >
+                    Isi Saran
+                  </Typography>
+                </th>
+                <th className="border-y border-blue-gray-100 bg-blue-gray-50/50 p-4 w-1/3">
+                  <Typography
+                    variant="small"
+                    color="blue-gray"
+                    className="font-normal leading-none opacity-70"
+                  >
+                    Tanggal
+                  </Typography>
+                </th>
+              </tr>
+            </thead>
+
+            <tbody>
+              <tr>
+                <td className="p-4 w-2/3">
+                  <Typography
+                    variant="small"
+                    color="blue-gray"
+                    className="font-normal break-words"
+                  >
+                    {saranTerpilih.Saran || "Tidak ada isi saran"}
+                  </Typography>
+                </td>
+
+                <td className="p-4 w-1/3">
+                  <Typography
+                    variant="small"
+                    color="blue-gray"
+                    className="font-normal"
+                  >
+                    {saranTerpilih.Tanggal_Pembuatan
+                      ? new Date(
+                          saranTerpilih.Tanggal_Pembuatan.seconds * 1000,
+                        ).toLocaleDateString("id-ID", {
+                          day: "numeric",
+                          month: "long",
+                          year: "numeric",
+                          timeZone: "Asia/Jakarta",
+                        })
+                      : "Tanggal tidak tersedia"}
+                  </Typography>
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </DialogBody>
       </div>
     </Dialog>

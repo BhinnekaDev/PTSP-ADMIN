@@ -114,7 +114,7 @@ function Konten({ tahunDipilih }) {
               {saringTransaksi.filter(
                 (pemesanan) =>
                   pemesanan.Status_Pembayaran === "Lunas" &&
-                  pemesanan.Status_Pembuatan === "Selesai Pembuatan"
+                  pemesanan.Status_Pembuatan === "Selesai Pembuatan",
               ).length === 0 && (
                 <tr>
                   <td
@@ -129,7 +129,7 @@ function Konten({ tahunDipilih }) {
                 .filter(
                   (pemesanan) =>
                     pemesanan.Status_Pembayaran === "Lunas" &&
-                    pemesanan.Status_Pembuatan === "Selesai Pembuatan"
+                    pemesanan.Status_Pembuatan === "Selesai Pembuatan",
                 )
                 .map(
                   (
@@ -143,7 +143,7 @@ function Konten({ tahunDipilih }) {
                       Status_Pesanan,
                       Status_Pengisian_IKM,
                     },
-                    index
+                    index,
                   ) => {
                     const apakahTerakhir = index === daftarTransaksi.length - 1;
                     const kelas = apakahTerakhir
@@ -157,17 +157,21 @@ function Konten({ tahunDipilih }) {
                           {Data_Keranjang && Data_Keranjang.length > 0 ? (
                             [
                               ...new Set(
-                                Data_Keranjang.map((item) => item.Nomor_Surat)
+                                Data_Keranjang.map((item) => item.Nomor_Surat),
                               ),
                             ].map((nomorSurat, idx) => (
                               <div key={idx} className="flex flex-col mb-2">
-                                <Typography
-                                  variant="small"
-                                  color="blue-gray"
-                                  className="font-normal"
-                                >
-                                  {nomorSurat}
-                                </Typography>
+                                <Tooltip content={nomorSurat}>
+                                  <Typography
+                                    variant="small"
+                                    color="blue-gray"
+                                    className="font-normal cursor-pointer hover:text-blue-500"
+                                  >
+                                    {nomorSurat.length > 15
+                                      ? `${nomorSurat.slice(0, 15)}...`
+                                      : nomorSurat}
+                                  </Typography>
+                                </Tooltip>
                               </div>
                             ))
                           ) : (
@@ -287,8 +291,8 @@ function Konten({ tahunDipilih }) {
                                 Status_Pesanan === "Selesai"
                                   ? "green"
                                   : Status_Pesanan === "Belum Selesai"
-                                  ? "red"
-                                  : "default"
+                                    ? "red"
+                                    : "default"
                               }
                             />
                           </div>
@@ -305,8 +309,8 @@ function Konten({ tahunDipilih }) {
                                 ajukan.Jenis_Ajukan === "Gratis"
                                   ? "blue"
                                   : ajukan.Jenis_Ajukan === "Berbayar"
-                                  ? "red"
-                                  : "default"
+                                    ? "red"
+                                    : "default"
                               }
                             />
                           </div>
@@ -343,7 +347,7 @@ function Konten({ tahunDipilih }) {
                         </td>
                       </tr>
                     );
-                  }
+                  },
                 )}
             </tbody>
           </table>

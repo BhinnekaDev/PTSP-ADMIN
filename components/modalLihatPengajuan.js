@@ -116,11 +116,13 @@ const ModalLihatPengajuan = ({ terbuka, tertutup, pengajuanYangTerpilih }) => {
                   {pengajuanTerpilih.ajukan?.File_Ajukan?.length > 0 ? (
                     pengajuanTerpilih.ajukan.File_Ajukan.map((file, index) => (
                       <div key={index} className="mb-2">
-                        <embed
-                          alt={`Dokumen Pengajuan ${index + 1}`}
-                          className="w-80 h-64 border-4 border-gray-300 rounded-lg transition-transform duration-300 hover:scale-105 shadow-lg"
-                          src={file}
-                        />
+                        <div className="w-80 h-64 overflow-auto border-4 border-gray-300 rounded-lg shadow-lg">
+                          <embed
+                            alt={`Dokumen Pengajuan ${index + 1}`}
+                            className="transition-transform duration-300 hover:scale-105"
+                            src={file}
+                          />
+                        </div>
                         <h3
                           className="text-center mt-3 font-semibold text-blue-700 cursor-pointer hover:underline"
                           onClick={() => window.open(file, "_blank")}

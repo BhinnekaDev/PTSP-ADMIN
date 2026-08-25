@@ -45,7 +45,7 @@ const ModalLihatRiwayatTransaksi = ({
   const { daftarTransaksi } = useTampilkanRiwayatTransaksi();
 
   const transaksiTerpilih = daftarTransaksi.find(
-    (transaksi) => transaksi.id === riyawatTransaksiYangDipilih
+    (transaksi) => transaksi.id === riyawatTransaksiYangDipilih,
   );
 
   const filesToDownload = Array.isArray(transaksiTerpilih?.ajukan?.File_Ajukan)
@@ -122,8 +122,8 @@ const ModalLihatRiwayatTransaksi = ({
     const daftarFile = Array.isArray(filePenerimaan)
       ? filePenerimaan
       : filePenerimaan
-      ? [filePenerimaan]
-      : [];
+        ? [filePenerimaan]
+        : [];
 
     if (daftarFile.length === 0) {
       alert("Tidak ada file penerimaan untuk diunduh.");
@@ -196,7 +196,7 @@ const ModalLihatRiwayatTransaksi = ({
       offsetX,
       offsetY,
       imageWidth / 4,
-      imageHeight / 4
+      imageHeight / 4,
     );
 
     const imageEndY = offsetY + imageHeight / 4;
@@ -218,7 +218,7 @@ const ModalLihatRiwayatTransaksi = ({
     doc.text(
       `Status Pembayaran: ${pemesanan.Status_Pembayaran || "Belum Dibayar"}`,
       14,
-      textStartY + 12
+      textStartY + 12,
     );
 
     doc.text("Detail Pelanggan:", 14, textStartY + 22);
@@ -226,17 +226,17 @@ const ModalLihatRiwayatTransaksi = ({
     doc.text(
       `Nama: ${userData.Nama_Lengkap || "Tidak diketahui"}`,
       14,
-      textStartY + 28
+      textStartY + 28,
     );
     doc.text(
       `Email: ${userData.Email || "Tidak diketahui"}`,
       14,
-      textStartY + 34
+      textStartY + 34,
     );
     doc.text(
       `Alamat: ${userData.Alamat || "Tidak tersedia"}`,
       14,
-      textStartY + 40
+      textStartY + 40,
     );
     doc.setFont("helvetica", "normal");
 
@@ -294,7 +294,7 @@ const ModalLihatRiwayatTransaksi = ({
     // Total Harga
     const totalHarga = dataKeranjang.reduce(
       (total, item) => total + item.Harga * item.Kuantitas,
-      0
+      0,
     );
     const akhirY = doc.lastAutoTable.finalY + 10;
     doc.setFontSize(12);
@@ -306,7 +306,7 @@ const ModalLihatRiwayatTransaksi = ({
     doc.text(
       "Catatan: Harap simpan invoice ini untuk referensi.",
       14,
-      akhirY + 10
+      akhirY + 10,
     );
 
     doc.line(14, akhirY + 18, 196, akhirY + 18);
@@ -322,12 +322,12 @@ const ModalLihatRiwayatTransaksi = ({
     doc.text(
       "Hubungi kami di: +62 123 456 7890 atau email@company.com",
       14,
-      akhirY + 40
+      akhirY + 40,
     );
     doc.text(
       "Alamat Perusahaan: Jl. Raya No. 123, Jakarta, Indonesia",
       14,
-      akhirY + 45
+      akhirY + 45,
     );
 
     doc.save(`faktur_${tanggal.replace(/\//g, "-")}.pdf`);
@@ -363,7 +363,7 @@ const ModalLihatRiwayatTransaksi = ({
           Pengajuan
         </Typography>
 
-        <table className="mt-4 w-full min-w-max table-auto text-left">
+        <table className="mt-4 w-full table-auto text-left">
           <thead>
             <tr>
               {judulTabel.map((konten) => (
@@ -438,7 +438,7 @@ const ModalLihatRiwayatTransaksi = ({
                       className="font-normal"
                     >
                       {formatTanggal(
-                        transaksiTerpilih.ajukan?.Tanggal_Pembuatan_Ajukan
+                        transaksiTerpilih.ajukan?.Tanggal_Pembuatan_Ajukan,
                       ) || "Tidak ada tanggal ajukan"}
                     </Typography>
                   </td>
@@ -529,7 +529,7 @@ const ModalLihatRiwayatTransaksi = ({
 
                   <td className="p-4">
                     {(Array.isArray(
-                      transaksiTerpilih.transaksi?.Bukti_Pembayaran
+                      transaksiTerpilih.transaksi?.Bukti_Pembayaran,
                     )
                       ? transaksiTerpilih.transaksi.Bukti_Pembayaran
                       : [
@@ -541,8 +541,8 @@ const ModalLihatRiwayatTransaksi = ({
                         typeof bukti === "string"
                           ? bukti
                           : typeof gambarBawaan === "string"
-                          ? gambarBawaan
-                          : "";
+                            ? gambarBawaan
+                            : "";
 
                       const ekstensi = path
                         ? path.split(".").pop()?.toLowerCase()
@@ -596,7 +596,7 @@ const ModalLihatRiwayatTransaksi = ({
                         color="green"
                         onClick={() =>
                           unduhSemuaBukti(
-                            transaksiTerpilih.transaksi?.Bukti_Pembayaran
+                            transaksiTerpilih.transaksi?.Bukti_Pembayaran,
                           )
                         }
                       >
@@ -699,7 +699,7 @@ const ModalLihatRiwayatTransaksi = ({
                         color="green"
                         onClick={() =>
                           unduhSemuaPenerimaan(
-                            transaksiTerpilih.penerimaan?.File
+                            transaksiTerpilih.penerimaan?.File,
                           )
                         }
                       >
@@ -719,208 +719,380 @@ const ModalLihatRiwayatTransaksi = ({
           </tbody>
         </table>
 
+        {/* FAKTUR */}
         <Typography className="text-black font-bold text-lg">Faktur</Typography>
 
-        <table className="mt-4 w-full min-w-max table-auto text-left">
-          <thead>
-            <tr>
-              {judulTabel4.map((konten) => (
-                <th
-                  key={konten}
-                  className="border-y border-blue-gray-100 bg-blue-gray-50/50 p-4"
-                >
-                  <Typography
-                    variant="small"
-                    color="blue-gray"
-                    className="font-normal leading-none opacity-70"
-                  >
-                    {konten}
-                  </Typography>
-                </th>
-              ))}
-            </tr>
-          </thead>
+        {/* FAKTUR */}
+        <Typography className="text-black font-bold text-lg">Faktur</Typography>
 
-          <tbody>
-            {transaksiTerpilih ? (
-              <>
+        <div className="flex flex-row items-start">
+          {/* Tabel 1: Data Faktur dengan overflow */}
+          <div className="flex-1 overflow-x-auto min-w-0">
+            <table className="mt-4 w-full table-auto text-left">
+              <thead>
                 <tr>
-                  <td className="p-4">
-                    <div className="flex items-center gap-3">
-                      <Image
-                        src={transaksiTerpilih.pengguna?.Foto || gambarBawaan}
-                        alt={
-                          transaksiTerpilih.pengguna?.Nama_Lengkap ||
-                          "Tidak ada nama"
-                        }
-                        width={40}
-                        height={40}
-                        className="rounded-full"
-                      />
-                      <div className="flex flex-col">
-                        <Typography
-                          variant="small"
-                          color="blue-gray"
-                          className="font-normal"
-                        >
-                          {transaksiTerpilih.pengguna?.Nama_Lengkap ||
-                            "Tidak ada nama"}
-                        </Typography>
-                        <Typography
-                          variant="small"
-                          color="blue-gray"
-                          className="font-normal opacity-70"
-                        >
-                          {transaksiTerpilih.pengguna?.Email ||
-                            "Tidak ada email"}
-                        </Typography>
-                      </div>
-                    </div>
-                  </td>
+                  <th className="border-y border-blue-gray-100 bg-blue-gray-50/50 p-4 whitespace-nowrap">
+                    <Typography
+                      variant="small"
+                      color="blue-gray"
+                      className="font-normal leading-none opacity-70"
+                    >
+                      Pembeli
+                    </Typography>
+                  </th>
+                  <th className="border-y border-blue-gray-100 bg-blue-gray-50/50 p-4 whitespace-nowrap">
+                    <Typography
+                      variant="small"
+                      color="blue-gray"
+                      className="font-normal leading-none opacity-70"
+                    >
+                      Produk
+                    </Typography>
+                  </th>
+                  <th className="border-y border-blue-gray-100 bg-blue-gray-50/50 p-4 whitespace-nowrap">
+                    <Typography
+                      variant="small"
+                      color="blue-gray"
+                      className="font-normal leading-none opacity-70"
+                    >
+                      Nama Instansi
+                    </Typography>
+                  </th>
+                  <th className="border-y border-blue-gray-100 bg-blue-gray-50/50 p-4 whitespace-nowrap">
+                    <Typography
+                      variant="small"
+                      color="blue-gray"
+                      className="font-normal leading-none opacity-70"
+                    >
+                      Kuantitas
+                    </Typography>
+                  </th>
+                  <th className="border-y border-blue-gray-100 bg-blue-gray-50/50 p-4 whitespace-nowrap">
+                    <Typography
+                      variant="small"
+                      color="blue-gray"
+                      className="font-normal leading-none opacity-70"
+                    >
+                      Harga
+                    </Typography>
+                  </th>
+                  <th className="border-y border-blue-gray-100 bg-blue-gray-50/50 p-4 whitespace-nowrap">
+                    <Typography
+                      variant="small"
+                      color="blue-gray"
+                      className="font-normal leading-none opacity-70"
+                    >
+                      Total
+                    </Typography>
+                  </th>
+                </tr>
+              </thead>
 
-                  <td className="p-4">
-                    {transaksiTerpilih.Data_Keranjang?.length > 0 ? (
-                      transaksiTerpilih.Data_Keranjang.map((item, idx) => (
-                        <div key={idx} className="flex flex-col mb-2">
+              <tbody>
+                {transaksiTerpilih ? (
+                  <>
+                    <tr>
+                      <td className="p-4">
+                        <div className="flex items-center gap-3">
+                          <Image
+                            src={
+                              transaksiTerpilih.pengguna?.Foto || gambarBawaan
+                            }
+                            alt={
+                              transaksiTerpilih.pengguna?.Nama_Lengkap ||
+                              "Tidak ada nama"
+                            }
+                            width={40}
+                            height={40}
+                            className="rounded-full"
+                          />
+                          <div className="flex flex-col">
+                            <Typography
+                              variant="small"
+                              color="blue-gray"
+                              className="font-normal"
+                            >
+                              {transaksiTerpilih.pengguna?.Nama_Lengkap ||
+                                "Tidak ada nama"}
+                            </Typography>
+                            <Typography
+                              variant="small"
+                              color="blue-gray"
+                              className="font-normal opacity-70"
+                            >
+                              {transaksiTerpilih.pengguna?.Email ||
+                                "Tidak ada email"}
+                            </Typography>
+                          </div>
+                        </div>
+                      </td>
+
+                      <td className="p-4">
+                        {transaksiTerpilih.Data_Keranjang?.length > 0 ? (
+                          transaksiTerpilih.Data_Keranjang.map((item, idx) => (
+                            <div key={idx} className="flex flex-col mb-2">
+                              <Typography
+                                variant="small"
+                                color="blue-gray"
+                                className="font-normal"
+                              >
+                                {item.Nama || "Nama produk tidak tersedia"}
+                              </Typography>
+                            </div>
+                          ))
+                        ) : (
                           <Typography
                             variant="small"
                             color="blue-gray"
                             className="font-normal"
                           >
-                            {item.Nama || "Nama produk tidak tersedia"}
+                            Produk tidak tersedia
                           </Typography>
-                        </div>
-                      ))
-                    ) : (
-                      <Typography
-                        variant="small"
-                        color="blue-gray"
-                        className="font-normal"
-                      >
-                        Produk tidak tersedia
-                      </Typography>
-                    )}
-                  </td>
+                        )}
+                      </td>
 
-                  <td className="p-4">
-                    {transaksiTerpilih.Data_Keranjang?.length > 0 ? (
-                      transaksiTerpilih.Data_Keranjang.map((item, idx) => (
-                        <div key={idx} className="flex flex-col mb-2">
+                      <td className="p-4">
+                        {transaksiTerpilih.Data_Keranjang?.length > 0 ? (
+                          transaksiTerpilih.Data_Keranjang.map((item, idx) => (
+                            <div key={idx} className="flex flex-col mb-2">
+                              <Typography
+                                variant="small"
+                                color="blue-gray"
+                                className="font-normal"
+                              >
+                                {item.Pemilik}
+                              </Typography>
+                            </div>
+                          ))
+                        ) : (
                           <Typography
                             variant="small"
                             color="blue-gray"
                             className="font-normal"
                           >
-                            {item.Pemilik}
+                            Pemilik produk tidak tersedia
                           </Typography>
-                        </div>
-                      ))
-                    ) : (
-                      <Typography
-                        variant="small"
-                        color="blue-gray"
-                        className="font-normal"
-                      >
-                        Pemilik produk tidak tersedia
-                      </Typography>
-                    )}
-                  </td>
+                        )}
+                      </td>
 
-                  <td className="p-4">
-                    {transaksiTerpilih.Data_Keranjang?.length > 0 ? (
-                      transaksiTerpilih.Data_Keranjang.map((item, idx) => (
-                        <div key={idx} className="flex flex-col mb-2">
+                      <td className="p-4">
+                        {transaksiTerpilih.Data_Keranjang?.length > 0 ? (
+                          transaksiTerpilih.Data_Keranjang.map((item, idx) => (
+                            <div key={idx} className="flex flex-col mb-2">
+                              <Typography
+                                variant="small"
+                                color="blue-gray"
+                                className="font-normal"
+                              >
+                                {item.Kuantitas} x
+                              </Typography>
+                            </div>
+                          ))
+                        ) : (
                           <Typography
                             variant="small"
                             color="blue-gray"
                             className="font-normal"
                           >
-                            {item.Kuantitas} x
+                            Kuantitas produk tidak tersedia
                           </Typography>
-                        </div>
-                      ))
-                    ) : (
-                      <Typography
-                        variant="small"
-                        color="blue-gray"
-                        className="font-normal"
-                      >
-                        Kuantitas produk tidak tersedia
-                      </Typography>
-                    )}
-                  </td>
+                        )}
+                      </td>
 
-                  <td className="p-4">
-                    {transaksiTerpilih.Data_Keranjang?.length > 0 ? (
-                      transaksiTerpilih.Data_Keranjang.map((item, idx) => (
-                        <div key={idx} className="flex flex-col mb-2">
+                      <td className="p-4">
+                        {transaksiTerpilih.Data_Keranjang?.length > 0 ? (
+                          transaksiTerpilih.Data_Keranjang.map((item, idx) => (
+                            <div key={idx} className="flex flex-col mb-2">
+                              <Typography
+                                variant="small"
+                                color="blue-gray"
+                                className="font-normal"
+                              >
+                                {formatRupiah(item.Harga)}
+                              </Typography>
+                            </div>
+                          ))
+                        ) : (
                           <Typography
                             variant="small"
                             color="blue-gray"
                             className="font-normal"
                           >
-                            {formatRupiah(item.Harga)}
+                            Harga produk tidak tersedia
                           </Typography>
-                        </div>
-                      ))
-                    ) : (
-                      <Typography
-                        variant="small"
-                        color="blue-gray"
-                        className="font-normal"
-                      >
-                        Harga produk tidak tersedia
-                      </Typography>
-                    )}
-                  </td>
+                        )}
+                      </td>
 
-                  <td className="p-4">
-                    {transaksiTerpilih.Data_Keranjang?.length > 0 ? (
-                      transaksiTerpilih.Data_Keranjang.map((item, idx) => (
-                        <div key={idx} className="flex flex-col mb-2">
+                      <td className="p-4">
+                        {transaksiTerpilih.Data_Keranjang?.length > 0 ? (
+                          transaksiTerpilih.Data_Keranjang.map((item, idx) => (
+                            <div key={idx} className="flex flex-col mb-2">
+                              <Typography
+                                variant="small"
+                                color="blue-gray"
+                                className="font-normal"
+                              >
+                                {formatRupiah(item.Harga * item.Kuantitas)}
+                              </Typography>
+                            </div>
+                          ))
+                        ) : (
                           <Typography
                             variant="small"
                             color="blue-gray"
                             className="font-normal"
                           >
-                            {formatRupiah(item.Harga * item.Kuantitas)}
+                            Total produk tidak tersedia
                           </Typography>
-                        </div>
-                      ))
-                    ) : (
-                      <Typography
-                        variant="small"
-                        color="blue-gray"
-                        className="font-normal"
-                      >
-                        Total produk tidak tersedia
-                      </Typography>
-                    )}
-                  </td>
+                        )}
+                      </td>
+                    </tr>
+                  </>
+                ) : (
+                  <tr>
+                    <td colSpan="6" className="text-center py-4">
+                      Tidak ada data pengajuan.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
 
-                  <td className="p-4 text-end">
+          <div className="flex-shrink-0 mt-4">
+            <table className="w-auto table-auto text-left">
+              <thead>
+                <tr>
+                  <th className="border-y border-blue-gray-100 bg-blue-gray-50/50 p-4">
+                    <Typography
+                      variant="small"
+                      color="blue-gray"
+                      className="font-normal leading-none opacity-70 pb-3.5"
+                    ></Typography>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td className="p-4 text-center">
                     <Tooltip content="Unduh Faktur">
                       <IconButton
                         variant="outlined"
                         color="green"
                         onClick={() =>
+                          transaksiTerpilih &&
                           unduhFaktur(
                             transaksiTerpilih.Data_Keranjang,
                             transaksiTerpilih,
-                            transaksiTerpilih.pengguna
+                            transaksiTerpilih.pengguna,
                           )
                         }
+                        disabled={!transaksiTerpilih}
                       >
                         <AiOutlineDownload className="h-4 w-4 text-green-800" />
                       </IconButton>
                     </Tooltip>
                   </td>
                 </tr>
-              </>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        {/* SECTION KETERANGAN */}
+        <Typography className="text-black font-bold text-lg mt-6">
+          Keterangan
+        </Typography>
+
+        <table className="mt-4 w-full min-w-max table-auto text-left">
+          <thead>
+            <tr>
+              <th className="border-y border-blue-gray-100 bg-blue-gray-50/50 p-4">
+                <Typography
+                  variant="small"
+                  color="blue-gray"
+                  className="font-normal leading-none opacity-70"
+                >
+                  Nomor Surat
+                </Typography>
+              </th>
+              <th className="border-y border-blue-gray-100 bg-blue-gray-50/50 p-4">
+                <Typography
+                  variant="small"
+                  color="blue-gray"
+                  className="font-normal leading-none opacity-70"
+                >
+                  Nama Pengajuan
+                </Typography>
+              </th>
+              <th className="border-y border-blue-gray-100 bg-blue-gray-50/50 p-4">
+                <Typography
+                  variant="small"
+                  color="blue-gray"
+                  className="font-normal leading-none opacity-70"
+                >
+                  Tanggal Pengajuan
+                </Typography>
+              </th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {transaksiTerpilih ? (
+              <tr>
+                <td className="p-4">
+                  <Typography
+                    variant="small"
+                    color="blue-gray"
+                    className="font-normal break-words"
+                  >
+                    {(() => {
+                      if (!transaksiTerpilih.Data_Keranjang?.length) {
+                        return "Nomor surat tidak tersedia";
+                      }
+                      // Ambil nomor surat unik dan tampilkan hanya 1
+                      const nomorSuratUnik = [
+                        ...new Set(
+                          transaksiTerpilih.Data_Keranjang.map(
+                            (item) => item.Nomor_Surat,
+                          ).filter(Boolean), // filter null/undefined
+                        ),
+                      ];
+                      return nomorSuratUnik[0] || "Nomor surat tidak tersedia";
+                    })()}
+                  </Typography>
+                </td>
+                <td className="p-4">
+                  <Typography
+                    variant="small"
+                    color="blue-gray"
+                    className="font-normal"
+                  >
+                    {transaksiTerpilih.ajukan?.Nama_Ajukan ||
+                      "Nama pengajuan tidak tersedia"}
+                  </Typography>
+                </td>
+                <td className="p-4">
+                  <Typography
+                    variant="small"
+                    color="blue-gray"
+                    className="font-normal"
+                  >
+                    {formatTanggal(
+                      transaksiTerpilih.ajukan?.Tanggal_Pembuatan_Ajukan,
+                    ) || "Tanggal tidak tersedia"}
+                  </Typography>
+                </td>
+              </tr>
             ) : (
               <tr>
-                <td colSpan={judulTabel.length} className="text-center py-4">
-                  Tidak ada data pengajuan.
+                <td colSpan="3" className="p-4 text-center">
+                  <Typography
+                    variant="small"
+                    color="blue-gray"
+                    className="font-normal"
+                  >
+                    Tidak ada data transaksi
+                  </Typography>
                 </td>
               </tr>
             )}
